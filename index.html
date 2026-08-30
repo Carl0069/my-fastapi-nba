@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Hub | 2026–27 Teams & Starters</title>
+    <title>NBA Hub | 2026–27 Teams, Starters & Transactions</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,36 +15,70 @@
     <header class="navbar">
         <div class="nav-container">
             <a href="#hero" class="brand-logo">
-                <span class="nba-badge">NBA</span> STATS HUB
+                <span class="nba-badge">NBA</span> STATS & NEWS HUB
             </a>
             <nav class="nav-links">
-                <a href="#hero">Featured Stars</a>
+                <a href="#hero">Headline News</a>
+                <a href="#transactionsSection" class="nav-highlight">Offseason Transactions</a>
                 <a href="#teamsSection">Teams Directory</a>
                 <span class="nav-disabled">Live Scores</span>
-                <span class="nav-disabled">Playoffs 2027</span>
             </nav>
         </div>
     </header>
 
-    <!-- HERO SECTION (FEATURED TEAMS / MARQUEE STARS) -->
+    <!-- HEADLINE HERO SECTION -->
     <section id="hero" class="hero-section">
-        <button class="hero-nav-btn prev-btn" onclick="prevHeroTeam()" aria-label="Previous Team">&#10094;</button>
-        <button class="hero-nav-btn next-btn" onclick="nextHeroTeam()" aria-label="Next Team">&#10095;</button>
+        <button class="hero-nav-btn prev-btn" onclick="prevHeadline()" aria-label="Previous News">&#10094;</button>
+        <button class="hero-nav-btn next-btn" onclick="nextHeadline()" aria-label="Next News">&#10095;</button>
 
         <div class="hero-container">
             <div class="hero-content">
-                <p class="hero-eyebrow" id="heroConference">WESTERN CONFERENCE • NORTHWEST</p>
-                <h1 class="hero-title" id="heroTitle">Denver Nuggets</h1>
-                <h2 class="hero-star" id="heroStar">Nikola Jokić</h2>
-                <p class="hero-desc" id="heroDesc">The quintessential half-court clinic ran by arguably the most gifted passing center in basketball history.</p>
-                <div class="hero-pills" id="heroPills">
-                    <span class="pill" id="heroStat">29.6 PPG | 10.2 APG</span>
-                    <span class="pill" id="heroRecord">54-28 Last Season</span>
+                <div class="breaking-badge-row">
+                    <span class="pulse-indicator"></span>
+                    <span class="news-category" id="newsCategory">TRADE ALERT</span>
+                </div>
+                <h1 class="hero-title" id="newsHeadline">Giannis Antetokounmpo & Klay Thompson Unite with Miami Heat</h1>
+                <p class="hero-desc" id="newsStory">In a seismic Eastern Conference shakeup, the Heat acquire Giannis Antetokounmpo from Milwaukee to pair with Bam Adebayo, followed by signing veteran champion Klay Thompson.</p>
+                <div class="hero-pills" id="newsPills">
+                    <span class="pill pill-highlight" id="newsPill1">Trade: Giannis to Miami</span>
+                    <span class="pill" id="newsPill2">Signing: Klay Thompson</span>
+                    <span class="pill" id="newsPill3">Miami Heat</span>
                 </div>
             </div>
             <div class="hero-visual">
-                <img id="heroImage" src="https://cdn.nba.com/logos/nba/1610612743/primary/L/logo.svg" alt="Featured Team Logo" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
+                <img id="newsImage" src="https://cdn.nba.com/logos/nba/1610612748/primary/L/logo.svg" alt="Team News Graphic" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
             </div>
+        </div>
+
+        <div class="hero-dots" id="heroDots"></div>
+    </section>
+
+    <!-- OFFSEASON TRANSACTIONS SECTION -->
+    <section id="transactionsSection" class="transactions-section">
+        <div class="section-container">
+            <div class="transactions-header-block">
+                <span class="nba-badge">OFFSEASON LEDGER</span>
+                <h2 class="section-heading">2026 OFFSEASON TRANSACTIONS</h2>
+                <p class="section-subheading">Complete timeline of every trade, free agency signing, contract extension, draft selection, and waiver move across the NBA.</p>
+            </div>
+
+            <!-- SEARCH & TABS -->
+            <div class="tx-controls-bar">
+                <div class="tx-search-wrap">
+                    <input type="text" id="txSearchInput" oninput="filterTransactions()" placeholder="Search transactions by player (e.g. Cody Williams, Giannis, Klay), team, or move...">
+                    <button class="tx-clear-btn" onclick="clearTxSearch()" id="clearBtn">Clear</button>
+                </div>
+                <div class="tx-tabs">
+                    <button class="tx-tab active" onclick="setTxFilter('ALL', this)">All</button>
+                    <button class="tx-tab" onclick="setTxFilter('TRADE', this)">Trades</button>
+                    <button class="tx-tab" onclick="setTxFilter('SIGNING', this)">Signings</button>
+                    <button class="tx-tab" onclick="setTxFilter('EXTENSION', this)">Extensions</button>
+                    <button class="tx-tab" onclick="setTxFilter('DRAFT', this)">Draft</button>
+                    <button class="tx-tab" onclick="setTxFilter('WAIVED', this)">Waivers</button>
+                </div>
+            </div>
+
+            <div id="transactionsTimeline" class="tx-timeline-feed"></div>
         </div>
     </section>
 
@@ -87,25 +121,25 @@
                 </div>
             </div>
 
-            <!-- TEAMS GRID -->
             <div id="teamGrid" class="watch-grid"></div>
         </div>
     </section>
 
-    <!-- TEAM & STARTING LINEUP DETAIL MODAL -->
+    <!-- TEAM DETAIL MODAL WITH CORRECT 11-COLUMN TABLE HEADER -->
     <div id="detailModal" class="modal-overlay" onclick="handleBackdropClick(event)">
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <div class="modal-body">
                 <div class="modal-image-col">
                     <img id="modalLogo" src="" alt="Team Logo">
-                    <p class="modal-record" id="modalRecord">Last Season: 56-26</p>
+                    <div class="modal-record" id="modalRecord"></div>
                 </div>
                 <div class="modal-info-col">
                     <p class="modal-conference" id="modalConference">EASTERN CONFERENCE • ATLANTIC</p>
                     <h2 class="modal-title" id="modalTitle">Team Name</h2>
                     <h3 class="modal-star" id="modalStar">Featured: Star Name</h3>
                     
+                    <div id="modalSalaryRow" style="margin: 10px 0; display: flex; align-items: center; gap: 10px;"></div>
                     <p class="modal-description" id="modalDescription"></p>
                     <div class="modal-divider"></div>
 
@@ -119,6 +153,9 @@
                                     <th>PTS</th>
                                     <th>REB</th>
                                     <th>AST</th>
+                                    <th>STL</th>
+                                    <th>BLK</th>
+                                    <th>TOV</th>
                                     <th>FG%</th>
                                     <th>3P%</th>
                                     <th>FT%</th>
