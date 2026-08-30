@@ -1,4 +1,4 @@
-const API_URL = "/api";
+const API_URL = "https://my-fastapi-nba.vercel.app/";
 
 const DIVISIONS = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"];
 
