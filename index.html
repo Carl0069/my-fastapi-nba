@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA 2026-2027 Team Finder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🏀 NBA Team & Roster Finder</h1>
+        <p>Explore all 30 NBA teams and 2026–2027 player stats</p>
+    </header>
+
+    <main>
+        <!-- SEARCH -->
+        <section class="search">
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search team, city, player name, or position (e.g., Lakers, Tatum, PG)..."
+            >
+            <button onclick="searchTeams()">Search</button>
+            <button class="secondary" onclick="loadTeams()">Show All</button>
+        </section>
+
+        <section>
+            <h2>NBA Teams</h2>
+            <div id="teamList" class="team-list">
+                Loading teams...
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Data provided by the NBA 2026–2027 REST API</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
