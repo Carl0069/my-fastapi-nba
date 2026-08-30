@@ -1,4 +1,4 @@
-const API_URL = "/api";
+const API_URL = "https:my-fastapi-nba.vercel.app"; // Update with your deployed URL or http://127.0.0.1:8000 for local dev
 
 const DIVISION_ORDER = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"];
 
@@ -64,7 +64,7 @@ function renderDivisions(teams) {
         grouped[team.division].push(team);
     });
 
-    // Render division columns
+    // Render each division column (Atlantic, Central, etc.)
     DIVISION_ORDER.forEach(divisionName => {
         const divisionTeams = grouped[divisionName] || [];
         if (divisionTeams.length === 0) return;
