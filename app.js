@@ -1,4 +1,4 @@
-const API_URL = "https://YOUR-API.vercel.app"; // Update with your deployed URL or http://127.0.0.1:8000 for local dev
+const API_URL = "https:my-fastapi-nba.vercel.app"; // Update with your deployed URL or http://127.0.0.1:8000 for local dev
 
 // ENTER KEY SEARCH
 document.getElementById("searchInput").addEventListener("keydown", function (event) {
