@@ -3,58 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Teams & 2026-27 Rosters</title>
+    <title>NBA Hub | 2026–27 Teams & Starters</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header class="nba-header">
-        <div class="header-container">
-            <div class="logo-title">
-                <span class="nba-badge">NBA</span>
-                <h1>TEAM DIRECTORY & STARTERS</h1>
-            </div>
-            <p class="subtitle">2026–27 Projections & Season Stats</p>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="#hero" class="brand-logo">
+                <span class="nba-badge">NBA</span> STATS HUB
+            </a>
+            <nav class="nav-links">
+                <a href="#hero">Featured Stars</a>
+                <a href="#teamsSection">Teams Directory</a>
+                <span class="nav-disabled">Live Scores</span>
+                <span class="nav-disabled">Playoffs 2027</span>
+            </nav>
         </div>
     </header>
 
-    <main class="main-container">
-        <!-- SEARCH & FILTERS -->
-        <section class="controls-section">
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search by team, player (e.g. Tatum, Luka), or division...">
-                <button class="btn btn-primary" onclick="searchTeams()">Search</button>
-                <button class="btn btn-secondary" onclick="loadTeams()">Reset</button>
-            </div>
-            <div class="filter-tabs">
-                <button class="tab active" onclick="filterByConference('ALL', this)">All Teams</button>
-                <button class="tab" onclick="filterByConference('Eastern', this)">Eastern Conference</button>
-                <button class="tab" onclick="filterByConference('Western', this)">Western Conference</button>
-            </div>
-        </section>
+    <!-- HERO SECTION (FEATURED TEAMS / MARQUEE STARS) -->
+    <section id="hero" class="hero-section">
+        <button class="hero-nav-btn prev-btn" onclick="prevHeroTeam()" aria-label="Previous Team">&#10094;</button>
+        <button class="hero-nav-btn next-btn" onclick="nextHeroTeam()" aria-label="Next Team">&#10095;</button>
 
-        <!-- TEAMS BY DIVISION GRID -->
-        <section class="directory-section">
-            <h2 id="viewHeading" class="section-title">ALL TEAMS</h2>
-            <div id="teamContainer" class="divisions-wrapper">
-                <p class="loading-text">Loading NBA Teams...</p>
+        <div class="hero-container">
+            <div class="hero-content">
+                <p class="hero-eyebrow" id="heroConference">WESTERN CONFERENCE • NORTHWEST</p>
+                <h1 class="hero-title" id="heroTitle">Denver Nuggets</h1>
+                <h2 class="hero-star" id="heroStar">Nikola Jokić</h2>
+                <p class="hero-desc" id="heroDesc">The quintessential half-court clinic ran by arguably the most gifted passing center in basketball history.</p>
+                <div class="hero-pills" id="heroPills">
+                    <span class="pill" id="heroStat">29.6 PPG | 10.2 APG</span>
+                    <span class="pill" id="heroRecord">54-28 Last Season</span>
+                </div>
             </div>
-        </section>
-    </main>
+            <div class="hero-visual">
+                <img id="heroImage" src="https://cdn.nba.com/logos/nba/1610612743/primary/L/logo.svg" alt="Featured Team Logo" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
+            </div>
+        </div>
+    </section>
 
-    <!-- TEAM DETAILS & STARTERS MODAL -->
-    <div id="teamModal" class="modal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeModal()">&times;</button>
-            <div id="modalBody"></div>
+    <!-- CATALOG / TEAMS DIRECTORY SECTION -->
+    <section id="teamsSection" class="catalog-section">
+        <div class="catalog-container">
+            
+            <!-- POPULAR FRANCHISES QUICK-SELECT -->
+            <div class="brand-filter-row">
+                <button class="brand-circle" onclick="toggleFranchiseFilter('Boston Celtics', this)" title="Boston Celtics">
+                    <img src="https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg" alt="Celtics" class="brand-logo-img">
+                </button>
+                <button class="brand-circle" onclick="toggleFranchiseFilter('Los Angeles Lakers', this)" title="Los Angeles Lakers">
+                    <img src="https://cdn.nba.com/logos/nba/1610612747/primary/L/logo.svg" alt="Lakers" class="brand-logo-img">
+                </button>
+                <button class="brand-circle" onclick="toggleFranchiseFilter('Golden State Warriors', this)" title="Golden State Warriors">
+                    <img src="https://cdn.nba.com/logos/nba/1610612744/primary/L/logo.svg" alt="Warriors" class="brand-logo-img">
+                </button>
+                <button class="brand-circle" onclick="toggleFranchiseFilter('New York Knicks', this)" title="New York Knicks">
+                    <img src="https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg" alt="Knicks" class="brand-logo-img">
+                </button>
+                <button class="brand-circle" onclick="toggleFranchiseFilter('Oklahoma City Thunder', this)" title="Oklahoma City Thunder">
+                    <img src="https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg" alt="Thunder" class="brand-logo-img">
+                </button>
+                <button class="brand-circle" onclick="toggleFranchiseFilter('San Antonio Spurs', this)" title="San Antonio Spurs">
+                    <img src="https://cdn.nba.com/logos/nba/1610612759/primary/L/logo.svg" alt="Spurs" class="brand-logo-img">
+                </button>
+            </div>
+
+            <!-- SEARCH BAR & CONFERENCE TABS -->
+            <div class="controls-wrap">
+                <div class="search-bar-wrap">
+                    <input type="text" id="searchInput" placeholder="Search by team, player (e.g. Tatum, Luka), or position (e.g. PG)...">
+                    <button id="searchBtn" onclick="searchTeams()">SEARCH</button>
+                </div>
+                <div class="conference-tabs">
+                    <button class="conf-tab active" onclick="filterConference('ALL', this)">All Teams</button>
+                    <button class="conf-tab" onclick="filterConference('Eastern', this)">Eastern Conference</button>
+                    <button class="conf-tab" onclick="filterConference('Western', this)">Western Conference</button>
+                </div>
+            </div>
+
+            <!-- TEAMS GRID -->
+            <div id="teamGrid" class="watch-grid"></div>
+        </div>
+    </section>
+
+    <!-- TEAM & STARTING LINEUP DETAIL MODAL -->
+    <div id="detailModal" class="modal-overlay" onclick="handleBackdropClick(event)">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div class="modal-body">
+                <div class="modal-image-col">
+                    <img id="modalLogo" src="" alt="Team Logo">
+                    <p class="modal-record" id="modalRecord">Last Season: 56-26</p>
+                </div>
+                <div class="modal-info-col">
+                    <p class="modal-conference" id="modalConference">EASTERN CONFERENCE • ATLANTIC</p>
+                    <h2 class="modal-title" id="modalTitle">Team Name</h2>
+                    <h3 class="modal-star" id="modalStar">Featured: Star Name</h3>
+                    
+                    <p class="modal-description" id="modalDescription"></p>
+                    <div class="modal-divider"></div>
+
+                    <h4 class="modal-lineup-heading">2026–27 Projected Starting Lineup</h4>
+                    <div class="table-responsive">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>POS</th>
+                                    <th>PLAYER</th>
+                                    <th>PTS</th>
+                                    <th>REB</th>
+                                    <th>AST</th>
+                                    <th>FG%</th>
+                                    <th>3P%</th>
+                                    <th>FT%</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalStartersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <footer class="nba-footer">
-        <p>Data provided by the NBA Fast API • 2026–27 Projected Lineups</p>
-    </footer>
 
     <script src="app.js"></script>
 </body>
