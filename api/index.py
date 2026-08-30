@@ -482,20 +482,20 @@ nba_teams = [
     }
 ]
 
-# API ENDPOINTS
+# HOME
 @app.get("/")
 def home():
     return {
         "message": "Welcome to the NBA Teams API!",
         "endpoints": [
-            "/api/teams",
-            "/api/teams/{id}",
-            "/api/teams/search"
+            "/teams",
+            "/teams/{id}",
+            "/teams/search"
         ]
     }
 
 # GET ALL TEAMS
-@app.get("/api/teams")
+@app.get("/teams")
 def get_teams():
     return {
         "count": len(nba_teams),
@@ -503,15 +503,15 @@ def get_teams():
     }
 
 # GET SINGLE TEAM
-@app.get("/api/teams/{team_id}")
+@app.get("/teams/{team_id}")
 def get_team(team_id: int):
     for team in nba_teams:
         if team["id"] == team_id:
             return team
     raise HTTPException(status_code=404, detail="Team not found.")
 
-# SEARCH TEAMS (Searches team name, division, conference, or any starting player)
-@app.get("/api/teams/search")
+# SEARCH TEAMS
+@app.get("/teams/search")
 def search_teams(q: str = Query(..., min_length=1)):
     q_lower = q.lower()
     results = []
