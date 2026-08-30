@@ -393,23 +393,17 @@ teams = [
     }
 ]
 
-# Root/Health check
-@app.get("/")
 @app.get("/api")
 def home():
     return {
-        "message": "NBA 2026-2027 Teams & Rosters API Live",
+        "message": "Welcome to the NBA 2026-2027 Teams & Rosters API!",
         "endpoints": ["/api/teams", "/api/teams/{id}", "/api/teams/search"]
     }
 
-# Get All Teams
-@app.get("/teams")
 @app.get("/api/teams")
 def get_teams():
     return {"count": len(teams), "teams": teams}
 
-# Search
-@app.get("/teams/search")
 @app.get("/api/teams/search")
 def search_teams(q: str = Query(..., min_length=1)):
     q = q.lower().strip()
@@ -421,8 +415,6 @@ def search_teams(q: str = Query(..., min_length=1)):
             results.append(team)
     return {"query": q, "count": len(results), "results": results}
 
-# Get One Team
-@app.get("/teams/{team_id}")
 @app.get("/api/teams/{team_id}")
 def get_team(team_id: int):
     for team in teams:
