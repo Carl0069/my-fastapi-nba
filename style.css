@@ -1,597 +1,219 @@
-/* BASE & NBA PALETTE */
-:root {
-    --nba-blue: #051c2d;
-    --nba-red: #c9082a;
-    --nba-royal: #1d428a;
-    --bg-light: #f4f5f8;
-    --card-bg: #ffffff;
-    --text-dark: #111827;
-    --text-muted: #64748b;
-    --border-subtle: #e2e8f0;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-html {
-    scroll-behavior: smooth;
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-/* NAVBAR */
-.navbar {
-    position: sticky;
-    top: 0;
-    width: 100%;
-    background-color: var(--nba-blue);
-    z-index: 100;
-    border-bottom: 3px solid var(--nba-red);
-}
-
-.nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 16px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 900;
-    font-size: 1.3rem;
-    color: #ffffff;
-    text-decoration: none;
-    letter-spacing: 1px;
-}
-
-.nba-badge {
-    background-color: var(--nba-red);
-    color: #ffffff;
-    font-size: 0.8rem;
-    font-weight: 900;
-    padding: 3px 8px;
-    border-radius: 4px;
-    letter-spacing: 1.5px;
-}
-
-.nav-links {
-    display: flex;
-    gap: 28px;
-    align-items: center;
-}
-
-.nav-links a {
-    color: #f1f5f9;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: color 0.2s;
-}
-
-.nav-links a:hover {
-    color: #93c5fd;
-}
-
-.nav-disabled {
-    color: rgba(241, 245, 249, 0.35);
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: default;
-}
-
-/* HERO SECTION */
-.hero-section {
-    position: relative;
-    background: linear-gradient(135deg, #051c2d 0%, #0a2540 100%);
-    color: #ffffff;
-    min-height: 75vh;
-    display: flex;
-    align-items: center;
-    padding: 60px 80px;
-    overflow: hidden;
-}
-
-.hero-container {
-    max-width: 1150px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap: 50px;
-    align-items: center;
-    width: 100%;
-}
-
-.hero-eyebrow {
-    font-size: 0.85rem;
-    letter-spacing: 2px;
-    font-weight: 700;
-    color: var(--nba-red);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-}
-
-.hero-title {
-    font-size: 2.8rem;
-    font-weight: 900;
-    line-height: 1.1;
-    letter-spacing: -0.5px;
-    margin-bottom: 4px;
-}
-
-.hero-star {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #93c5fd;
-    margin-bottom: 16px;
-}
-
-.hero-desc {
-    color: #cbd5e1;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 24px;
-}
-
-.hero-pills {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.pill {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #ffffff;
-}
-
-.hero-visual {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.hero-visual img {
-    max-width: 320px;
-    max-height: 320px;
-    width: 100%;
-    object-fit: contain;
-    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.6));
-    transition: transform 0.3s ease;
-}
-
-.hero-visual img:hover {
-    transform: scale(1.05);
-}
-
-/* HERO CONTROLS */
-.hero-nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(5, 28, 45, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    font-size: 1.5rem;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.2s;
-}
-
-.hero-nav-btn:hover {
-    opacity: 1;
-    background: var(--nba-red);
-}
-
-.prev-btn { left: 24px; }
-.next-btn { right: 24px; }
-
-/* CATALOG SECTION */
-.catalog-section {
-    background-color: var(--bg-light);
-    padding: 60px 24px 100px;
-    min-height: 100vh;
-}
-
-.catalog-container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* FRANCHISE QUICK SELECT BUTTONS */
-.brand-filter-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 24px;
-    width: 100%;
-    margin-bottom: 40px;
-    flex-wrap: wrap;
-}
-
-.brand-circle {
-    width: 85px;
-    height: 85px;
-    border-radius: 50%;
-    background-color: #ffffff;
-    border: 2px solid transparent;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.brand-circle:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(5, 28, 45, 0.15);
-    border-color: var(--nba-royal);
-}
-
-.brand-circle.active {
-    border-color: var(--nba-red);
-    box-shadow: 0 0 0 4px rgba(201, 8, 42, 0.2);
-    transform: scale(1.08);
-}
-
-.brand-logo-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-/* SEARCH & TABS */
-.controls-wrap {
-    margin-bottom: 35px;
-}
-
-.search-bar-wrap {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.search-bar-wrap input {
-    flex: 1;
-    padding: 15px 20px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    border: 1px solid var(--border-subtle);
-    background-color: #ffffff;
-    border-radius: 6px;
-    color: var(--text-dark);
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.search-bar-wrap input:focus {
-    border-color: var(--nba-royal);
-}
-
-.search-bar-wrap button {
-    background-color: var(--nba-red);
-    color: #ffffff;
-    border: none;
-    padding: 0 32px;
-    font-weight: 700;
-    font-family: inherit;
-    letter-spacing: 1px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.search-bar-wrap button:hover {
-    background-color: #a30622;
-}
-
-.conference-tabs {
-    display: flex;
-    gap: 8px;
-}
-
-.conf-tab {
-    background: #e2e8f0;
-    border: none;
-    padding: 8px 18px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    color: #475569;
-    transition: all 0.2s;
-}
-
-.conf-tab.active, .conf-tab:hover {
-    background: var(--nba-royal);
-    color: #ffffff;
-}
-
-/* TEAMS GRID */
-.watch-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-}
-
-.watch-card {
-    background-color: #ffffff;
-    border-radius: 10px;
-    padding: 16px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border-subtle);
-}
-
-.watch-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(5, 28, 45, 0.1);
-    border-color: #cbd5e1;
-}
-
-.card-top {
-    background-color: #f8fafc;
-    border-radius: 8px;
-    height: 180px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 14px;
-    padding: 20px;
-}
-
-.card-top img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    transition: transform 0.3s;
-}
-
-.watch-card:hover .card-top img {
-    transform: scale(1.08);
-}
-
-.card-bottom {
-    text-align: left;
-}
-
-.card-brand {
-    font-size: 0.75rem;
-    font-weight: 800;
-    color: var(--nba-red);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-
-.card-title {
-    font-size: 1.05rem;
-    font-weight: 800;
-    color: var(--text-dark);
-    margin-bottom: 4px;
-}
-
-.card-subtitle {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    font-weight: 600;
-}
-
-/* MODAL OVERLAY */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(5, 28, 45, 0.75);
-    backdrop-filter: blur(6px);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal-overlay.open {
-    display: flex;
-}
-
-.modal-card {
-    background-color: #ffffff;
-    width: 100%;
-    max-width: 850px;
-    border-radius: 12px;
-    position: relative;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-close {
-    position: absolute;
-    top: 14px;
-    right: 18px;
-    background: transparent;
-    border: none;
-    font-size: 1.8rem;
-    color: var(--text-dark);
-    cursor: pointer;
-    z-index: 10;
-}
-
-.modal-body {
-    display: grid;
-    grid-template-columns: 1fr 1.6fr;
-    overflow-y: auto;
-}
-
-.modal-image-col {
-    background-color: #f8fafc;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 24px;
-    border-right: 1px solid var(--border-subtle);
-}
-
-.modal-image-col img {
-    max-width: 180px;
-    max-height: 180px;
-    object-fit: contain;
-    margin-bottom: 16px;
-}
-
-.modal-record {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-
-.modal-info-col {
-    padding: 36px 30px;
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-conference {
-    font-size: 0.8rem;
-    font-weight: 800;
-    color: var(--nba-red);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-}
-
-.modal-title {
-    font-size: 1.7rem;
-    font-weight: 900;
-    color: var(--text-dark);
-    margin-bottom: 2px;
-}
-
-.modal-star {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--nba-royal);
-    margin-bottom: 14px;
-}
-
-.modal-description {
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: #475569;
-}
-
-.modal-divider {
-    height: 1px;
-    background-color: var(--border-subtle);
-    margin: 16px 0;
-}
-
-.modal-lineup-heading {
-    font-size: 0.85rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-dark);
-    margin-bottom: 10px;
-}
-
-/* STATS TABLE */
-.table-responsive {
-    overflow-x: auto;
-}
-
-.stats-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-}
-
-.stats-table th, .stats-table td {
-    padding: 8px 6px;
-    text-align: right;
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.stats-table th:first-child, .stats-table td:first-child,
-.stats-table th:nth-child(2), .stats-table td:nth-child(2) {
-    text-align: left;
-}
-
-.stats-table th {
-    background-color: #f1f5f9;
-    font-size: 0.75rem;
-    font-weight: 800;
-    color: #475569;
-    text-transform: uppercase;
-}
-
-.pos-tag {
-    font-weight: 800;
-    color: var(--nba-red);
-}
-
-/* RESPONSIVE */
-@media (max-width: 992px) {
-    .watch-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .hero-section {
-        padding: 40px 20px;
-    }
-    .hero-container {
-        grid-template-columns: 1fr;
-        text-align: center;
-    }
-    .hero-pills {
-        justify-content: center;
-    }
-    .modal-body {
-        grid-template-columns: 1fr;
-    }
-    .modal-image-col {
-        border-right: none;
-        border-bottom: 1px solid var(--border-subtle);
-        padding: 24px;
+const API_URL = "https://my-fastapi-nba.vercel.app";
+
+let allTeams = [];
+let featuredTeams = [];
+let currentHeroIndex = 0;
+let selectedFranchise = "";
+let selectedConference = "ALL";
+
+// GET ALL TEAMS
+async function loadTeams() {
+    try {
+        const response = await fetch(`${API_URL}/teams`);
+        const data = await response.json();
+        allTeams = data.teams || [];
+
+        // Pick top marquee teams for the hero slider
+        const heroTeamNames = [
+            "Denver Nuggets",
+            "Oklahoma City Thunder",
+            "Boston Celtics",
+            "Los Angeles Lakers",
+            "San Antonio Spurs",
+            "Miami Heat"
+        ];
+        featuredTeams = allTeams.filter(t => heroTeamNames.includes(t.name));
+        if (featuredTeams.length === 0) {
+            featuredTeams = allTeams.slice(0, 5);
+        }
+
+        displayTeams(allTeams);
+        if (featuredTeams.length > 0) {
+            updateHero(0);
+        }
+    } catch (error) {
+        console.error(error);
+        document.getElementById("teamGrid").innerHTML = "<p style='grid-column: 1/-1; text-align:center; color:#c9082a; padding: 40px 0;'>Unable to connect to the NBA API.</p>";
     }
 }
 
-@media (max-width: 576px) {
-    .watch-grid {
-        grid-template-columns: 1fr;
+// RENDER GRID CARDS
+function displayTeams(teams) {
+    const grid = document.getElementById("teamGrid");
+    grid.innerHTML = "";
+
+    if (!teams || teams.length === 0) {
+        grid.innerHTML = "<p style='grid-column: 1/-1; text-align:center; color:#64748b; padding: 40px 0;'>No teams or players found matching your selection.</p>";
+        return;
     }
-    .brand-filter-row {
-        gap: 12px;
+
+    teams.forEach(team => {
+        const card = document.createElement("div");
+        card.className = "watch-card";
+        card.onclick = () => openModal(team);
+
+        card.innerHTML = `
+            <div class="card-top">
+                <img src="${team.logo}" alt="${team.name}" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
+            </div>
+            <div class="card-bottom">
+                <p class="card-brand">${team.conference} • ${team.division}</p>
+                <h4 class="card-title">${team.name}</h4>
+                <p class="card-subtitle">Star: ${team.featured_star}</p>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+// HERO DISPLAY CONTROLS
+function updateHero(index) {
+    if (!featuredTeams || featuredTeams.length === 0) return;
+    currentHeroIndex = index;
+    const team = featuredTeams[currentHeroIndex];
+
+    document.getElementById("heroConference").innerText = `${team.conference.toUpperCase()} CONFERENCE • ${team.division.toUpperCase()} DIVISION`;
+    document.getElementById("heroTitle").innerText = team.name;
+    document.getElementById("heroStar").innerText = `Featured Star: ${team.featured_star}`;
+    document.getElementById("heroDesc").innerText = team.description;
+    document.getElementById("heroStat").innerText = team.headline_stat;
+    document.getElementById("heroRecord").innerText = `${team.last_season_record} Last Season`;
+
+    const heroImg = document.getElementById("heroImage");
+    heroImg.src = team.logo;
+    heroImg.onerror = () => {
+        heroImg.src = "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
+    };
+}
+
+function prevHeroTeam() {
+    if (featuredTeams.length === 0) return;
+    currentHeroIndex = (currentHeroIndex - 1 + featuredTeams.length) % featuredTeams.length;
+    updateHero(currentHeroIndex);
+}
+
+function nextHeroTeam() {
+    if (featuredTeams.length === 0) return;
+    currentHeroIndex = (currentHeroIndex + 1) % featuredTeams.length;
+    updateHero(currentHeroIndex);
+}
+
+// SEARCH FILTER
+function searchTeams() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+
+    document.querySelectorAll(".brand-circle").forEach(btn => btn.classList.remove("active"));
+    selectedFranchise = "";
+
+    let filtered = allTeams;
+    if (selectedConference !== "ALL") {
+        filtered = filtered.filter(t => t.conference.toLowerCase() === selectedConference.toLowerCase());
     }
-    .brand-circle {
-        width: 60px;
-        height: 60px;
-        padding: 10px;
+
+    if (!query) {
+        displayTeams(filtered);
+        return;
+    }
+
+    const results = filtered.filter(team => {
+        const teamName = team.name.toLowerCase();
+        const div = team.division.toLowerCase();
+        const conf = team.conference.toLowerCase();
+        const star = team.featured_star.toLowerCase();
+        const playerMatch = team.starters_2026_27.some(p =>
+            p.name.toLowerCase().includes(query) || p.pos.toLowerCase() === query
+        );
+
+        return teamName.includes(query) || div.includes(query) || conf.includes(query) || star.includes(query) || playerMatch;
+    });
+
+    displayTeams(results);
+}
+
+// FRANCHISE QUICK SELECT FILTER
+function toggleFranchiseFilter(teamName, element) {
+    const isAlreadySelected = element.classList.contains("active");
+
+    document.querySelectorAll(".brand-circle").forEach(btn => btn.classList.remove("active"));
+    document.getElementById("searchInput").value = "";
+
+    if (isAlreadySelected) {
+        selectedFranchise = "";
+        applyFilters();
+    } else {
+        selectedFranchise = teamName;
+        element.classList.add("active");
+        const filtered = allTeams.filter(t => t.name.toLowerCase() === teamName.toLowerCase());
+        displayTeams(filtered);
     }
 }
+
+// CONFERENCE TAB FILTER
+function filterConference(conf, element) {
+    selectedConference = conf;
+    document.querySelectorAll(".conf-tab").forEach(tab => tab.classList.remove("active"));
+    if (element) element.classList.add("active");
+    applyFilters();
+}
+
+function applyFilters() {
+    let list = allTeams;
+    if (selectedConference !== "ALL") {
+        list = list.filter(t => t.conference.toLowerCase() === selectedConference.toLowerCase());
+    }
+    if (selectedFranchise) {
+        list = list.filter(t => t.name.toLowerCase() === selectedFranchise.toLowerCase());
+    }
+    displayTeams(list);
+}
+
+// MODAL CONTROLS
+function openModal(team) {
+    document.getElementById("modalConference").innerText = `${team.conference.toUpperCase()} CONFERENCE • ${team.division.toUpperCase()}`;
+    document.getElementById("modalTitle").innerText = team.name;
+    document.getElementById("modalStar").innerText = `Featured Star: ${team.featured_star} (${team.headline_stat})`;
+    document.getElementById("modalRecord").innerText = `Last Season: ${team.last_season_record}`;
+    document.getElementById("modalDescription").innerText = team.description;
+
+    const modalImg = document.getElementById("modalLogo");
+    modalImg.src = team.logo;
+    modalImg.onerror = () => {
+        modalImg.src = "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
+    };
+
+    const tbody = document.getElementById("modalStartersBody");
+    tbody.innerHTML = team.starters_2026_27.map(p => `
+        <tr>
+            <td class="pos-tag">${p.pos}</td>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.pts.toFixed(1)}</td>
+            <td>${p.reb.toFixed(1)}</td>
+            <td>${p.ast.toFixed(1)}</td>
+            <td>${p.fg.toFixed(1)}%</td>
+            <td>${p.fg3.toFixed(1)}%</td>
+            <td>${p.ft.toFixed(1)}%</td>
+        </tr>
+    `).join("");
+
+    document.getElementById("detailModal").classList.add("open");
+}
+
+function closeModal() {
+    document.getElementById("detailModal").classList.remove("open");
+}
+
+function handleBackdropClick(event) {
+    if (event.target.id === "detailModal") {
+        closeModal();
+    }
+}
+
+// EVENT LISTENERS
+const searchInput = document.getElementById("searchInput");
+searchInput.addEventListener("input", searchTeams);
+searchInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") searchTeams();
+});
+
+loadTeams();
