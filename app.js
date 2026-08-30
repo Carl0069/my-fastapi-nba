@@ -1,163 +1,104 @@
-const API_URL = "https:my-fastapi-nba.vercel.app"; // Update with your deployed URL or http://127.0.0.1:8000 for local dev
+const API_URL = "https:my-fastapi-nba.vercel.app";
 
-const DIVISION_ORDER = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"];
-
-document.getElementById("searchInput").addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        searchTeams();
-    }
-});
+const DIVISIONS = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"];
 
 async function loadTeams() {
-    const container = document.getElementById("divisionsContainer");
-    container.innerHTML = "<p>Loading NBA teams...</p>";
-
     try {
         const response = await fetch(`${API_URL}/teams`);
-        if (!response.ok) throw new Error("Failed to load teams.");
         const data = await response.json();
-        renderDivisions(data.teams);
+        renderTeamsByDivision(data.teams);
     } catch (error) {
         console.error(error);
-        container.innerHTML = "<p style='color:red;'>Unable to connect to the NBA API.</p>";
+        document.getElementById("divisionGrid").innerHTML = "<p>Unable to connect to the NBA API.</p>";
     }
 }
 
-async function searchTeams() {
-    const query = document.getElementById("searchInput").value.trim();
-    if (!query) {
-        loadTeams();
-        return;
-    }
+function renderTeamsByDivision(teams) {
+    const grid = document.getElementById("divisionGrid");
+    grid.innerHTML = "";
 
-    const container = document.getElementById("divisionsContainer");
-    container.innerHTML = "<p>Searching...</p>";
-
-    try {
-        const response = await fetch(`${API_URL}/teams/search?q=${encodeURIComponent(query)}`);
-        if (!response.ok) throw new Error("Search failed.");
-        const data = await response.json();
-        renderDivisions(data.results);
-    } catch (error) {
-        console.error(error);
-        container.innerHTML = "<p style='color:red;'>Search request failed.</p>";
-    }
-}
-
-function renderDivisions(teams) {
-    const container = document.getElementById("divisionsContainer");
-    container.innerHTML = "";
-
-    if (!teams || teams.length === 0) {
-        container.innerHTML = "<p>No matching NBA teams or players found.</p>";
-        return;
-    }
-
-    // Group teams by division
-    const grouped = {};
-    DIVISION_ORDER.forEach(div => grouped[div] = []);
-
-    teams.forEach(team => {
-        if (!grouped[team.division]) {
-            grouped[team.division] = [];
-        }
-        grouped[team.division].push(team);
-    });
-
-    // Render each division column (Atlantic, Central, etc.)
-    DIVISION_ORDER.forEach(divisionName => {
-        const divisionTeams = grouped[divisionName] || [];
-        if (divisionTeams.length === 0) return;
+    // Group teams by their division
+    DIVISIONS.forEach(divName => {
+        const divTeams = teams.filter(t => t.division.toLowerCase() === divName.toLowerCase());
+        if (divTeams.length === 0) return;
 
         const col = document.createElement("div");
         col.className = "division-column";
+        col.innerHTML = `<h3>${divName}</h3>`;
 
-        const teamsListHtml = divisionTeams.map(team => `
-            <div class="team-row">
-                <img src="${team.logo}" alt="${team.name}" class="team-logo" onerror="this.src='https://cdn.nba.com/logos/leagues/L/logo-nba.svg'">
-                <div class="team-info-group">
-                    <button class="team-title-btn" onclick="openTeamModal(${team.id})">
-                        ${team.name} <span class="external-icon">↗</span>
-                    </button>
+        divTeams.forEach(team => {
+            const teamRow = document.createElement("div");
+            teamRow.className = "team-entry";
+            teamRow.innerHTML = `
+                <img class="team-logo" src="${team.logo}" alt="${team.name}" onerror="this.src='https://via.placeholder.com/44'">
+                <div class="team-info">
+                    <h4>${team.name}</h4>
                     <div class="team-links">
-                        <a onclick="openTeamModal(${team.id})">Profile</a>
-                        <a onclick="openTeamModal(${team.id})">Stats</a>
-                        <a onclick="alert('Viewing 2026-2027 Schedule for ${team.name}')">Schedule ↗</a>
-                        <a onclick="alert('Tickets for ${team.arena}')">Tickets ↗</a>
+                        <span onclick="viewProfile(${team.id})">Profile ↗</span>
+                        <span onclick="viewStats(${team.id})">Stats ↗</span>
                     </div>
                 </div>
-            </div>
-        `).join("");
+            `;
+            col.appendChild(teamRow);
+        });
 
-        col.innerHTML = `
-            <h2>${divisionName}</h2>
-            <div class="teams-list">
-                ${teamsListHtml}
-            </div>
-        `;
-
-        container.appendChild(col);
+        grid.appendChild(col);
     });
 }
 
-async function openTeamModal(teamId) {
+// PROFILE MODAL (Record & Conference)
+async function viewProfile(id) {
     try {
-        const response = await fetch(`${API_URL}/teams/${teamId}`);
-        if (!response.ok) throw new Error("Team not found.");
-        const team = await response.json();
+        const res = await fetch(`${API_URL}/teams/${id}`);
+        const team = await res.json();
 
-        const playerRows = (team.roster || []).map(p => `
+        document.getElementById("modalBody").innerHTML = `
+            <h2>${team.name}</h2>
+            <p><strong>Conference:</strong> ${team.conference}</p>
+            <p><strong>Division:</strong> ${team.division}</p>
+            <p><strong>Last Season Record (2025-26):</strong> ${team.last_season_record}</p>
+        `;
+        document.getElementById("teamModal").style.display = "block";
+    } catch (err) {
+        alert("Failed to load profile.");
+    }
+}
+
+// STATS MODAL (2026-2027 Starting 5 & Stats)
+async function viewStats(id) {
+    try {
+        const res = await fetch(`${API_URL}/teams/${id}`);
+        const team = await res.json();
+
+        let tableRows = team.starters_2026_27.map(p => `
             <tr>
+                <td>${p.pos}</td>
                 <td><strong>${p.name}</strong></td>
-                <td><span class="pos-tag">${p.pos}</span></td>
-                <td><strong>${p.ppg}</strong></td>
-                <td>${p.rpg}</td>
-                <td>${p.apg}</td>
-                <td>${p.spg}</td>
-                <td>${p.fg_pct}</td>
-                <td>${p.fg3_pct}</td>
+                <td>${p.pts}</td>
+                <td>${p.reb}</td>
+                <td>${p.ast}</td>
             </tr>
         `).join("");
 
-        const modalContent = document.getElementById("modalContent");
-        modalContent.innerHTML = `
-            <div class="modal-header-section">
-                <img src="${team.logo}" alt="${team.name}">
-                <div>
-                    <h2>${team.name}</h2>
-                    <p class="modal-sub">${team.conference} Conference • ${team.division} Division</p>
-                </div>
-            </div>
-
-            <p><strong>Arena:</strong> ${team.arena} (${team.city}) &nbsp;|&nbsp; <strong>Founded:</strong> ${team.founded} &nbsp;|&nbsp; <strong>Championships:</strong> 🏆 ${team.championships}</p>
-            <p style="color:#555; font-size:0.9rem;">${team.description}</p>
-
-            <h3 style="margin-top:20px; font-size:1.05rem;">2026–2027 Player Roster & Projected Stats</h3>
-            <div style="overflow-x: auto;">
-                <table class="roster-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Pos</th>
-                            <th>PTS</th>
-                            <th>REB</th>
-                            <th>AST</th>
-                            <th>STL</th>
-                            <th>FG%</th>
-                            <th>3P%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${playerRows}
-                    </tbody>
-                </table>
-            </div>
+        document.getElementById("modalBody").innerHTML = `
+            <h2>${team.name}</h2>
+            <h4>2026-2027 Starting Five & Per Game Stats</h4>
+            <table class="stat-table">
+                <thead>
+                    <tr>
+                        <th>POS</th>
+                        <th>Player</th>
+                        <th>PTS</th>
+                        <th>REB</th>
+                        <th>AST</th>
+                    </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+            </table>
         `;
-
-        document.getElementById("teamModal").style.display = "flex";
+        document.getElementById("teamModal").style.display = "block";
     } catch (err) {
-        console.error(err);
-        alert("Failed to load team details.");
+        alert("Failed to load stats.");
     }
 }
 
@@ -165,11 +106,28 @@ function closeModal() {
     document.getElementById("teamModal").style.display = "none";
 }
 
-window.onclick = function(event) {
-    const modal = document.getElementById("teamModal");
-    if (event.target === modal) {
-        closeModal();
+// SEARCH LOGIC
+async function searchTeams() {
+    const query = document.getElementById("searchInput").value.trim();
+    if (!query) {
+        loadTeams();
+        return;
     }
-};
+
+    try {
+        const response = await fetch(`${API_URL}/teams/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        renderTeamsByDivision(data.results);
+    } catch (error) {
+        console.error(error);
+        alert("Search failed.");
+    }
+}
+
+// Close modal when clicking outside the box
+window.onclick = function(e) {
+    const modal = document.getElementById("teamModal");
+    if (e.target === modal) modal.style.display = "none";
+}
 
 loadTeams();
