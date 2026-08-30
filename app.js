@@ -2,9 +2,11 @@ const API_URL = "/api";
 
 const DIVISIONS = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"];
 
+// FETCH ALL TEAMS
 async function loadTeams() {
     try {
         const response = await fetch(`${API_URL}/teams`);
+        if (!response.ok) throw new Error("API call failed");
         const data = await response.json();
         renderTeamsByDivision(data.teams);
     } catch (error) {
@@ -13,11 +15,11 @@ async function loadTeams() {
     }
 }
 
+// RENDER 6-DIVISION GRID
 function renderTeamsByDivision(teams) {
     const grid = document.getElementById("divisionGrid");
     grid.innerHTML = "";
 
-    // Group teams by their division
     DIVISIONS.forEach(divName => {
         const divTeams = teams.filter(t => t.division.toLowerCase() === divName.toLowerCase());
         if (divTeams.length === 0) return;
@@ -46,7 +48,7 @@ function renderTeamsByDivision(teams) {
     });
 }
 
-// PROFILE MODAL (Record & Conference)
+// PROFILE POPUP MODAL
 async function viewProfile(id) {
     try {
         const res = await fetch(`${API_URL}/teams/${id}`);
@@ -64,7 +66,7 @@ async function viewProfile(id) {
     }
 }
 
-// STATS MODAL (2026-2027 Starting 5 & Stats)
+// STATS & STARTING 5 POPUP MODAL
 async function viewStats(id) {
     try {
         const res = await fetch(`${API_URL}/teams/${id}`);
@@ -72,8 +74,8 @@ async function viewStats(id) {
 
         let tableRows = team.starters_2026_27.map(p => `
             <tr>
-                <td>${p.pos}</td>
-                <td><strong>${p.name}</strong></td>
+                <td><strong>${p.pos}</strong></td>
+                <td>${p.name}</td>
                 <td>${p.pts}</td>
                 <td>${p.reb}</td>
                 <td>${p.ast}</td>
@@ -82,7 +84,8 @@ async function viewStats(id) {
 
         document.getElementById("modalBody").innerHTML = `
             <h2>${team.name}</h2>
-            <h4>2026-2027 Starting Five & Per Game Stats</h4>
+            <p><strong>2025-26 Season Record:</strong> ${team.last_season_record}</p>
+            <h4>2026-2027 Starting Lineup & Stats</h4>
             <table class="stat-table">
                 <thead>
                     <tr>
@@ -106,7 +109,7 @@ function closeModal() {
     document.getElementById("teamModal").style.display = "none";
 }
 
-// SEARCH LOGIC
+// SEARCH FUNCTION
 async function searchTeams() {
     const query = document.getElementById("searchInput").value.trim();
     if (!query) {
@@ -124,7 +127,7 @@ async function searchTeams() {
     }
 }
 
-// Close modal when clicking outside the box
+// CLOSE MODAL ON OUTSIDE CLICK
 window.onclick = function(e) {
     const modal = document.getElementById("teamModal");
     if (e.target === modal) modal.style.display = "none";
