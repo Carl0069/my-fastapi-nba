@@ -1,8 +1,8 @@
 // Improved app.js — resolve API URL automatically and add defensive handling for Vercel
 
-// Force the API base to the deployed Vercel backend unless overridden by window.API_BASE_OVERRIDE
-// Use 'window.API_BASE_OVERRIDE' when you need to point to a different API (local dev, other env)
-const API_URL = (window.API_BASE_OVERRIDE || 'https://my-fastapi-nba.vercel.app').replace(/\/+$/,'');
+// Use the current origin + /api so the front-end will call the same deployment's /api
+// If your API is hosted on a different domain, set window.API_BASE_OVERRIDE = 'https://api.example.com'
+const API_URL = (window.API_BASE_OVERRIDE || `${window.location.origin}/api`).replace(/\/+$/,'');
 
 const DIVISIONS = ["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"];
 
