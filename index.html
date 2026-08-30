@@ -3,40 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Teams & Rosters</title>
+    <title>NBA Teams & 2026-27 Rosters</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>🏀 NBA Teams Directory</h1>
-        <p>2026-2027 Projected Starting Lineups & Past Season Records</p>
+    <header class="nba-header">
+        <div class="header-container">
+            <div class="logo-title">
+                <span class="nba-badge">NBA</span>
+                <h1>TEAM DIRECTORY & STARTERS</h1>
+            </div>
+            <p class="subtitle">2026–27 Projections & Season Stats</p>
+        </div>
     </header>
-    
-    <main>
-        <section class="search">
-            <input type="text" id="searchInput" placeholder="Search team, division, or player...">
-            <button onclick="searchTeams()">Search</button>
-            <button class="secondary" onclick="loadTeams()">Show All</button>
+
+    <main class="main-container">
+        <!-- SEARCH & FILTERS -->
+        <section class="controls-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by team, player (e.g. Tatum, Luka), or division...">
+                <button class="btn btn-primary" onclick="searchTeams()">Search</button>
+                <button class="btn btn-secondary" onclick="loadTeams()">Reset</button>
+            </div>
+            <div class="filter-tabs">
+                <button class="tab active" onclick="filterByConference('ALL', this)">All Teams</button>
+                <button class="tab" onclick="filterByConference('Eastern', this)">Eastern Conference</button>
+                <button class="tab" onclick="filterByConference('Western', this)">Western Conference</button>
+            </div>
         </section>
 
-        <h2>ALL TEAMS</h2>
-        <div id="divisionGrid" class="division-grid">
-            <!-- Rendered by app.js -->
-            <p>Loading NBA teams...</p>
-        </div>
+        <!-- TEAMS BY DIVISION GRID -->
+        <section class="directory-section">
+            <h2 id="viewHeading" class="section-title">ALL TEAMS</h2>
+            <div id="teamContainer" class="divisions-wrapper">
+                <p class="loading-text">Loading NBA Teams...</p>
+            </div>
+        </section>
     </main>
 
-    <!-- Modal for Detailed Stats & Profile -->
+    <!-- TEAM DETAILS & STARTERS MODAL -->
     <div id="teamModal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
             <div id="modalBody"></div>
         </div>
     </div>
 
-    <footer>
-        <p>Data provided by the FastAPI NBA Directory</p>
+    <footer class="nba-footer">
+        <p>Data provided by the NBA Fast API • 2026–27 Projected Lineups</p>
     </footer>
+
     <script src="app.js"></script>
 </body>
 </html>
