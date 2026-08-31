@@ -16,10 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2026-27 Cap: $164.96M | Luxury Tax: $200.43M | 1st Apron: $209.02M | 2nd Apron: $221.69M
 teams = [
-    # ==================== EASTERN CONFERENCE ====================
-    # --- Atlantic Division ---
     {
         "id": 1,
         "name": "Boston Celtics",
@@ -76,7 +73,7 @@ teams = [
         "championships": 3,
         "championship_years": [1970, 1973, 2026],
         "last_season_record": "53-29",
-        "description": "The reigning 2026 NBA Champions featuring MVP orchestrator Jalen Brunson and elite perimeter lockdown defense.",
+        "description": "A battle-tested championship contender powered by Jalen Brunson, Karl-Anthony Towns, and a relentless perimeter defense.",
         "logo": "https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg",
         "starters_2026_27": [
             {"pos": "PG", "name": "Jalen Brunson", "pts": 26.5, "reb": 3.2, "ast": 7.3, "stl": 0.9, "blk": 0.2, "tov": 2.4, "fg": 48.0, "fg3": 38.5, "ft": 84.0},
@@ -130,8 +127,6 @@ teams = [
             {"pos": "C", "name": "Jakob Poeltl", "pts": 11.5, "reb": 8.8, "ast": 2.6, "stl": 0.7, "blk": 1.5, "tov": 1.4, "fg": 65.8, "fg3": 0.0, "ft": 56.0}
         ]
     },
-
-    # --- Central Division ---
     {
         "id": 6,
         "name": "Chicago Bulls",
@@ -242,8 +237,6 @@ teams = [
             {"pos": "C", "name": "Myles Turner", "pts": 16.8, "reb": 6.8, "ast": 1.4, "stl": 0.6, "blk": 1.6, "tov": 1.4, "fg": 52.8, "fg3": 36.2, "ft": 77.8}
         ]
     },
-
-    # --- Southeast Division ---
     {
         "id": 11,
         "name": "Atlanta Hawks",
@@ -354,9 +347,6 @@ teams = [
             {"pos": "C", "name": "Alex Sarr", "pts": 12.5, "reb": 6.8, "ast": 2.1, "stl": 0.7, "blk": 1.8, "tov": 1.5, "fg": 42.8, "fg3": 31.5, "ft": 72.0}
         ]
     },
-
-    # ==================== WESTERN CONFERENCE ====================
-    # --- Northwest Division ---
     {
         "id": 16,
         "name": "Denver Nuggets",
@@ -413,7 +403,7 @@ teams = [
         "championships": 2,
         "championship_years": [1979, 2025],
         "last_season_record": "64-18",
-        "description": "The 2025 NBA Champions boasting an all-around dominant core with Shai Gilgeous-Alexander and Chet Holmgren.",
+        "description": "A 64-win reigning Western powerhouse boasting surgical midrange scoring and lockdown team defense.",
         "logo": "https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg",
         "starters_2026_27": [
             {"pos": "PG", "name": "Shai Gilgeous-Alexander", "pts": 32.7, "reb": 5.0, "ast": 6.4, "stl": 1.8, "blk": 0.8, "tov": 2.2, "fg": 51.9, "fg3": 37.5, "ft": 89.8},
@@ -467,8 +457,6 @@ teams = [
             {"pos": "C", "name": "Jusuf Nurkić", "pts": 10.6, "reb": 10.8, "ast": 3.8, "stl": 1.0, "blk": 1.1, "tov": 2.1, "fg": 50.8, "fg3": 24.0, "ft": 63.8}
         ]
     },
-
-    # --- Pacific Division ---
     {
         "id": 21,
         "name": "Golden State Warriors",
@@ -579,8 +567,6 @@ teams = [
             {"pos": "C", "name": "Domantas Sabonis", "pts": 19.4, "reb": 13.9, "ast": 8.2, "stl": 0.9, "blk": 0.6, "tov": 3.3, "fg": 59.4, "fg3": 37.9, "ft": 70.4}
         ]
     },
-
-    # --- Southwest Division ---
     {
         "id": 26,
         "name": "Dallas Mavericks",
