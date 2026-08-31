@@ -3,11 +3,22 @@ const API_URL = "https://my-fastapi-nba.vercel.app";
 let allTeams = [];
 let currentHeadlineIndex = 0;
 let headlineAutoTimer = null;
-let selectedFranchise = "";
+let selectedDivision = "";
 let selectedConference = "ALL";
 let selectedTxFilter = "ALL";
+let selectedScheduleStage = "OPENING_WEEK";
 
-// TEAM METADATA & FULL CHAMPIONSHIP YEARS ARCHIVE (ALL 30 TEAMS)
+// DIVISION TO CONFERENCE LOOKUP
+const DIVISION_CONF_MAP = {
+    "Atlantic": "Eastern",
+    "Central": "Eastern",
+    "Southeast": "Eastern",
+    "Northwest": "Western",
+    "Pacific": "Western",
+    "Southwest": "Western"
+};
+
+// TEAM METADATA & ACCURATE CHAMPIONSHIP YEARS ARCHIVE
 const teamMetadata = {
     "Boston Celtics": { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg", salary: 201437932, status: "Luxury Tax", rings: 18, years: [1957, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1968, 1969, 1974, 1976, 1981, 1984, 1986, 2008, 2024] },
     "Brooklyn Nets": { logo: "https://cdn.nba.com/logos/nba/1610612751/primary/L/logo.svg", salary: 160105139, status: "Under Cap", rings: 0, years: [] },
@@ -41,176 +52,187 @@ const teamMetadata = {
     "San Antonio Spurs": { logo: "https://cdn.nba.com/logos/nba/1610612759/primary/L/logo.svg", salary: 198315672, status: "Over Cap", rings: 5, years: [1999, 2003, 2005, 2007, 2014] }
 };
 
-// 2025-26 OFFICIAL REGULAR SEASON BENCHMARK STATS (CBS SPORTS)
+// PLAYER HEADSHOT ID MAP
+const playerHeadshotIds = {
+    "Derrick White": "1628401", "Baylor Scheierman": "1642260", "Paul George": "202331", "Jayson Tatum": "1628369", "Mitchell Robinson": "1629011",
+    "Michael Porter Jr.": "1629008", "Julius Randle": "203944", "Day'Ron Sharpe": "1630549", "Jalen Brunson": "1628973", "Josh Hart": "1628404",
+    "Mikal Bridges": "1628969", "OG Anunoby": "1628384", "Karl-Anthony Towns": "1626157", "Tyrese Maxey": "1630178", "VJ Edgecombe": "1642270",
+    "Jaylen Brown": "1627759", "LeBron James": "2544", "Joel Embiid": "203954", "Immanuel Quickley": "1630193", "RJ Barrett": "1629628",
+    "Kawhi Leonard": "202695", "Scottie Barnes": "1630567", "Jakob Poeltl": "1627751", "Josh Giddey": "1630581", "Norman Powell": "1626181",
+    "Matas Buzelis": "1641824", "Nic Claxton": "1629651", "James Harden": "201935", "Donovan Mitchell": "1628378", "Peyton Watson": "1631212",
+    "Evan Mobley": "1630596", "Jarrett Allen": "1628386", "Cade Cunningham": "1630595", "Ausar Thompson": "1641709", "Duncan Robinson": "1629130",
+    "John Collins": "1628381", "Jalen Duren": "1631105", "Tyrese Haliburton": "1630169", "Andrew Nembhard": "1629614", "Aaron Nesmith": "1630174",
+    "Pascal Siakam": "1627783", "Ivica Zubac": "1627826", "Ryan Rollins": "1631157", "Tyler Herro": "1629639", "Jaime Jaquez Jr.": "1631170",
+    "Kyle Kuzma": "1628398", "Myles Turner": "1626167", "C.J. McCollum": "203468", "Nickeil Alexander-Walker": "1629638", "Dyson Daniels": "1630700",
+    "Jalen Johnson": "1630552", "Onyeka Okongwu": "1630168", "Coby White": "1629632", "Brandon Miller": "1641706", "Naz Reid": "1629675",
+    "Moussa Diabaté": "1631217", "Davion Mitchell": "1630558", "Tim Hardaway Jr.": "203501", "Andrew Wiggins": "203952", "Giannis Antetokounmpo": "203507",
+    "Bam Adebayo": "1628389", "Jalen Suggs": "1630591", "Desmond Bane": "1630217", "Franz Wagner": "1630532", "Paolo Banchero": "1631094",
+    "Wendell Carter Jr.": "1628976", "Trae Young": "1629027", "Kyshawn George": "1642267", "Anthony Davis": "203076", "Alex Sarr": "1642259",
+    "Jamal Murray": "1627750", "Christian Braun": "1631128", "Cameron Johnson": "1629661", "Aaron Gordon": "203932", "Nikola Jokić": "203999",
+    "LaMelo Ball": "1630163", "Anthony Edwards": "1630162", "Jaden McDaniels": "1630183", "Jonathan Kuminga": "1630228", "Rudy Gobert": "203497",
+    "Shai Gilgeous-Alexander": "1628983", "Cason Wallace": "1641717", "Jalen Williams": "1631114", "Chet Holmgren": "1631096", "Isaiah Hartenstein": "1628392",
+    "Ja Morant": "1629630", "Damian Lillard": "203081", "Toumani Camara": "1641739", "Deni Avdija": "1630166", "Donovan Clingan": "1642271",
+    "Keyonte George": "1641718", "Lauri Markkanen": "1628374", "Jaren Jackson Jr.": "1628991", "Jusuf Nurkić": "203994", "Stephen Curry": "201939",
+    "Brandin Podziemski": "1641764", "Jimmy Butler": "202710", "Draymond Green": "203110", "Kristaps Porziņģis": "204001", "Darius Garland": "1629636",
+    "Kris Dunn": "1627739", "Brandon Ingram": "1627742", "Rui Hachimura": "1629060", "Brook Lopez": "201572", "Luka Dončić": "1629029",
+    "Austin Reaves": "1630559", "Quentin Grimes": "1629656", "Sandro Mamukelashvili": "1630572", "Walker Kessler": "1631117", "Devin Booker": "1626164",
+    "Jalen Green": "1630224", "Dillon Brooks": "1628415", "Miles Bridges": "1628970", "Mark Williams": "1631109", "Zach LaVine": "203897",
+    "De'Andre Hunter": "1629631", "Keegan Murray": "1631105", "Domantas Sabonis": "1627734", "Kyrie Irving": "202681", "Max Christie": "1631108",
+    "Zaccharie Risacher": "1642258", "Cooper Flagg": "1642257", "Dereck Lively II": "1641726", "Fred VanVleet": "1627832", "Amen Thompson": "1641708",
+    "Kevin Durant": "201142", "Jabari Smith Jr.": "1631095", "Alperen Şengün": "1630578", "Ty Jerome": "1629660", "Jaylen Wells": "1642377",
+    "Zach Edey": "1641744", "Dejounte Murray": "1627749", "Trey Murphy III": "1630530", "Herb Jones": "1630529", "Zion Williamson": "1629627",
+    "De'Aaron Fox": "1628368", "Stephon Castle": "1642264", "Devin Vassell": "1630170", "Tobias Harris": "202699", "Victor Wembanyama": "1641705"
+};
+
+function getPlayerHeadshotUrl(playerName) {
+    const id = playerHeadshotIds[playerName];
+    if (id) {
+        return `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png`;
+    }
+    return `https://placehold.co/200x200/051c2d/ffffff?text=${encodeURIComponent(playerName.split(' ').map(n=>n[0]).join(''))}`;
+}
+
+// 2025-26 REGULAR SEASON BENCHMARK STATS
 const playerStatsBenchmark = {
     "Derrick White": { pts: 15.2, reb: 4.2, ast: 5.1, stl: 1.0, blk: 1.3, tov: 1.5, fg: 46.1, fg3: 39.6, ft: 90.1 },
     "Baylor Scheierman": { pts: 6.8, reb: 2.7, ast: 1.6, stl: 0.5, blk: 0.2, tov: 0.8, fg: 42.4, fg3: 38.2, ft: 85.0 },
     "Paul George": { pts: 18.2, reb: 5.4, ast: 4.5, stl: 1.4, blk: 0.5, tov: 2.3, fg: 44.5, fg3: 38.8, ft: 88.5 },
     "Jayson Tatum": { pts: 26.8, reb: 8.4, ast: 5.4, stl: 1.1, blk: 0.6, tov: 2.5, fg: 46.5, fg3: 36.5, ft: 82.5 },
     "Mitchell Robinson": { pts: 6.2, reb: 8.8, ast: 0.7, stl: 1.1, blk: 1.2, tov: 0.9, fg: 66.5, fg3: 0.0, ft: 42.5 },
-
     "Egor Dëmin": { pts: 11.4, reb: 3.6, ast: 4.1, stl: 0.9, blk: 0.4, tov: 1.8, fg: 44.2, fg3: 36.4, ft: 79.5 },
     "Michael Porter Jr.": { pts: 17.5, reb: 7.1, ast: 1.6, stl: 0.6, blk: 0.7, tov: 1.3, fg: 48.8, fg3: 39.8, ft: 79.2 },
     "Julius Randle": { pts: 23.8, reb: 9.1, ast: 4.8, stl: 0.6, blk: 0.3, tov: 3.1, fg: 47.0, fg3: 31.5, ft: 76.8 },
     "Day'Ron Sharpe": { pts: 7.2, reb: 6.8, ast: 1.5, stl: 0.7, blk: 0.9, tov: 1.1, fg: 58.2, fg3: 0.0, ft: 62.5 },
-
     "Jalen Brunson": { pts: 26.5, reb: 3.2, ast: 7.3, stl: 0.9, blk: 0.2, tov: 2.4, fg: 48.0, fg3: 38.5, ft: 84.0 },
     "Josh Hart": { pts: 10.1, reb: 8.6, ast: 4.5, stl: 1.1, blk: 0.3, tov: 1.6, fg: 44.2, fg3: 31.8, ft: 79.5 },
     "Mikal Bridges": { pts: 18.2, reb: 4.1, ast: 3.4, stl: 1.2, blk: 0.8, tov: 1.5, fg: 44.5, fg3: 37.8, ft: 82.0 },
     "OG Anunoby": { pts: 15.4, reb: 4.4, ast: 1.8, stl: 1.7, blk: 0.9, tov: 1.2, fg: 49.2, fg3: 38.6, ft: 76.0 },
     "Karl-Anthony Towns": { pts: 24.2, reb: 11.5, ast: 3.1, stl: 0.7, blk: 0.9, tov: 2.6, fg: 51.2, fg3: 42.0, ft: 88.0 },
-
     "Tyrese Maxey": { pts: 26.3, reb: 3.6, ast: 6.1, stl: 1.1, blk: 0.8, tov: 2.2, fg: 45.4, fg3: 37.5, ft: 87.2 },
     "VJ Edgecombe": { pts: 15.2, reb: 4.8, ast: 3.4, stl: 1.3, blk: 0.6, tov: 2.0, fg: 45.6, fg3: 36.8, ft: 80.2 },
     "Jaylen Brown": { pts: 22.5, reb: 5.6, ast: 3.7, stl: 1.2, blk: 0.6, tov: 2.4, fg: 50.1, fg3: 35.8, ft: 71.0 },
     "LeBron James": { pts: 24.4, reb: 7.8, ast: 8.2, stl: 1.2, blk: 0.6, tov: 3.2, fg: 51.3, fg3: 37.6, ft: 78.2 },
     "Joel Embiid": { pts: 24.9, reb: 8.5, ast: 4.5, stl: 0.9, blk: 1.6, tov: 3.0, fg: 45.4, fg3: 33.3, ft: 86.5 },
-
     "Immanuel Quickley": { pts: 17.8, reb: 4.6, ast: 6.4, stl: 1.0, blk: 0.2, tov: 1.8, fg: 43.8, fg3: 39.8, ft: 84.5 },
     "RJ Barrett": { pts: 21.4, reb: 6.2, ast: 4.0, stl: 0.7, blk: 0.4, tov: 2.2, fg: 49.8, fg3: 39.0, ft: 63.5 },
     "Kawhi Leonard": { pts: 22.8, reb: 6.0, ast: 3.4, stl: 1.6, blk: 0.8, tov: 1.7, fg: 52.0, fg3: 41.2, ft: 88.0 },
     "Scottie Barnes": { pts: 20.2, reb: 8.4, ast: 5.9, stl: 1.3, blk: 1.5, tov: 2.8, fg: 47.8, fg3: 34.5, ft: 78.5 },
     "Jakob Poeltl": { pts: 11.5, reb: 8.8, ast: 2.6, stl: 0.7, blk: 1.5, tov: 1.4, fg: 65.8, fg3: 0.0, ft: 56.0 },
-
     "Josh Giddey": { pts: 13.8, reb: 7.2, ast: 5.8, stl: 0.9, blk: 0.6, tov: 2.6, fg: 48.0, fg3: 34.5, ft: 81.2 },
     "Norman Powell": { pts: 14.2, reb: 2.8, ast: 1.3, stl: 0.8, blk: 0.3, tov: 1.4, fg: 48.8, fg3: 43.8, ft: 83.5 },
     "Matas Buzelis": { pts: 12.4, reb: 4.6, ast: 1.5, stl: 0.8, blk: 1.5, tov: 1.3, fg: 46.0, fg3: 35.3, ft: 79.5 },
     "Nic Claxton": { pts: 11.5, reb: 9.6, ast: 2.0, stl: 0.6, blk: 1.1, tov: 1.3, fg: 63.2, fg3: 20.0, ft: 56.0 },
-
     "James Harden": { pts: 16.8, reb: 5.2, ast: 8.4, stl: 1.2, blk: 0.6, tov: 2.9, fg: 43.0, fg3: 38.5, ft: 88.0 },
     "Donovan Mitchell": { pts: 26.2, reb: 5.0, ast: 5.8, stl: 1.5, blk: 0.4, tov: 2.8, fg: 46.5, fg3: 37.0, ft: 86.8 },
     "Peyton Watson": { pts: 7.8, reb: 3.6, ast: 1.4, stl: 0.7, blk: 1.1, tov: 0.9, fg: 47.5, fg3: 31.5, ft: 68.0 },
     "Evan Mobley": { pts: 17.2, reb: 9.6, ast: 3.4, stl: 0.9, blk: 1.8, tov: 1.8, fg: 58.2, fg3: 37.8, ft: 72.5 },
     "Jarrett Allen": { pts: 16.2, reb: 10.4, ast: 2.5, stl: 0.7, blk: 1.7, tov: 1.5, fg: 63.8, fg3: 0.0, ft: 74.5 },
-
     "Cade Cunningham": { pts: 23.4, reb: 4.5, ast: 7.8, stl: 1.0, blk: 0.8, tov: 3.4, fg: 45.2, fg3: 36.0, ft: 87.2 },
     "Ausar Thompson": { pts: 9.8, reb: 6.9, ast: 2.4, stl: 1.4, blk: 1.8, tov: 1.5, fg: 49.2, fg3: 21.8, ft: 62.5 },
     "Duncan Robinson": { pts: 11.8, reb: 2.4, ast: 2.6, stl: 0.6, blk: 0.2, tov: 1.1, fg: 44.8, fg3: 39.2, ft: 88.5 },
     "John Collins": { pts: 14.8, reb: 8.2, ast: 1.2, stl: 0.6, blk: 0.7, tov: 1.4, fg: 53.5, fg3: 37.4, ft: 80.0 },
     "Jalen Duren": { pts: 14.2, reb: 11.8, ast: 2.6, stl: 0.6, blk: 0.8, tov: 1.9, fg: 62.4, fg3: 0.0, ft: 79.5 },
-
     "Tyrese Haliburton": { pts: 18.5, reb: 3.8, ast: 9.2, stl: 1.4, blk: 0.6, tov: 2.3, fg: 46.0, fg3: 35.5, ft: 85.0 },
     "Andrew Nembhard": { pts: 10.2, reb: 2.4, ast: 4.6, stl: 0.9, blk: 0.2, tov: 1.4, fg: 50.2, fg3: 36.2, ft: 81.0 },
     "Aaron Nesmith": { pts: 12.6, reb: 3.9, ast: 1.6, stl: 1.0, blk: 0.4, tov: 1.1, fg: 49.8, fg3: 42.1, ft: 78.5 },
     "Pascal Siakam": { pts: 21.2, reb: 7.0, ast: 4.2, stl: 0.9, blk: 0.4, tov: 1.9, fg: 53.8, fg3: 38.8, ft: 73.5 },
     "Ivica Zubac": { pts: 12.4, reb: 9.8, ast: 1.5, stl: 0.4, blk: 1.3, tov: 1.3, fg: 65.2, fg3: 0.0, ft: 72.8 },
-
     "Ryan Rollins": { pts: 6.8, reb: 2.1, ast: 2.4, stl: 0.7, blk: 0.2, tov: 1.0, fg: 43.5, fg3: 36.8, ft: 78.5 },
     "Tyler Herro": { pts: 21.2, reb: 5.4, ast: 4.6, stl: 0.8, blk: 0.2, tov: 2.2, fg: 44.5, fg3: 39.8, ft: 86.0 },
     "Jaime Jaquez Jr.": { pts: 12.5, reb: 4.2, ast: 2.8, stl: 1.1, blk: 0.3, tov: 1.5, fg: 49.5, fg3: 33.5, ft: 82.5 },
     "Kyle Kuzma": { pts: 21.8, reb: 6.4, ast: 4.0, stl: 0.5, blk: 0.7, tov: 2.5, fg: 46.0, fg3: 33.2, ft: 77.0 },
     "Myles Turner": { pts: 16.8, reb: 6.8, ast: 1.4, stl: 0.6, blk: 1.6, tov: 1.4, fg: 52.8, fg3: 36.2, ft: 77.8 },
-
     "C.J. McCollum": { pts: 18.8, reb: 4.1, ast: 4.4, stl: 0.9, blk: 0.5, tov: 1.7, fg: 45.5, fg3: 42.5, ft: 82.0 },
     "Nickeil Alexander-Walker": { pts: 8.8, reb: 2.2, ast: 2.6, stl: 0.9, blk: 0.5, tov: 1.0, fg: 44.2, fg3: 39.5, ft: 80.5 },
     "Dyson Daniels": { pts: 9.5, reb: 5.4, ast: 4.3, stl: 2.4, blk: 0.8, tov: 1.8, fg: 46.8, fg3: 34.2, ft: 70.5 },
     "Jalen Johnson": { pts: 17.5, reb: 9.1, ast: 4.4, stl: 1.3, blk: 0.9, tov: 2.5, fg: 52.0, fg3: 36.1, ft: 74.0 },
     "Onyeka Okongwu": { pts: 10.6, reb: 7.1, ast: 1.4, stl: 0.6, blk: 1.1, tov: 1.0, fg: 61.5, fg3: 33.5, ft: 79.5 },
-
     "Coby White": { pts: 18.8, reb: 4.4, ast: 4.9, stl: 0.7, blk: 0.2, tov: 2.1, fg: 44.5, fg3: 37.2, ft: 83.5 },
     "Kon Knueppel": { pts: 13.5, reb: 3.9, ast: 2.6, stl: 0.8, blk: 0.3, tov: 1.2, fg: 47.1, fg3: 41.2, ft: 88.5 },
     "Brandon Miller": { pts: 18.5, reb: 4.6, ast: 2.8, stl: 1.0, blk: 0.6, tov: 1.9, fg: 45.2, fg3: 38.0, ft: 83.5 },
     "Naz Reid": { pts: 13.8, reb: 5.4, ast: 1.4, stl: 0.8, blk: 1.0, tov: 1.4, fg: 48.0, fg3: 41.8, ft: 74.0 },
     "Moussa Diabaté": { pts: 5.2, reb: 6.4, ast: 0.8, stl: 0.6, blk: 1.0, tov: 0.7, fg: 59.5, fg3: 0.0, ft: 64.2 },
-
     "Davion Mitchell": { pts: 6.4, reb: 1.6, ast: 2.7, stl: 0.8, blk: 0.2, tov: 0.9, fg: 46.0, fg3: 37.2, ft: 74.0 },
     "Tim Hardaway Jr.": { pts: 13.8, reb: 3.0, ast: 1.6, stl: 0.5, blk: 0.1, tov: 1.0, fg: 40.0, fg3: 35.0, ft: 85.0 },
     "Andrew Wiggins": { pts: 13.0, reb: 4.4, ast: 1.6, stl: 0.9, blk: 1.0, tov: 1.4, fg: 45.0, fg3: 35.5, ft: 75.0 },
     "Giannis Antetokounmpo": { pts: 30.4, reb: 11.9, ast: 6.1, stl: 1.2, blk: 1.1, tov: 3.4, fg: 60.1, fg3: 24.5, ft: 61.8 },
     "Bam Adebayo": { pts: 19.4, reb: 10.6, ast: 4.1, stl: 1.2, blk: 0.9, tov: 2.3, fg: 52.4, fg3: 35.8, ft: 75.8 },
-
     "Jalen Suggs": { pts: 13.4, reb: 3.4, ast: 3.2, stl: 1.5, blk: 0.6, tov: 1.9, fg: 47.5, fg3: 40.1, ft: 76.8 },
     "Desmond Bane": { pts: 22.8, reb: 4.5, ast: 5.2, stl: 1.1, blk: 0.5, tov: 2.4, fg: 46.0, fg3: 37.8, ft: 86.5 },
     "Franz Wagner": { pts: 20.4, reb: 5.6, ast: 4.0, stl: 1.2, blk: 0.4, tov: 1.9, fg: 48.8, fg3: 30.5, ft: 85.8 },
     "Paolo Banchero": { pts: 23.5, reb: 7.2, ast: 5.8, stl: 0.9, blk: 0.6, tov: 3.1, fg: 46.2, fg3: 34.8, ft: 73.5 },
     "Wendell Carter Jr.": { pts: 11.2, reb: 7.1, ast: 1.8, stl: 0.6, blk: 1.7, tov: 1.3, fg: 52.8, fg3: 37.6, ft: 70.0 },
-
     "Trae Young": { pts: 24.5, reb: 3.1, ast: 11.6, stl: 1.3, blk: 0.2, tov: 4.1, fg: 42.5, fg3: 36.0, ft: 86.5 },
     "Kyshawn George": { pts: 9.8, reb: 3.6, ast: 2.5, stl: 0.9, blk: 0.5, tov: 1.3, fg: 42.8, fg3: 36.5, ft: 78.5 },
     "Anthony Davis": { pts: 25.4, reb: 12.1, ast: 3.2, stl: 1.2, blk: 2.3, tov: 2.1, fg: 54.2, fg3: 30.0, ft: 80.5 },
     "Alex Sarr": { pts: 12.5, reb: 6.8, ast: 2.1, stl: 0.7, blk: 1.8, tov: 1.5, fg: 42.8, fg3: 31.5, ft: 72.0 },
-
     "Jamal Murray": { pts: 20.8, reb: 4.0, ast: 6.2, stl: 1.0, blk: 0.6, tov: 2.1, fg: 47.8, fg3: 41.8, ft: 85.0 },
     "Christian Braun": { pts: 8.9, reb: 4.2, ast: 2.0, stl: 0.8, blk: 0.5, tov: 0.8, fg: 47.8, fg3: 39.5, ft: 72.0 },
     "Cameron Johnson": { pts: 13.6, reb: 4.3, ast: 2.5, stl: 0.8, blk: 0.4, tov: 0.9, fg: 44.8, fg3: 39.4, ft: 79.2 },
     "Aaron Gordon": { pts: 14.2, reb: 6.6, ast: 3.6, stl: 0.8, blk: 0.6, tov: 1.5, fg: 55.8, fg3: 29.5, ft: 66.2 },
     "Nikola Jokić": { pts: 29.6, reb: 12.8, ast: 10.2, stl: 1.5, blk: 0.8, tov: 3.2, fg: 57.6, fg3: 41.2, ft: 80.5 },
-
     "LaMelo Ball": { pts: 23.5, reb: 5.0, ast: 7.8, stl: 1.4, blk: 0.3, tov: 3.5, fg: 43.0, fg3: 35.2, ft: 86.0 },
     "Anthony Edwards": { pts: 27.2, reb: 5.7, ast: 5.1, stl: 1.4, blk: 0.8, tov: 3.1, fg: 46.5, fg3: 40.2, ft: 84.5 },
     "Jaden McDaniels": { pts: 11.4, reb: 3.5, ast: 1.7, stl: 1.0, blk: 1.0, tov: 1.2, fg: 49.5, fg3: 35.0, ft: 74.0 },
     "Jonathan Kuminga": { pts: 16.8, reb: 5.2, ast: 2.5, stl: 0.8, blk: 0.6, tov: 1.8, fg: 53.4, fg3: 33.0, ft: 75.8 },
     "Rudy Gobert": { pts: 13.8, reb: 12.7, ast: 1.2, stl: 0.6, blk: 1.6, tov: 1.5, fg: 65.8, fg3: 0.0, ft: 63.5 },
-
     "Shai Gilgeous-Alexander": { pts: 32.7, reb: 5.0, ast: 6.4, stl: 1.8, blk: 0.8, tov: 2.2, fg: 51.9, fg3: 37.5, ft: 89.8 },
     "Cason Wallace": { pts: 8.2, reb: 2.8, ast: 2.1, stl: 1.2, blk: 0.5, tov: 0.7, fg: 50.2, fg3: 42.5, ft: 80.0 },
     "Jalen Williams": { pts: 19.8, reb: 4.3, ast: 4.8, stl: 1.3, blk: 0.7, tov: 1.9, fg: 54.5, fg3: 43.1, ft: 82.0 },
     "Chet Holmgren": { pts: 17.4, reb: 8.4, ast: 2.7, stl: 0.7, blk: 1.9, tov: 1.7, fg: 53.8, fg3: 37.8, ft: 80.5 },
     "Isaiah Hartenstein": { pts: 8.2, reb: 8.6, ast: 2.6, stl: 1.0, blk: 1.1, tov: 1.2, fg: 64.8, fg3: 33.3, ft: 71.0 },
-
     "Ja Morant": { pts: 24.6, reb: 5.4, ast: 7.8, stl: 1.1, blk: 0.3, tov: 3.0, fg: 46.8, fg3: 28.0, ft: 81.0 },
     "Damian Lillard": { pts: 23.8, reb: 4.2, ast: 6.8, stl: 0.9, blk: 0.2, tov: 2.5, fg: 42.8, fg3: 35.8, ft: 92.2 },
     "Toumani Camara": { pts: 8.6, reb: 5.4, ast: 1.6, stl: 1.2, blk: 0.5, tov: 1.1, fg: 46.2, fg3: 35.0, ft: 77.5 },
     "Deni Avdija": { pts: 15.4, reb: 7.6, ast: 4.1, stl: 0.9, blk: 0.5, tov: 2.1, fg: 51.2, fg3: 38.0, ft: 75.2 },
     "Donovan Clingan": { pts: 9.2, reb: 8.1, ast: 1.4, stl: 0.5, blk: 1.7, tov: 1.3, fg: 59.5, fg3: 25.0, ft: 60.0 },
-
     "Keyonte George": { pts: 14.5, reb: 3.2, ast: 5.2, stl: 0.7, blk: 0.2, tov: 2.5, fg: 40.8, fg3: 34.9, ft: 79.2 },
     "Lauri Markkanen": { pts: 22.8, reb: 8.0, ast: 2.1, stl: 0.8, blk: 0.6, tov: 1.4, fg: 47.8, fg3: 39.5, ft: 89.5 },
     "Jaren Jackson Jr.": { pts: 22.2, reb: 5.4, ast: 2.2, stl: 1.2, blk: 1.8, tov: 2.1, fg: 44.8, fg3: 32.5, ft: 81.2 },
     "Jusuf Nurkić": { pts: 10.6, reb: 10.8, ast: 3.8, stl: 1.0, blk: 1.1, tov: 2.1, fg: 50.8, fg3: 24.0, ft: 63.8 },
-
     "Stephen Curry": { pts: 24.2, reb: 4.4, ast: 6.1, stl: 0.8, blk: 0.4, tov: 2.7, fg: 44.8, fg3: 39.8, ft: 92.5 },
     "Brandin Podziemski": { pts: 11.5, reb: 6.2, ast: 4.4, stl: 1.0, blk: 0.2, tov: 1.4, fg: 46.8, fg3: 39.4, ft: 68.0 },
     "Jimmy Butler": { pts: 20.2, reb: 5.1, ast: 4.8, stl: 1.4, blk: 0.4, tov: 1.6, fg: 49.5, fg3: 41.0, ft: 85.5 },
     "Draymond Green": { pts: 8.4, reb: 7.0, ast: 5.8, stl: 1.0, blk: 0.9, tov: 2.1, fg: 49.2, fg3: 39.0, ft: 72.5 },
     "Kristaps Porziņģis": { pts: 19.8, reb: 7.0, ast: 1.9, stl: 0.6, blk: 1.8, tov: 1.6, fg: 51.2, fg3: 37.2, ft: 85.5 },
-
     "Darius Garland": { pts: 18.4, reb: 2.8, ast: 6.8, stl: 1.1, blk: 0.1, tov: 2.4, fg: 44.8, fg3: 37.5, ft: 83.8 },
     "Kris Dunn": { pts: 5.6, reb: 3.0, ast: 4.0, stl: 1.5, blk: 0.4, tov: 1.2, fg: 47.5, fg3: 37.2, ft: 69.2 },
     "Brandon Ingram": { pts: 20.4, reb: 5.0, ast: 5.6, stl: 0.9, blk: 0.6, tov: 2.4, fg: 49.0, fg3: 35.2, ft: 80.5 },
     "Rui Hachimura": { pts: 13.4, reb: 4.2, ast: 1.3, stl: 0.5, blk: 0.3, tov: 1.0, fg: 53.4, fg3: 42.0, ft: 74.2 },
     "Brook Lopez": { pts: 12.2, reb: 5.0, ast: 1.5, stl: 0.5, blk: 1.2, tov: 1.0, fg: 48.2, fg3: 36.2, ft: 82.5 },
-
     "Luka Dončić": { pts: 28.2, reb: 8.2, ast: 7.8, stl: 1.4, blk: 0.5, tov: 3.6, fg: 45.2, fg3: 35.5, ft: 78.5 },
     "Austin Reaves": { pts: 16.2, reb: 4.4, ast: 5.7, stl: 0.8, blk: 0.3, tov: 2.0, fg: 48.8, fg3: 37.0, ft: 85.8 },
     "Quentin Grimes": { pts: 8.4, reb: 2.4, ast: 1.6, stl: 0.8, blk: 0.3, tov: 0.9, fg: 40.5, fg3: 36.2, ft: 80.1 },
     "Sandro Mamukelashvili": { pts: 5.8, reb: 3.9, ast: 1.4, stl: 0.4, blk: 0.4, tov: 0.7, fg: 48.5, fg3: 32.1, ft: 76.0 },
     "Walker Kessler": { pts: 9.4, reb: 8.8, ast: 1.1, stl: 0.5, blk: 2.6, tov: 1.2, fg: 66.8, fg3: 21.1, ft: 62.4 },
-
     "Devin Booker": { pts: 25.8, reb: 4.1, ast: 7.1, stl: 1.0, blk: 0.4, tov: 2.6, fg: 47.0, fg3: 34.5, ft: 89.0 },
     "Jalen Green": { pts: 20.4, reb: 5.4, ast: 3.8, stl: 0.9, blk: 0.3, tov: 2.2, fg: 43.5, fg3: 34.6, ft: 81.5 },
     "Dillon Brooks": { pts: 12.5, reb: 3.3, ast: 1.6, stl: 0.9, blk: 0.2, tov: 1.3, fg: 42.5, fg3: 35.5, ft: 84.0 },
     "Miles Bridges": { pts: 20.6, reb: 7.1, ast: 3.2, stl: 0.9, blk: 0.5, tov: 1.9, fg: 46.0, fg3: 34.5, ft: 82.0 },
     "Mark Williams": { pts: 12.5, reb: 9.5, ast: 1.1, stl: 0.6, blk: 0.9, tov: 1.2, fg: 64.5, fg3: 0.0, ft: 71.5 },
-
     "Zach LaVine": { pts: 19.2, reb: 5.0, ast: 3.8, stl: 0.8, blk: 0.3, tov: 2.2, fg: 45.0, fg3: 34.5, ft: 85.0 },
     "De'Andre Hunter": { pts: 15.4, reb: 3.8, ast: 1.4, stl: 0.8, blk: 0.3, tov: 1.3, fg: 45.5, fg3: 38.2, ft: 84.2 },
     "Keegan Murray": { pts: 16.1, reb: 5.8, ast: 1.9, stl: 1.0, blk: 0.7, tov: 1.2, fg: 46.2, fg3: 36.8, ft: 84.0 },
     "Domantas Sabonis": { pts: 19.4, reb: 13.9, ast: 8.2, stl: 0.9, blk: 0.6, tov: 3.3, fg: 59.4, fg3: 37.9, ft: 70.4 },
-
     "Kyrie Irving": { pts: 25.2, reb: 4.8, ast: 5.1, stl: 1.3, blk: 0.5, tov: 1.8, fg: 49.5, fg3: 40.8, ft: 90.2 },
     "Max Christie": { pts: 5.6, reb: 2.5, ast: 1.2, stl: 0.5, blk: 0.3, tov: 0.7, fg: 44.0, fg3: 37.2, ft: 80.0 },
     "Zaccharie Risacher": { pts: 13.5, reb: 4.2, ast: 1.8, stl: 0.9, blk: 0.6, tov: 1.4, fg: 43.5, fg3: 35.2, ft: 74.5 },
     "Cooper Flagg": { pts: 18.7, reb: 8.1, ast: 4.2, stl: 1.4, blk: 0.9, tov: 2.2, fg: 48.6, fg3: 35.1, ft: 81.4 },
     "Dereck Lively II": { pts: 9.8, reb: 7.8, ast: 1.5, stl: 0.7, blk: 1.5, tov: 1.1, fg: 73.2, fg3: 0.0, ft: 54.0 },
-
     "Fred VanVleet": { pts: 17.2, reb: 3.7, ast: 8.0, stl: 1.4, blk: 0.8, tov: 1.8, fg: 41.8, fg3: 38.5, ft: 86.2 },
     "Amen Thompson": { pts: 12.8, reb: 7.5, ast: 3.8, stl: 1.4, blk: 0.7, tov: 1.8, fg: 54.5, fg3: 17.5, ft: 71.0 },
     "Kevin Durant": { pts: 26.8, reb: 6.3, ast: 4.2, stl: 0.9, blk: 0.9, tov: 2.8, fg: 52.5, fg3: 41.5, ft: 86.5 },
     "Jabari Smith Jr.": { pts: 14.8, reb: 8.6, ast: 1.8, stl: 0.8, blk: 0.9, tov: 1.3, fg: 46.5, fg3: 37.8, ft: 83.5 },
     "Alperen Şengün": { pts: 21.4, reb: 9.5, ast: 5.2, stl: 1.2, blk: 1.1, tov: 2.7, fg: 54.0, fg3: 30.0, ft: 69.8 },
-
     "Ty Jerome": { pts: 7.8, reb: 1.9, ast: 3.2, stl: 0.7, blk: 0.1, tov: 1.0, fg: 47.5, fg3: 38.8, ft: 88.2 },
     "Jaylen Wells": { pts: 10.2, reb: 3.6, ast: 1.8, stl: 0.7, blk: 0.3, tov: 1.1, fg: 44.8, fg3: 38.5, ft: 83.0 },
     "Cedric Coward": { pts: 7.8, reb: 3.4, ast: 1.4, stl: 0.7, blk: 0.4, tov: 0.9, fg: 44.8, fg3: 35.5, ft: 77.0 },
     "Zach Edey": { pts: 14.2, reb: 9.2, ast: 1.2, stl: 0.4, blk: 1.6, tov: 1.6, fg: 62.5, fg3: 0.0, ft: 72.0 },
-
     "Dejounte Murray": { pts: 22.2, reb: 5.1, ast: 6.2, stl: 1.5, blk: 0.3, tov: 2.4, fg: 45.6, fg3: 36.0, ft: 79.0 },
     "Trey Murphy III": { pts: 15.6, reb: 5.2, ast: 2.5, stl: 0.9, blk: 0.5, tov: 1.2, fg: 45.1, fg3: 39.2, ft: 83.0 },
     "Herb Jones": { pts: 11.2, reb: 3.7, ast: 2.7, stl: 1.5, blk: 0.9, tov: 1.3, fg: 50.0, fg3: 42.0, ft: 87.0 },
     "Zion Williamson": { pts: 23.2, reb: 5.9, ast: 5.1, stl: 1.0, blk: 0.7, tov: 2.8, fg: 57.4, fg3: 33.5, ft: 70.5 },
     "Derik Queen": { pts: 11.6, reb: 7.2, ast: 2.4, stl: 0.8, blk: 0.9, tov: 1.7, fg: 54.1, fg3: 28.0, ft: 72.8 },
-
     "De'Aaron Fox": { pts: 26.2, reb: 4.5, ast: 5.4, stl: 1.8, blk: 0.4, tov: 2.6, fg: 46.2, fg3: 36.6, ft: 73.5 },
     "Stephon Castle": { pts: 14.7, reb: 3.7, ast: 4.1, stl: 1.2, blk: 0.4, tov: 2.1, fg: 44.8, fg3: 30.5, ft: 72.9 },
     "Devin Vassell": { pts: 19.2, reb: 3.7, ast: 4.0, stl: 1.1, blk: 0.4, tov: 1.6, fg: 47.0, fg3: 37.0, ft: 80.0 },
@@ -770,12 +792,42 @@ const rawTimelineTransactions = [
     }
 ];
 
+// 2026-27 SCHEDULE DATASET
+const scheduleGames = [
+    // Preseason
+    { stage: "PRESEASON", date: "Sun, Oct 4, 2026", time: "7:00 PM ET", home: "Toronto Raptors", away: "Miami Heat", venue: "Videotron Centre (Quebec City)" },
+    { stage: "PRESEASON", date: "Mon, Oct 5, 2026", time: "7:00 PM ET", home: "Denver Nuggets", away: "Utah Jazz", venue: "CU Events Center" },
+    { stage: "PRESEASON", date: "Tue, Oct 6, 2026", time: "7:00 PM ET", home: "Philadelphia 76ers", away: "New York Knicks", venue: "Xfinity Mobile Arena" },
+    { stage: "PRESEASON", date: "Tue, Oct 6, 2026", time: "10:00 PM ET", home: "Golden State Warriors", away: "Los Angeles Lakers", venue: "Chase Center" },
+    
+    // Global Showcases
+    { stage: "INTL", date: "Fri, Oct 9, 2026", time: "8:00 AM ET", home: "Dallas Mavericks", away: "Houston Rockets", venue: "The Venetian Arena (Macao)" },
+    { stage: "INTL", date: "Sat, Nov 7, 2026", time: "9:00 PM ET", home: "Denver Nuggets", away: "Indiana Pacers", venue: "Mexico City Arena" },
+    { stage: "INTL", date: "Thu, Jan 14, 2027", time: "3:00 PM ET", home: "New Orleans Pelicans", away: "San Antonio Spurs", venue: "Accor Arena (Paris)" },
+    { stage: "INTL", date: "Sun, Jan 17, 2027", time: "2:00 PM ET", home: "San Antonio Spurs", away: "New Orleans Pelicans", venue: "Co-op Live (Manchester)" },
+
+    // Opening Week
+    { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "3:00 PM ET", home: "Detroit Pistons", away: "Boston Celtics", venue: "Little Caesars Arena" },
+    { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "7:00 PM ET", home: "New York Knicks", away: "Philadelphia 76ers", venue: "Madison Square Garden" },
+    { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "9:30 PM ET", home: "San Antonio Spurs", away: "Oklahoma City Thunder", venue: "Frost Bank Center" },
+    { stage: "OPENING_WEEK", date: "Wed, Oct 21, 2026", time: "7:30 PM ET", home: "Miami Heat", away: "Minnesota Timberwolves", venue: "Kaseya Center" },
+    { stage: "OPENING_WEEK", date: "Wed, Oct 21, 2026", time: "8:00 PM ET", home: "Memphis Grizzlies", away: "Utah Jazz", venue: "FedExForum" },
+
+    // Christmas Day
+    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "12:00 PM ET", home: "New York Knicks", away: "San Antonio Spurs", venue: "Madison Square Garden" },
+    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "2:30 PM ET", home: "Boston Celtics", away: "Cleveland Cavaliers", venue: "TD Garden" },
+    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "5:00 PM ET", home: "Los Angeles Lakers", away: "Philadelphia 76ers", venue: "Crypto.com Arena" },
+    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "8:00 PM ET", home: "Minnesota Timberwolves", away: "Oklahoma City Thunder", venue: "Target Center" },
+    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "10:30 PM ET", home: "Golden State Warriors", away: "Denver Nuggets", venue: "Chase Center" }
+];
+
 // INITIAL LOAD
 async function loadTeams() {
     setupHeadlineDots();
     updateHeadline(0);
     startHeadlineAutoPlay();
     filterTransactions();
+    renderSchedule();
 
     try {
         const response = await fetch(`${API_URL}/teams`);
@@ -788,7 +840,52 @@ async function loadTeams() {
     }
 }
 
-// HEADLINE SLIDER (DYNAMIC BG GRADIENT)
+// SCHEDULE RENDERING & FILTERING
+function filterScheduleStage(stage, element) {
+    selectedScheduleStage = stage;
+    document.querySelectorAll(".schedule-date-btn").forEach(btn => btn.classList.remove("active"));
+    if (element) element.classList.add("active");
+    renderSchedule();
+}
+
+function renderSchedule() {
+    const grid = document.getElementById("scheduleGrid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    const filtered = scheduleGames.filter(g => selectedScheduleStage === "ALL" || g.stage === selectedScheduleStage);
+
+    filtered.forEach(game => {
+        const homeMeta = teamMetadata[game.home] || { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg" };
+        const awayMeta = teamMetadata[game.away] || { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg" };
+
+        const card = document.createElement("div");
+        card.className = "game-card";
+        card.innerHTML = `
+            <div class="game-type-tag">${game.stage.replace('_', ' ')} • ${game.venue}</div>
+            <div class="game-main-row">
+                <div class="game-teams-col">
+                    <div class="game-team-row">
+                        <img src="${awayMeta.logo}" alt="${game.away}" class="game-team-logo">
+                        <span class="game-team-name">${game.away}</span>
+                    </div>
+                    <div class="game-team-row">
+                        <img src="${homeMeta.logo}" alt="${game.home}" class="game-team-logo">
+                        <span class="game-team-name">${game.home}</span>
+                    </div>
+                </div>
+                <div class="game-divider"></div>
+                <div class="game-time-col">
+                    <div class="game-date-label">${game.date.split(',')[1] || game.date}</div>
+                    <div class="game-time-label">${game.time}</div>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// HEADLINE SLIDER
 function updateHeadline(index) {
     currentHeadlineIndex = index;
     const item = headlines[currentHeadlineIndex];
@@ -856,7 +953,112 @@ function resetHeadlineAutoPlay() {
     startHeadlineAutoPlay();
 }
 
-// TRANSACTIONS LIVE SEARCH & FILTER
+// GLOBAL SEARCH LOGIC
+function handleGlobalSearch() {
+    const input = document.getElementById("globalSearchInput");
+    const query = input.value.trim().toLowerCase();
+    const dropdown = document.getElementById("globalSearchResults");
+
+    if (!query) {
+        dropdown.classList.remove("open");
+        dropdown.innerHTML = "";
+        return;
+    }
+
+    const matchedTeams = allTeams.filter(t => 
+        t.name.toLowerCase().includes(query) ||
+        t.division.toLowerCase().includes(query) ||
+        t.conference.toLowerCase().includes(query)
+    );
+
+    const matchedPlayers = [];
+    allTeams.forEach(team => {
+        team.starters_2026_27.forEach(player => {
+            if (player.name.toLowerCase().includes(query) || player.pos.toLowerCase() === query) {
+                matchedPlayers.push({
+                    player: player,
+                    team: team
+                });
+            }
+        });
+    });
+
+    if (matchedTeams.length === 0 && matchedPlayers.length === 0) {
+        dropdown.innerHTML = `<div style="padding: 16px; text-align: center; color: #94a3b8; font-size: 0.85rem;">No players or teams found matching "${query}".</div>`;
+        dropdown.classList.add("open");
+        return;
+    }
+
+    let html = "";
+
+    if (matchedPlayers.length > 0) {
+        html += `<div class="dropdown-section-title">Players (${matchedPlayers.length})</div>`;
+        matchedPlayers.slice(0, 6).forEach(item => {
+            const photoUrl = getPlayerHeadshotUrl(item.player.name);
+            html += `
+                <div class="dropdown-item" onclick="selectSearchedPlayer('${item.player.name.replace(/'/g, "\\'")}', ${item.team.id})">
+                    <img src="${photoUrl}" alt="${item.player.name}" class="dropdown-player-img" onerror="this.src='https://placehold.co/100x100/051c2d/ffffff?text=${encodeURIComponent(item.player.name[0])}'">
+                    <div class="dropdown-item-info">
+                        <div class="dropdown-item-title">${item.player.name} <span style="font-size:0.75rem; color:var(--nba-red); font-weight:800;">${item.player.pos}</span></div>
+                        <div class="dropdown-item-subtitle">${item.team.name} • ${item.player.pts.toFixed(1)} PPG, ${item.player.reb.toFixed(1)} RPG</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    if (matchedTeams.length > 0) {
+        html += `<div class="dropdown-section-title">Teams (${matchedTeams.length})</div>`;
+        matchedTeams.slice(0, 4).forEach(team => {
+            html += `
+                <div class="dropdown-item" onclick="selectSearchedTeam(${team.id})">
+                    <img src="${team.logo}" alt="${team.name}" class="dropdown-team-logo" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
+                    <div class="dropdown-item-info">
+                        <div class="dropdown-item-title">${team.name}</div>
+                        <div class="dropdown-item-subtitle">${team.conference} • ${team.division} Division</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.classList.add("open");
+}
+
+function clearGlobalSearch() {
+    const input = document.getElementById("globalSearchInput");
+    input.value = "";
+    document.getElementById("globalSearchResults").classList.remove("open");
+}
+
+function selectSearchedTeam(teamId) {
+    clearGlobalSearch();
+    const team = allTeams.find(t => t.id === teamId);
+    if (team) {
+        openModal(team);
+    }
+}
+
+function selectSearchedPlayer(playerName, teamId) {
+    clearGlobalSearch();
+    const team = allTeams.find(t => t.id === teamId);
+    if (!team) return;
+    const player = team.starters_2026_27.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+    if (player) {
+        openPlayerModal(player, team);
+    }
+}
+
+document.addEventListener("click", function(event) {
+    const container = document.querySelector(".nav-search-container");
+    if (container && !container.contains(event.target)) {
+        const dropdown = document.getElementById("globalSearchResults");
+        if (dropdown) dropdown.classList.remove("open");
+    }
+});
+
+// TRANSACTIONS TIMELINE FILTER
 function setTxFilter(type, element) {
     selectedTxFilter = type;
     document.querySelectorAll(".tx-tab").forEach(tab => tab.classList.remove("active"));
@@ -864,31 +1066,16 @@ function setTxFilter(type, element) {
     filterTransactions();
 }
 
-function clearTxSearch() {
-    document.getElementById("txSearchInput").value = "";
-    filterTransactions();
-}
-
 function filterTransactions() {
-    const query = (document.getElementById("txSearchInput") ? document.getElementById("txSearchInput").value : "").trim().toLowerCase();
     const container = document.getElementById("transactionsTimeline");
     container.innerHTML = "";
 
-    let matchedCount = 0;
-
     rawTimelineTransactions.forEach(group => {
         const filteredItems = group.items.filter(item => {
-            const matchesType = (selectedTxFilter === "ALL") || (item.type === selectedTxFilter);
-            if (!matchesType) return false;
-
-            if (!query) return true;
-
-            const fullText = `${group.date} ${item.team} ${item.type} ${item.text}`.toLowerCase();
-            return fullText.includes(query);
+            return (selectedTxFilter === "ALL") || (item.type === selectedTxFilter);
         });
 
         if (filteredItems.length > 0) {
-            matchedCount += filteredItems.length;
             const groupEl = document.createElement("div");
             groupEl.className = "tx-date-group";
 
@@ -923,15 +1110,6 @@ function filterTransactions() {
             container.appendChild(groupEl);
         }
     });
-
-    if (matchedCount === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; color: #94a3b8; padding: 60px 20px;">
-                <p style="font-size: 1.1rem; font-weight: 700;">No transactions found matching "${query}".</p>
-                <button class="tx-tab" style="margin-top: 14px;" onclick="clearTxSearch()">Clear Search</button>
-            </div>
-        `;
-    }
 }
 
 // TEAMS DIRECTORY GRID
@@ -940,7 +1118,7 @@ function displayTeams(teams) {
     grid.innerHTML = "";
 
     if (!teams || teams.length === 0) {
-        grid.innerHTML = "<p style='grid-column: 1/-1; text-align:center; color:#64748b; padding: 40px 0;'>No teams or players found matching your selection.</p>";
+        grid.innerHTML = "<p style='grid-column: 1/-1; text-align:center; color:#64748b; padding: 40px 0;'>No teams found matching your selection.</p>";
         return;
     }
 
@@ -951,7 +1129,7 @@ function displayTeams(teams) {
 
         const meta = teamMetadata[team.name] || { salary: team.total_salary || 0, status: team.tax_status || "Over Cap", rings: team.championships || 0, years: team.championship_years || [] };
         const formattedSalary = `$${(meta.salary).toLocaleString()}`;
-        const ringsLabel = meta.rings > 0 ? `${meta.rings}x Champion` : `0 Championships`;
+        const yearsString = (meta.years && meta.years.length > 0) ? meta.years.join(', ') : 'None';
 
         card.innerHTML = `
             <div class="card-top">
@@ -961,7 +1139,11 @@ function displayTeams(teams) {
                 <p class="card-brand">${team.conference} • ${team.division}</p>
                 <h4 class="card-title">${team.name}</h4>
                 <p class="card-subtitle">Star: ${team.featured_star}</p>
-                <p class="card-rings" style="font-size: 0.75rem; font-weight: 700; color: #64748b; margin-top: 4px;">🏆 ${ringsLabel}</p>
+                <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; margin-top: 6px; line-height: 1.4;">
+                    <div>Last Season: <strong style="color:#111827;">${team.last_season_record}</strong></div>
+                    <div>Championships: <strong style="color:#111827;">${meta.rings}</strong></div>
+                    <div>Years: <strong style="color:#111827;">${yearsString}</strong></div>
+                </div>
                 <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.8rem; font-weight: 800; color: #111827;">${formattedSalary}</span>
                     <span class="tx-badge tx-badge-${meta.status.replace(' ', '_')}">${meta.status}</span>
@@ -973,18 +1155,25 @@ function displayTeams(teams) {
     });
 }
 
-// FRANCHISE FILTER TOGGLE
-function toggleFranchiseFilter(teamName, element) {
+// 6-DIVISION FILTER TOGGLE
+function toggleDivisionFilter(divisionName, element) {
     const isAlreadySelected = element.classList.contains("active");
 
-    document.querySelectorAll(".brand-circle").forEach(btn => btn.classList.remove("active"));
-    document.getElementById("searchInput").value = "";
+    document.querySelectorAll(".division-btn").forEach(btn => btn.classList.remove("active"));
 
     if (isAlreadySelected) {
-        selectedFranchise = "";
+        selectedDivision = "";
     } else {
-        selectedFranchise = teamName;
+        selectedDivision = divisionName;
         element.classList.add("active");
+
+        const matchingConf = DIVISION_CONF_MAP[divisionName];
+        if (matchingConf) {
+            selectedConference = matchingConf;
+            document.querySelectorAll(".conf-tab").forEach(tab => {
+                tab.classList.toggle("active", tab.innerText.toLowerCase().includes(matchingConf.toLowerCase()));
+            });
+        }
     }
 
     applyFilters();
@@ -993,8 +1182,16 @@ function toggleFranchiseFilter(teamName, element) {
 // CONFERENCE TAB FILTER
 function filterConference(conf, element) {
     selectedConference = conf;
-    selectedFranchise = "";
-    document.querySelectorAll(".brand-circle").forEach(btn => btn.classList.remove("active"));
+
+    if (selectedDivision && conf !== "ALL") {
+        if (DIVISION_CONF_MAP[selectedDivision] !== conf) {
+            selectedDivision = "";
+            document.querySelectorAll(".division-btn").forEach(btn => btn.classList.remove("active"));
+        }
+    } else if (conf === "ALL") {
+        selectedDivision = "";
+        document.querySelectorAll(".division-btn").forEach(btn => btn.classList.remove("active"));
+    }
 
     document.querySelectorAll(".conf-tab").forEach(tab => tab.classList.remove("active"));
     if (element) {
@@ -1013,36 +1210,14 @@ function applyFilters() {
         list = list.filter(t => t.conference.toLowerCase() === selectedConference.toLowerCase());
     }
 
-    if (selectedFranchise) {
-        list = list.filter(t => t.name.toLowerCase() === selectedFranchise.toLowerCase());
-    }
-
-    const query = document.getElementById("searchInput").value.trim().toLowerCase();
-    if (query) {
-        list = list.filter(team => {
-            const teamName = team.name.toLowerCase();
-            const div = team.division.toLowerCase();
-            const conf = team.conference.toLowerCase();
-            const star = (team.featured_star || "").toLowerCase();
-            const meta = teamMetadata[team.name] || {};
-            const taxStatus = (meta.status || "").toLowerCase();
-            const playerMatch = team.starters_2026_27.some(p =>
-                p.name.toLowerCase().includes(query) || p.pos.toLowerCase() === query
-            );
-            return teamName.includes(query) || div.includes(query) || conf.includes(query) || star.includes(query) || taxStatus.includes(query) || playerMatch;
-        });
+    if (selectedDivision) {
+        list = list.filter(t => t.division.toLowerCase() === selectedDivision.toLowerCase());
     }
 
     displayTeams(list);
 }
 
-function searchTeams() {
-    selectedFranchise = "";
-    document.querySelectorAll(".brand-circle").forEach(btn => btn.classList.remove("active"));
-    applyFilters();
-}
-
-// MODAL CONTROLS (FULL 11-COLUMN STATS: PTS, REB, AST, STL, BLK, TOV, FG%, 3P%, FT% + ALL CHAMPIONSHIP YEARS)
+// UNIFIED TEAM MODAL
 function openModal(team) {
     const meta = teamMetadata[team.name] || {
         salary: team.total_salary || 0,
@@ -1058,7 +1233,6 @@ function openModal(team) {
     document.getElementById("modalTitle").innerText = team.name;
     document.getElementById("modalStar").innerText = `Featured Star: ${team.featured_star} (${team.headline_stat})`;
 
-    // Left Column Info with All Championship Years
     document.getElementById("modalRecord").innerHTML = `
         <div style="margin-bottom: 6px;">Last Season: <strong>${team.last_season_record}</strong></div>
         <div style="margin-bottom: 6px;">Championships: <strong>${meta.rings}</strong></div>
@@ -1073,7 +1247,6 @@ function openModal(team) {
         modalImg.src = "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
     };
 
-    // 11-column starter stat row generation using CBS Sports regular season metrics
     const tbody = document.getElementById("modalStartersBody");
     tbody.innerHTML = team.starters_2026_27.map(p => {
         const bm = playerStatsBenchmark[p.name] || {};
@@ -1088,9 +1261,9 @@ function openModal(team) {
         const ft = p.ft ?? bm.ft ?? 0.0;
 
         return `
-            <tr>
+            <tr style="cursor:pointer;" onclick="selectSearchedPlayer('${p.name.replace(/'/g, "\\'")}', ${team.id})">
                 <td class="pos-tag">${p.pos}</td>
-                <td><strong>${p.name}</strong></td>
+                <td><strong>${p.name}</strong> <span style="font-size:0.75rem; color:#64748b;">(Click for Photo)</span></td>
                 <td>${pts.toFixed(1)}</td>
                 <td>${reb.toFixed(1)}</td>
                 <td>${ast.toFixed(1)}</td>
@@ -1112,6 +1285,34 @@ function openModal(team) {
         `;
     }
 
+    const teamTxContainer = document.getElementById("modalTeamTransactions");
+    const teamTxList = [];
+    rawTimelineTransactions.forEach(group => {
+        group.items.forEach(item => {
+            if (item.team.toLowerCase() === team.name.toLowerCase() || item.text.toLowerCase().includes(team.name.toLowerCase())) {
+                teamTxList.push({
+                    date: group.date,
+                    type: item.type,
+                    text: item.text
+                });
+            }
+        });
+    });
+
+    if (teamTxList.length > 0) {
+        teamTxContainer.innerHTML = teamTxList.map(t => `
+            <div class="modal-tx-item">
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                    <span class="tx-badge tx-badge-${t.type}">${t.type}</span>
+                    <span style="font-size:0.72rem; color:#64748b; font-weight:700;">${t.date}</span>
+                </div>
+                <div>${t.text}</div>
+            </div>
+        `).join("");
+    } else {
+        teamTxContainer.innerHTML = `<p style="font-size:0.8rem; color:#64748b;">No major offseason transactions recorded.</p>`;
+    }
+
     document.getElementById("detailModal").classList.add("open");
 }
 
@@ -1125,11 +1326,64 @@ function handleBackdropClick(event) {
     }
 }
 
-// EVENT LISTENERS
-const searchInput = document.getElementById("searchInput");
-searchInput.addEventListener("input", searchTeams);
-searchInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") searchTeams();
-});
+// PLAYER MODAL LOGIC
+function openPlayerModal(player, team) {
+    closeModal();
+
+    const photoUrl = getPlayerHeadshotUrl(player.name);
+    document.getElementById("playerModalPhoto").src = photoUrl;
+    document.getElementById("playerModalPhoto").onerror = function() {
+        this.src = `https://placehold.co/200x200/051c2d/ffffff?text=${encodeURIComponent(player.name[0])}`;
+    };
+
+    document.getElementById("playerModalTeamLogo").src = team.logo;
+    document.getElementById("playerModalTeamName").innerText = team.name;
+    document.getElementById("playerModalPos").innerText = player.pos;
+    document.getElementById("playerModalName").innerText = player.name;
+
+    const bm = playerStatsBenchmark[player.name] || {};
+    const pts = player.pts ?? bm.pts ?? 0.0;
+    const reb = player.reb ?? bm.reb ?? 0.0;
+    const ast = player.ast ?? bm.ast ?? 0.0;
+    const stl = player.stl ?? bm.stl ?? 0.0;
+    const blk = player.blk ?? bm.blk ?? 0.0;
+    const tov = player.tov ?? bm.tov ?? 0.0;
+    const fg = player.fg ?? bm.fg ?? 0.0;
+    const fg3 = player.fg3 ?? bm.fg3 ?? 0.0;
+    const ft = player.ft ?? bm.ft ?? 0.0;
+
+    const tbody = document.getElementById("playerModalStatsBody");
+    tbody.innerHTML = `
+        <tr>
+            <td>${pts.toFixed(1)}</td>
+            <td>${reb.toFixed(1)}</td>
+            <td>${ast.toFixed(1)}</td>
+            <td>${stl.toFixed(1)}</td>
+            <td>${blk.toFixed(1)}</td>
+            <td>${tov.toFixed(1)}</td>
+            <td>${fg.toFixed(1)}%</td>
+            <td>${fg3.toFixed(1)}%</td>
+            <td>${ft.toFixed(1)}%</td>
+        </tr>
+    `;
+
+    const viewTeamBtn = document.getElementById("playerModalViewTeamBtn");
+    viewTeamBtn.onclick = function() {
+        closePlayerModal();
+        openModal(team);
+    };
+
+    document.getElementById("playerModal").classList.add("open");
+}
+
+function closePlayerModal() {
+    document.getElementById("playerModal").classList.remove("open");
+}
+
+function handlePlayerBackdropClick(event) {
+    if (event.target.id === "playerModal") {
+        closePlayerModal();
+    }
+}
 
 loadTeams();
