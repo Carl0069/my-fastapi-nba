@@ -1076,6 +1076,7 @@ const scheduleGames = [
     { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "10:30 PM ET", home: "Golden State Warriors", away: "Denver Nuggets", venue: "Chase Center" }
 ];
 
+// Number ticker utility for stat counting animations
 function animateNumber(element, targetValue, duration = 650) {
     if (!element) return;
     const isPercent = String(targetValue).includes('%');
@@ -1197,6 +1198,7 @@ function updateHeadline(index) {
         heroEl.style.background = item.bgGradient;
     }
 
+    // Kinetic reset on carousel switch
     if (content) {
         content.style.animation = 'none';
         void content.offsetWidth;
@@ -1441,6 +1443,7 @@ function displayTeams(teams) {
     teams.forEach((team, index) => {
         const card = document.createElement("div");
         card.className = "watch-card";
+        // Staggered cascade entrance
         card.style.animation = `heroSlideIn 0.42s var(--ease-out-expo) forwards`;
         card.style.animationDelay = `${Math.min(index * 0.035, 0.45)}s`;
         card.onclick = () => openModal(team);
@@ -1551,7 +1554,7 @@ function openModal(team) {
     document.getElementById("modalRecord").innerHTML = `
         <div style="margin-bottom: 6px;">Last Season: <strong>${team.last_season_record}</strong></div>
         <div style="margin-bottom: 6px;">Championships: <strong>${meta.rings}</strong></div>
-        <div style="font-size: 0.8rem; line-height: 1.4; color: #475569;">Years: <strong>${yearsString}</strong></div>
+        <div style="font-size: 0.78rem; line-height: 1.4; color: #475569;">Years: <strong>${yearsString}</strong></div>
     `;
 
     document.getElementById("modalDescription").innerText = team.description;
@@ -1582,7 +1585,7 @@ function openModal(team) {
                 <td>
                     <div class="table-player-cell">
                         <img src="${photoUrl}" alt="${p.name}" class="table-player-thumb" onerror="this.src='${fallbackAvatar}'">
-                        <span class="table-player-name">${p.name}</span>
+                        <span><strong>${p.name}</strong></span>
                     </div>
                 </td>
                 <td>${pts}</td>
@@ -1613,14 +1616,14 @@ function openModal(team) {
         if (cleanBench && cleanBench.length > 0) {
             benchBody.innerHTML = cleanBench.map(renderPlayerRow).join("");
         } else {
-            benchBody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#94a3b8; padding:16px;">No bench players recorded.</td></tr>`;
+            benchBody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#94a3b8; padding:12px;">No bench players recorded.</td></tr>`;
         }
     }
 
     const salaryRow = document.getElementById("modalSalaryRow");
     if (salaryRow) {
         salaryRow.innerHTML = `
-            <span style="font-size: 0.88rem; font-weight: 800; color: #111827;">2026-27 Payroll: ${formattedSalary}</span>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #111827;">2026-27 Payroll: ${formattedSalary}</span>
             <span class="tx-badge tx-badge-${meta.status.replace(' ', '_')}">${meta.status}</span>
         `;
     }
@@ -1642,20 +1645,16 @@ function openModal(team) {
     if (teamTxList.length > 0) {
         teamTxContainer.innerHTML = teamTxList.map(t => `
             <div class="modal-tx-item">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                     <span class="tx-badge tx-badge-${t.type}">${t.type}</span>
-                    <span style="font-size:0.75rem; color:#64748b; font-weight:700;">${t.date}</span>
+                    <span style="font-size:0.72rem; color:#64748b; font-weight:700;">${t.date}</span>
                 </div>
                 <div>${t.text}</div>
             </div>
         `).join("");
     } else {
-        teamTxContainer.innerHTML = `<p style="font-size:0.85rem; color:#64748b;">No major offseason transactions recorded.</p>`;
+        teamTxContainer.innerHTML = `<p style="font-size:0.8rem; color:#64748b;">No major offseason transactions recorded.</p>`;
     }
-
-    // Always reset right side to the top upon opening
-    const infoCol = document.querySelector(".modal-info-col");
-    if (infoCol) infoCol.scrollTop = 0;
 
     document.getElementById("detailModal").classList.add("open");
 }
@@ -1705,6 +1704,7 @@ function openPlayerModal(player, team) {
     const fg3 = (player.fg3 ?? bm.fg3 ?? 0.0).toFixed(1);
     const ft = (player.ft ?? bm.ft ?? 0.0).toFixed(1);
 
+    // Dynamic numeric ticker count-ups
     animateNumber(document.getElementById("playerStatPpg"), pts);
     animateNumber(document.getElementById("playerStatRpg"), reb);
     animateNumber(document.getElementById("playerStatApg"), ast);
