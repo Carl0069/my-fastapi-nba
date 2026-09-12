@@ -148,7 +148,7 @@
         </div>
     </section>
 
-    <!-- UNIFIED TEAM DETAIL MODAL -->
+    <!-- UNIFIED TEAM DETAIL MODAL (STARTERS + BENCH) -->
     <div id="detailModal" class="modal-overlay" onclick="handleBackdropClick(event)">
         <div class="modal-card">
             <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -166,7 +166,7 @@
                     <p class="modal-description" id="modalDescription"></p>
                     <div class="modal-divider"></div>
 
-                    <!-- ROSTER SECTION -->
+                    <!-- STARTING LINEUP SECTION -->
                     <h4 class="modal-lineup-heading">2026–27 Projected Starting Lineup</h4>
                     <div class="table-responsive">
                         <table class="stats-table">
@@ -186,6 +186,30 @@
                                 </tr>
                             </thead>
                             <tbody id="modalStartersBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- BENCH ROSTER SECTION -->
+                    <div class="modal-divider"></div>
+                    <h4 class="modal-lineup-heading" style="color: var(--nba-royal);">2026–27 Bench & Reserves</h4>
+                    <div class="table-responsive">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>POS</th>
+                                    <th>PLAYER</th>
+                                    <th>PTS</th>
+                                    <th>REB</th>
+                                    <th>AST</th>
+                                    <th>STL</th>
+                                    <th>BLK</th>
+                                    <th>TOV</th>
+                                    <th>FG%</th>
+                                    <th>3P%</th>
+                                    <th>FT%</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalBenchBody"></tbody>
                         </table>
                     </div>
 
