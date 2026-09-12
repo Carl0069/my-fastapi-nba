@@ -82,7 +82,15 @@ const playerHeadshotIds = {
     "Zaccharie Risacher": "1642258", "Cooper Flagg": "1642257", "Dereck Lively II": "1641726", "Fred VanVleet": "1627832", "Amen Thompson": "1641708",
     "Kevin Durant": "201142", "Jabari Smith Jr.": "1631095", "Alperen Şengün": "1630578", "Ty Jerome": "1629660", "Jaylen Wells": "1642377",
     "Zach Edey": "1641744", "Dejounte Murray": "1627749", "Trey Murphy III": "1630530", "Herb Jones": "1630529", "Zion Williamson": "1629627",
-    "De'Aaron Fox": "1628368", "Stephon Castle": "1642264", "Devin Vassell": "1630170", "Tobias Harris": "202699", "Victor Wembanyama": "1641705"
+    "De'Aaron Fox": "1628368", "Stephon Castle": "1642264", "Devin Vassell": "1630170", "Tobias Harris": "202699", "Victor Wembanyama": "1641705",
+    // Celtics Bench Additions
+    "Payton Pritchard": "1630202",
+    "Sam Hauser": "1630573",
+    "Mike Conley": "201144",
+    "Neemias Queta": "1629674",
+    "Luka Garza": "1630568",
+    "Jordan Walsh": "1641775",
+    "Ron Harper Jr.": "1631199"
 };
 
 function getPlayerHeadshotUrl(playerName) {
@@ -100,6 +108,20 @@ const playerStatsBenchmark = {
     "Paul George": { pts: 18.2, reb: 5.4, ast: 4.5, stl: 1.4, blk: 0.5, tov: 2.3, fg: 44.5, fg3: 38.8, ft: 88.5 },
     "Jayson Tatum": { pts: 26.8, reb: 8.4, ast: 5.4, stl: 1.1, blk: 0.6, tov: 2.5, fg: 46.5, fg3: 36.5, ft: 82.5 },
     "Mitchell Robinson": { pts: 6.2, reb: 8.8, ast: 0.7, stl: 1.1, blk: 1.2, tov: 0.9, fg: 66.5, fg3: 0.0, ft: 42.5 },
+    "Payton Pritchard": { pts: 9.6, reb: 3.2, ast: 3.4, stl: 0.5, blk: 0.1, tov: 0.8, fg: 46.8, fg3: 38.5, ft: 82.1 },
+    "Ron Harper Jr.": { pts: 4.5, reb: 1.6, ast: 1.1, stl: 0.4, blk: 0.2, tov: 0.6, fg: 41.2, fg3: 34.0, ft: 76.5 },
+    "Jordan Walsh": { pts: 4.8, reb: 2.2, ast: 0.9, stl: 0.6, blk: 0.4, tov: 0.7, fg: 42.0, fg3: 33.5, ft: 75.0 },
+    "Hugo González": { pts: 5.2, reb: 2.0, ast: 1.3, stl: 0.5, blk: 0.3, tov: 0.8, fg: 43.1, fg3: 35.0, ft: 77.2 },
+    "Sam Hauser": { pts: 9.0, reb: 3.5, ast: 1.0, stl: 0.5, blk: 0.3, tov: 0.5, fg: 44.6, fg3: 42.4, ft: 89.5 },
+    "Max Shulga": { pts: 4.2, reb: 1.5, ast: 1.4, stl: 0.4, blk: 0.1, tov: 0.7, fg: 41.5, fg3: 36.2, ft: 81.0 },
+    "Mike Conley": { pts: 11.4, reb: 2.9, ast: 5.9, stl: 1.2, blk: 0.2, tov: 1.3, fg: 45.7, fg3: 44.2, ft: 91.1 },
+    "Luka Garza": { pts: 6.8, reb: 3.4, ast: 0.6, stl: 0.2, blk: 0.4, tov: 0.6, fg: 48.0, fg3: 32.5, ft: 78.4 },
+    "Amari Williams": { pts: 3.8, reb: 4.1, ast: 0.8, stl: 0.3, blk: 1.1, tov: 0.7, fg: 56.4, fg3: 0.0, ft: 61.5 },
+    "Neemias Queta": { pts: 5.5, reb: 4.4, ast: 0.7, stl: 0.5, blk: 0.8, tov: 0.6, fg: 64.4, fg3: 0.0, ft: 71.4 },
+    "Chris Cenac Jr.": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Tucker DeVries": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Dillon Mitchell": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Milos Uzan": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
     "Egor Dëmin": { pts: 11.4, reb: 3.6, ast: 4.1, stl: 0.9, blk: 0.4, tov: 1.8, fg: 44.2, fg3: 36.4, ft: 79.5 },
     "Michael Porter Jr.": { pts: 17.5, reb: 7.1, ast: 1.6, stl: 0.6, blk: 0.7, tov: 1.3, fg: 48.8, fg3: 39.8, ft: 79.2 },
     "Julius Randle": { pts: 23.8, reb: 9.1, ast: 4.8, stl: 0.6, blk: 0.3, tov: 3.1, fg: 47.0, fg3: 31.5, ft: 76.8 },
@@ -311,6 +333,73 @@ const headlines = [
 
 // TIMELINE TRANSACTIONS DATASET
 const rawTimelineTransactions = [
+    {
+        date: "Friday, September 11, 2026",
+        items: [
+            { team: "Boston Celtics", type: "WAIVED", text: "Waived forward Hank Morgan." },
+            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived guard Lamont Butler." },
+            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived guard Devin Carter." }
+        ]
+    },
+    {
+        date: "Thursday, September 10, 2026",
+        items: [
+            { team: "New Orleans Pelicans", type: "SIGNING", text: "Signed guard Bennedict Mathurin to a Contract." },
+            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived forward Keyshawn Bryant." }
+        ]
+    },
+    {
+        date: "Wednesday, September 09, 2026",
+        items: [
+            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived guard Devon Higgs." }
+        ]
+    },
+    {
+        date: "Tuesday, September 08, 2026",
+        items: [
+            { team: "Cleveland Cavaliers", type: "EXTENSION", text: "Re-signed guard James Harden to a Contract." },
+            { team: "Denver Nuggets", type: "SIGNING", text: "Signed guard DeMar DeRozan to a Contract." },
+            { team: "New Orleans Pelicans", type: "TRADE", text: "Received guard AJ Johnson and forward Taj Gibson from Memphis Grizzlies." },
+            { team: "Memphis Grizzlies", type: "TRADE", text: "Received guard Micah Peavy, guard Jordan Hawkins, and draft consideration from New Orleans Pelicans." },
+            { team: "New Orleans Pelicans", type: "WAIVED", text: "Waived forward Taj Gibson." }
+        ]
+    },
+    {
+        date: "Monday, September 07, 2026",
+        items: [
+            { team: "Sacramento Kings", type: "SIGNING", text: "Signed guard Ben Simmons to a Contract." },
+            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived guard Kobe Stewart." }
+        ]
+    },
+    {
+        date: "Friday, September 04, 2026",
+        items: [
+            { team: "Brooklyn Nets", type: "SIGNING", text: "Signed forward Grant Nelson to a Two-Way Contract." },
+            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived guard Jarkel Joiner." }
+        ]
+    },
+    {
+        date: "Thursday, September 03, 2026",
+        items: [
+            { team: "Houston Rockets", type: "EXTENSION", text: "Re-signed guard Amen Thompson to a Rookie Scale Extension." },
+            { team: "Minnesota Timberwolves", type: "SIGNING", text: "Signed forward Jonathan Kuminga to a Contract." },
+            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived guard Kyle Mangas." }
+        ]
+    },
+    {
+        date: "Wednesday, September 02, 2026",
+        items: [
+            { team: "Cleveland Cavaliers", type: "SIGNING", text: "Signed center Khalifa Diop to a Contract." },
+            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived forward Trey Townsend." },
+            { team: "Utah Jazz", type: "WAIVED", text: "Waived guard Matthew Murrell." }
+        ]
+    },
+    {
+        date: "Tuesday, September 01, 2026",
+        items: [
+            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived forward Josiah Allick." }
+        ]
+    },
     {
         date: "Friday, August 28, 2026",
         items: [
@@ -795,26 +884,19 @@ const rawTimelineTransactions = [
 
 // 2026-27 SCHEDULE DATASET
 const scheduleGames = [
-    // Preseason
     { stage: "PRESEASON", date: "Sun, Oct 4, 2026", time: "7:00 PM ET", home: "Toronto Raptors", away: "Miami Heat", venue: "Videotron Centre (Quebec City)" },
     { stage: "PRESEASON", date: "Mon, Oct 5, 2026", time: "7:00 PM ET", home: "Denver Nuggets", away: "Utah Jazz", venue: "CU Events Center" },
     { stage: "PRESEASON", date: "Tue, Oct 6, 2026", time: "7:00 PM ET", home: "Philadelphia 76ers", away: "New York Knicks", venue: "Xfinity Mobile Arena" },
     { stage: "PRESEASON", date: "Tue, Oct 6, 2026", time: "10:00 PM ET", home: "Golden State Warriors", away: "Los Angeles Lakers", venue: "Chase Center" },
-    
-    // Global Showcases
     { stage: "INTL", date: "Fri, Oct 9, 2026", time: "8:00 AM ET", home: "Dallas Mavericks", away: "Houston Rockets", venue: "The Venetian Arena (Macao)" },
     { stage: "INTL", date: "Sat, Nov 7, 2026", time: "9:00 PM ET", home: "Denver Nuggets", away: "Indiana Pacers", venue: "Mexico City Arena" },
     { stage: "INTL", date: "Thu, Jan 14, 2027", time: "3:00 PM ET", home: "New Orleans Pelicans", away: "San Antonio Spurs", venue: "Accor Arena (Paris)" },
     { stage: "INTL", date: "Sun, Jan 17, 2027", time: "2:00 PM ET", home: "San Antonio Spurs", away: "New Orleans Pelicans", venue: "Co-op Live (Manchester)" },
-
-    // Opening Week
     { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "3:00 PM ET", home: "Detroit Pistons", away: "Boston Celtics", venue: "Little Caesars Arena" },
     { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "7:00 PM ET", home: "New York Knicks", away: "Philadelphia 76ers", venue: "Madison Square Garden" },
     { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "9:30 PM ET", home: "San Antonio Spurs", away: "Oklahoma City Thunder", venue: "Frost Bank Center" },
     { stage: "OPENING_WEEK", date: "Wed, Oct 21, 2026", time: "7:30 PM ET", home: "Miami Heat", away: "Minnesota Timberwolves", venue: "Kaseya Center" },
     { stage: "OPENING_WEEK", date: "Wed, Oct 21, 2026", time: "8:00 PM ET", home: "Memphis Grizzlies", away: "Utah Jazz", venue: "FedExForum" },
-
-    // Christmas Day
     { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "12:00 PM ET", home: "New York Knicks", away: "San Antonio Spurs", venue: "Madison Square Garden" },
     { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "2:30 PM ET", home: "Boston Celtics", away: "Cleveland Cavaliers", venue: "TD Garden" },
     { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "5:00 PM ET", home: "Los Angeles Lakers", away: "Philadelphia 76ers", venue: "Crypto.com Arena" },
@@ -978,7 +1060,8 @@ function handleGlobalSearch() {
 
     const matchedPlayers = [];
     allTeams.forEach(team => {
-        team.starters_2026_27.forEach(player => {
+        const roster = [...(team.starters_2026_27 || []), ...(team.bench_2026_27 || [])];
+        roster.forEach(player => {
             if (player.name.toLowerCase().includes(query) || player.pos.toLowerCase() === query) {
                 matchedPlayers.push({
                     player: player,
@@ -1005,7 +1088,7 @@ function handleGlobalSearch() {
                     <img src="${photoUrl}" alt="${item.player.name}" class="dropdown-player-img" onerror="this.src='https://placehold.co/100x100/051c2d/ffffff?text=${encodeURIComponent(item.player.name[0])}'">
                     <div class="dropdown-item-info">
                         <div class="dropdown-item-title">${item.player.name} <span style="font-size:0.75rem; color:var(--nba-red); font-weight:800;">${item.player.pos}</span></div>
-                        <div class="dropdown-item-subtitle">${item.team.name} • ${item.player.pts.toFixed(1)} PPG, ${item.player.reb.toFixed(1)} RPG</div>
+                        <div class="dropdown-item-subtitle">${item.team.name} • ${(item.player.pts ?? 0).toFixed(1)} PPG, ${(item.player.reb ?? 0).toFixed(1)} RPG</div>
                     </div>
                 </div>
             `;
@@ -1049,7 +1132,8 @@ function selectSearchedPlayer(playerName, teamId) {
     clearGlobalSearch();
     const team = allTeams.find(t => t.id === teamId);
     if (!team) return;
-    const player = team.starters_2026_27.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+    const roster = [...(team.starters_2026_27 || []), ...(team.bench_2026_27 || [])];
+    const player = roster.find(p => p.name.toLowerCase() === playerName.toLowerCase());
     if (player) {
         openPlayerModal(player, team);
     }
@@ -1222,7 +1306,7 @@ function applyFilters() {
     displayTeams(list);
 }
 
-// UNIFIED TEAM MODAL
+// UNIFIED TEAM MODAL (STARTERS + BENCH WITH PHOTOS)
 function openModal(team) {
     const meta = teamMetadata[team.name] || {
         salary: team.total_salary || 0,
@@ -1252,35 +1336,54 @@ function openModal(team) {
         modalImg.src = "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
     };
 
-    const tbody = document.getElementById("modalStartersBody");
-    tbody.innerHTML = team.starters_2026_27.map(p => {
+    const renderPlayerRow = (p) => {
         const bm = playerStatsBenchmark[p.name] || {};
-        const pts = p.pts ?? bm.pts ?? 0.0;
-        const reb = p.reb ?? bm.reb ?? 0.0;
-        const ast = p.ast ?? bm.ast ?? 0.0;
-        const stl = p.stl ?? bm.stl ?? 0.0;
-        const blk = p.blk ?? bm.blk ?? 0.0;
-        const tov = p.tov ?? bm.tov ?? 0.0;
-        const fg = p.fg ?? bm.fg ?? 0.0;
-        const fg3 = p.fg3 ?? bm.fg3 ?? 0.0;
-        const ft = p.ft ?? bm.ft ?? 0.0;
+        const pts = (p.pts ?? bm.pts ?? 0.0).toFixed(1);
+        const reb = (p.reb ?? bm.reb ?? 0.0).toFixed(1);
+        const ast = (p.ast ?? bm.ast ?? 0.0).toFixed(1);
+        const stl = (p.stl ?? bm.stl ?? 0.0).toFixed(1);
+        const blk = (p.blk ?? bm.blk ?? 0.0).toFixed(1);
+        const tov = (p.tov ?? bm.tov ?? 0.0).toFixed(1);
+        const fg = (p.fg ?? bm.fg ?? 0.0).toFixed(1);
+        const fg3 = (p.fg3 ?? bm.fg3 ?? 0.0).toFixed(1);
+        const ft = (p.ft ?? bm.ft ?? 0.0).toFixed(1);
+        const photoUrl = getPlayerHeadshotUrl(p.name);
 
         return `
             <tr style="cursor:pointer;" onclick="selectSearchedPlayer('${p.name.replace(/'/g, "\\'")}', ${team.id})">
                 <td class="pos-tag">${p.pos}</td>
-                <td><strong>${p.name}</strong> <span style="font-size:0.75rem; color:#64748b;">(Click for Photo)</span></td>
-                <td>${pts.toFixed(1)}</td>
-                <td>${reb.toFixed(1)}</td>
-                <td>${ast.toFixed(1)}</td>
-                <td>${stl.toFixed(1)}</td>
-                <td>${blk.toFixed(1)}</td>
-                <td>${tov.toFixed(1)}</td>
-                <td>${fg.toFixed(1)}%</td>
-                <td>${fg3.toFixed(1)}%</td>
-                <td>${ft.toFixed(1)}%</td>
+                <td>
+                    <div class="table-player-cell">
+                        <img src="${photoUrl}" alt="${p.name}" class="table-player-thumb" onerror="this.src='https://placehold.co/100x100/051c2d/ffffff?text=${encodeURIComponent(p.name[0])}'">
+                        <span><strong>${p.name}</strong></span>
+                    </div>
+                </td>
+                <td>${pts}</td>
+                <td>${reb}</td>
+                <td>${ast}</td>
+                <td>${stl}</td>
+                <td>${blk}</td>
+                <td>${tov}</td>
+                <td>${fg}%</td>
+                <td>${fg3}%</td>
+                <td>${ft}%</td>
             </tr>
         `;
-    }).join("");
+    };
+
+    // Render Starters
+    const startersBody = document.getElementById("modalStartersBody");
+    startersBody.innerHTML = (team.starters_2026_27 || []).map(renderPlayerRow).join("");
+
+    // Render Bench
+    const benchBody = document.getElementById("modalBenchBody");
+    if (benchBody) {
+        if (team.bench_2026_27 && team.bench_2026_27.length > 0) {
+            benchBody.innerHTML = team.bench_2026_27.map(renderPlayerRow).join("");
+        } else {
+            benchBody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#94a3b8; padding:12px;">No bench players recorded.</td></tr>`;
+        }
+    }
 
     const salaryRow = document.getElementById("modalSalaryRow");
     if (salaryRow) {
