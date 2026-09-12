@@ -16,7 +16,6 @@ app = FastAPI(
     version=API_VERSION,
 )
 
-# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,7 +27,7 @@ app.add_middleware(
 # ==============================================================================
 # DATA MODEL (PYDANTIC SCHEMAS)
 # ==============================================================================
-class PlayerStarter(BaseModel):
+class PlayerStat(BaseModel):
     name: str = Field(..., min_length=1, description="Player full name")
     pos: Literal["PG", "SG", "SF", "PF", "C"] = Field(..., description="Court position")
     pts: float = Field(..., ge=0.0, le=100.0, description="Points per game")
@@ -55,10 +54,11 @@ class Team(BaseModel):
     championship_years: List[int] = Field(default_factory=list, description="Championship year archive")
     logo: str = Field(..., min_length=10, description="Vector/high-res logo URL")
     description: str = Field(..., min_length=10, description="Roster overview and team summary")
-    starters_2026_27: List[PlayerStarter] = Field(..., min_length=5, max_length=5, description="Projected starting five")
+    starters_2026_27: List[PlayerStat] = Field(..., min_length=5, max_length=5, description="Projected starting five")
+    bench_2026_27: List[PlayerStat] = Field(default_factory=list, description="Bench rotation and reserves")
 
 # ==============================================================================
-# EXPANDED DATASET (30 TEAMS)
+# DATASET
 # ==============================================================================
 teams = [
     {
@@ -81,6 +81,22 @@ teams = [
             {"name": "Paul George", "pos": "SF", "pts": 18.2, "reb": 5.4, "ast": 4.5, "stl": 1.4, "blk": 0.5, "tov": 2.3, "fg": 44.5, "fg3": 38.8, "ft": 88.5},
             {"name": "Jayson Tatum", "pos": "PF", "pts": 26.8, "reb": 8.4, "ast": 5.4, "stl": 1.1, "blk": 0.6, "tov": 2.5, "fg": 46.5, "fg3": 36.5, "ft": 82.5},
             {"name": "Mitchell Robinson", "pos": "C", "pts": 6.2, "reb": 8.8, "ast": 0.7, "stl": 1.1, "blk": 1.2, "tov": 0.9, "fg": 66.5, "fg3": 0.0, "ft": 42.5}
+        ],
+        "bench_2026_27": [
+            {"name": "Payton Pritchard", "pos": "PG", "pts": 9.6, "reb": 3.2, "ast": 3.4, "stl": 0.5, "blk": 0.1, "tov": 0.8, "fg": 46.8, "fg3": 38.5, "ft": 82.1},
+            {"name": "Ron Harper Jr.", "pos": "SG", "pts": 4.5, "reb": 1.6, "ast": 1.1, "stl": 0.4, "blk": 0.2, "tov": 0.6, "fg": 41.2, "fg3": 34.0, "ft": 76.5},
+            {"name": "Jordan Walsh", "pos": "SG", "pts": 4.8, "reb": 2.2, "ast": 0.9, "stl": 0.6, "blk": 0.4, "tov": 0.7, "fg": 42.0, "fg3": 33.5, "ft": 75.0},
+            {"name": "Hugo González", "pos": "SG", "pts": 5.2, "reb": 2.0, "ast": 1.3, "stl": 0.5, "blk": 0.3, "tov": 0.8, "fg": 43.1, "fg3": 35.0, "ft": 77.2},
+            {"name": "Sam Hauser", "pos": "SF", "pts": 9.0, "reb": 3.5, "ast": 1.0, "stl": 0.5, "blk": 0.3, "tov": 0.5, "fg": 44.6, "fg3": 42.4, "ft": 89.5},
+            {"name": "Max Shulga", "pos": "SG", "pts": 4.2, "reb": 1.5, "ast": 1.4, "stl": 0.4, "blk": 0.1, "tov": 0.7, "fg": 41.5, "fg3": 36.2, "ft": 81.0},
+            {"name": "Mike Conley", "pos": "PG", "pts": 11.4, "reb": 2.9, "ast": 5.9, "stl": 1.2, "blk": 0.2, "tov": 1.3, "fg": 45.7, "fg3": 44.2, "ft": 91.1},
+            {"name": "Luka Garza", "pos": "C", "pts": 6.8, "reb": 3.4, "ast": 0.6, "stl": 0.2, "blk": 0.4, "tov": 0.6, "fg": 48.0, "fg3": 32.5, "ft": 78.4},
+            {"name": "Amari Williams", "pos": "C", "pts": 3.8, "reb": 4.1, "ast": 0.8, "stl": 0.3, "blk": 1.1, "tov": 0.7, "fg": 56.4, "fg3": 0.0, "ft": 61.5},
+            {"name": "Neemias Queta", "pos": "C", "pts": 5.5, "reb": 4.4, "ast": 0.7, "stl": 0.5, "blk": 0.8, "tov": 0.6, "fg": 64.4, "fg3": 0.0, "ft": 71.4},
+            {"name": "Chris Cenac Jr.", "pos": "PF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
+            {"name": "Tucker DeVries", "pos": "SG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
+            {"name": "Dillon Mitchell", "pos": "SF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
+            {"name": "Milos Uzan", "pos": "PG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
         ]
     },
     {
@@ -103,7 +119,8 @@ teams = [
             {"name": "Julius Randle", "pos": "SF", "pts": 23.8, "reb": 9.1, "ast": 4.8, "stl": 0.6, "blk": 0.3, "tov": 3.1, "fg": 47.0, "fg3": 31.5, "ft": 76.8},
             {"name": "Day'Ron Sharpe", "pos": "PF", "pts": 7.2, "reb": 6.8, "ast": 1.5, "stl": 0.7, "blk": 0.9, "tov": 1.1, "fg": 58.2, "fg3": 0.0, "ft": 62.5},
             {"name": "Nic Claxton", "pos": "C", "pts": 11.5, "reb": 9.6, "ast": 2.0, "stl": 0.6, "blk": 1.1, "tov": 1.3, "fg": 63.2, "fg3": 20.0, "ft": 56.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 3,
@@ -125,7 +142,8 @@ teams = [
             {"name": "Mikal Bridges", "pos": "SF", "pts": 18.2, "reb": 4.1, "ast": 3.4, "stl": 1.2, "blk": 0.8, "tov": 1.5, "fg": 44.5, "fg3": 37.8, "ft": 82.0},
             {"name": "OG Anunoby", "pos": "PF", "pts": 15.4, "reb": 4.4, "ast": 1.8, "stl": 1.7, "blk": 0.9, "tov": 1.2, "fg": 49.2, "fg3": 38.6, "ft": 76.0},
             {"name": "Karl-Anthony Towns", "pos": "C", "pts": 24.2, "reb": 11.5, "ast": 3.1, "stl": 0.7, "blk": 0.9, "tov": 2.6, "fg": 51.2, "fg3": 42.0, "ft": 88.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 4,
@@ -147,7 +165,8 @@ teams = [
             {"name": "VJ Edgecombe", "pos": "SF", "pts": 15.2, "reb": 4.8, "ast": 3.4, "stl": 1.3, "blk": 0.6, "tov": 2.0, "fg": 45.6, "fg3": 36.8, "ft": 80.2},
             {"name": "LeBron James", "pos": "PF", "pts": 24.4, "reb": 7.8, "ast": 8.2, "stl": 1.2, "blk": 0.6, "tov": 3.2, "fg": 51.3, "fg3": 37.6, "ft": 78.2},
             {"name": "Joel Embiid", "pos": "C", "pts": 24.9, "reb": 8.5, "ast": 4.5, "stl": 0.9, "blk": 1.6, "tov": 3.0, "fg": 45.4, "fg3": 33.3, "ft": 86.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 5,
@@ -169,7 +188,8 @@ teams = [
             {"name": "Kawhi Leonard", "pos": "SF", "pts": 22.8, "reb": 6.0, "ast": 3.4, "stl": 1.6, "blk": 0.8, "tov": 1.7, "fg": 52.0, "fg3": 41.2, "ft": 88.0},
             {"name": "Scottie Barnes", "pos": "PF", "pts": 20.2, "reb": 8.4, "ast": 5.9, "stl": 1.3, "blk": 1.5, "tov": 2.8, "fg": 47.8, "fg3": 34.5, "ft": 78.5},
             {"name": "Jakob Poeltl", "pos": "C", "pts": 11.5, "reb": 8.8, "ast": 2.6, "stl": 0.7, "blk": 1.5, "tov": 1.4, "fg": 65.8, "fg3": 0.0, "ft": 56.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 6,
@@ -191,7 +211,8 @@ teams = [
             {"name": "Matas Buzelis", "pos": "SF", "pts": 12.4, "reb": 4.6, "ast": 1.5, "stl": 0.8, "blk": 1.5, "tov": 1.3, "fg": 46.0, "fg3": 35.3, "ft": 79.5},
             {"name": "John Collins", "pos": "PF", "pts": 14.8, "reb": 8.2, "ast": 1.2, "stl": 0.6, "blk": 0.7, "tov": 1.4, "fg": 53.5, "fg3": 37.4, "ft": 80.0},
             {"name": "Nic Claxton", "pos": "C", "pts": 11.5, "reb": 9.6, "ast": 2.0, "stl": 0.6, "blk": 1.1, "tov": 1.3, "fg": 63.2, "fg3": 20.0, "ft": 56.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 7,
@@ -213,7 +234,8 @@ teams = [
             {"name": "Peyton Watson", "pos": "SF", "pts": 7.8, "reb": 3.6, "ast": 1.4, "stl": 0.7, "blk": 1.1, "tov": 0.9, "fg": 47.5, "fg3": 31.5, "ft": 68.0},
             {"name": "Evan Mobley", "pos": "PF", "pts": 17.2, "reb": 9.6, "ast": 3.4, "stl": 0.9, "blk": 1.8, "tov": 1.8, "fg": 58.2, "fg3": 37.8, "ft": 72.5},
             {"name": "Jarrett Allen", "pos": "C", "pts": 16.2, "reb": 10.4, "ast": 2.5, "stl": 0.7, "blk": 1.7, "tov": 1.5, "fg": 63.8, "fg3": 0.0, "ft": 74.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 8,
@@ -235,7 +257,8 @@ teams = [
             {"name": "Ausar Thompson", "pos": "SF", "pts": 9.8, "reb": 6.9, "ast": 2.4, "stl": 1.4, "blk": 1.8, "tov": 1.5, "fg": 49.2, "fg3": 21.8, "ft": 62.5},
             {"name": "Tobias Harris", "pos": "PF", "pts": 16.8, "reb": 6.3, "ast": 3.0, "stl": 0.8, "blk": 0.5, "tov": 1.3, "fg": 48.5, "fg3": 35.0, "ft": 87.5},
             {"name": "Jalen Duren", "pos": "C", "pts": 14.2, "reb": 11.8, "ast": 2.6, "stl": 0.6, "blk": 0.8, "tov": 1.9, "fg": 62.4, "fg3": 0.0, "ft": 79.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 9,
@@ -257,7 +280,8 @@ teams = [
             {"name": "Aaron Nesmith", "pos": "SF", "pts": 12.6, "reb": 3.9, "ast": 1.6, "stl": 1.0, "blk": 0.4, "tov": 1.1, "fg": 49.8, "fg3": 42.1, "ft": 78.5},
             {"name": "Pascal Siakam", "pos": "PF", "pts": 21.2, "reb": 7.0, "ast": 4.2, "stl": 0.9, "blk": 0.4, "tov": 1.9, "fg": 53.8, "fg3": 38.8, "ft": 73.5},
             {"name": "Myles Turner", "pos": "C", "pts": 16.8, "reb": 6.8, "ast": 1.4, "stl": 0.6, "blk": 1.6, "tov": 1.4, "fg": 52.8, "fg3": 36.2, "ft": 77.8}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 10,
@@ -279,7 +303,8 @@ teams = [
             {"name": "Jaime Jaquez Jr.", "pos": "SF", "pts": 12.5, "reb": 4.2, "ast": 2.8, "stl": 1.1, "blk": 0.3, "tov": 1.5, "fg": 49.5, "fg3": 33.5, "ft": 82.5},
             {"name": "Kyle Kuzma", "pos": "PF", "pts": 21.8, "reb": 6.4, "ast": 4.0, "stl": 0.5, "blk": 0.7, "tov": 2.5, "fg": 46.0, "fg3": 33.2, "ft": 77.0},
             {"name": "Brook Lopez", "pos": "C", "pts": 12.2, "reb": 5.0, "ast": 1.5, "stl": 0.5, "blk": 1.2, "tov": 1.0, "fg": 48.2, "fg3": 36.2, "ft": 82.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 11,
@@ -301,7 +326,8 @@ teams = [
             {"name": "Andrew Wiggins", "pos": "SF", "pts": 13.0, "reb": 4.4, "ast": 1.6, "stl": 0.9, "blk": 1.0, "tov": 1.4, "fg": 45.0, "fg3": 35.5, "ft": 75.0},
             {"name": "Giannis Antetokounmpo", "pos": "PF", "pts": 30.4, "reb": 11.9, "ast": 6.1, "stl": 1.2, "blk": 1.1, "tov": 3.4, "fg": 60.1, "fg3": 24.5, "ft": 61.8},
             {"name": "Bam Adebayo", "pos": "C", "pts": 19.4, "reb": 10.6, "ast": 4.1, "stl": 1.2, "blk": 0.9, "tov": 2.3, "fg": 52.4, "fg3": 35.8, "ft": 75.8}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 12,
@@ -323,7 +349,8 @@ teams = [
             {"name": "Dyson Daniels", "pos": "SF", "pts": 9.5, "reb": 5.4, "ast": 4.3, "stl": 2.4, "blk": 0.8, "tov": 1.8, "fg": 46.8, "fg3": 34.2, "ft": 70.5},
             {"name": "Jalen Johnson", "pos": "PF", "pts": 17.5, "reb": 9.1, "ast": 4.4, "stl": 1.3, "blk": 0.9, "tov": 2.5, "fg": 52.0, "fg3": 36.1, "ft": 74.0},
             {"name": "Onyeka Okongwu", "pos": "C", "pts": 10.6, "reb": 7.1, "ast": 1.4, "stl": 0.6, "blk": 1.1, "tov": 1.0, "fg": 61.5, "fg3": 33.5, "ft": 79.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 13,
@@ -345,7 +372,8 @@ teams = [
             {"name": "Brandon Miller", "pos": "SF", "pts": 18.5, "reb": 4.6, "ast": 2.8, "stl": 1.0, "blk": 0.6, "tov": 1.9, "fg": 45.2, "fg3": 38.0, "ft": 83.5},
             {"name": "Naz Reid", "pos": "PF", "pts": 13.8, "reb": 5.4, "ast": 1.4, "stl": 0.8, "blk": 1.0, "tov": 1.4, "fg": 48.0, "fg3": 41.8, "ft": 74.0},
             {"name": "Moussa Diabaté", "pos": "C", "pts": 5.2, "reb": 6.4, "ast": 0.8, "stl": 0.6, "blk": 1.0, "tov": 0.7, "fg": 59.5, "fg3": 0.0, "ft": 64.2}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 14,
@@ -367,7 +395,8 @@ teams = [
             {"name": "Franz Wagner", "pos": "SF", "pts": 20.4, "reb": 5.6, "ast": 4.0, "stl": 1.2, "blk": 0.4, "tov": 1.9, "fg": 48.8, "fg3": 30.5, "ft": 85.8},
             {"name": "Paolo Banchero", "pos": "PF", "pts": 23.5, "reb": 7.2, "ast": 5.8, "stl": 0.9, "blk": 0.6, "tov": 3.1, "fg": 46.2, "fg3": 34.8, "ft": 73.5},
             {"name": "Wendell Carter Jr.", "pos": "C", "pts": 11.2, "reb": 7.1, "ast": 1.8, "stl": 0.6, "blk": 1.7, "tov": 1.3, "fg": 52.8, "fg3": 37.6, "ft": 70.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 15,
@@ -389,7 +418,8 @@ teams = [
             {"name": "Deni Avdija", "pos": "SF", "pts": 15.4, "reb": 7.6, "ast": 4.1, "stl": 0.9, "blk": 0.5, "tov": 2.1, "fg": 51.2, "fg3": 38.0, "ft": 75.2},
             {"name": "Alex Sarr", "pos": "PF", "pts": 12.5, "reb": 6.8, "ast": 2.1, "stl": 0.7, "blk": 1.8, "tov": 1.5, "fg": 42.8, "fg3": 31.5, "ft": 72.0},
             {"name": "Anthony Davis", "pos": "C", "pts": 25.4, "reb": 12.1, "ast": 3.2, "stl": 1.2, "blk": 2.3, "tov": 2.1, "fg": 54.2, "fg3": 30.0, "ft": 80.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 16,
@@ -411,7 +441,8 @@ teams = [
             {"name": "Cameron Johnson", "pos": "SF", "pts": 13.6, "reb": 4.3, "ast": 2.5, "stl": 0.8, "blk": 0.4, "tov": 0.9, "fg": 44.8, "fg3": 39.4, "ft": 79.2},
             {"name": "Aaron Gordon", "pos": "PF", "pts": 14.2, "reb": 6.6, "ast": 3.6, "stl": 0.8, "blk": 0.6, "tov": 1.5, "fg": 55.8, "fg3": 29.5, "ft": 66.2},
             {"name": "Nikola Jokić", "pos": "C", "pts": 29.6, "reb": 12.8, "ast": 10.2, "stl": 1.5, "blk": 0.8, "tov": 3.2, "fg": 57.6, "fg3": 41.2, "ft": 80.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 17,
@@ -433,7 +464,8 @@ teams = [
             {"name": "Jaden McDaniels", "pos": "SF", "pts": 11.4, "reb": 3.5, "ast": 1.7, "stl": 1.0, "blk": 1.0, "tov": 1.2, "fg": 49.5, "fg3": 35.0, "ft": 74.0},
             {"name": "Jonathan Kuminga", "pos": "PF", "pts": 16.8, "reb": 5.2, "ast": 2.5, "stl": 0.8, "blk": 0.6, "tov": 1.8, "fg": 53.4, "fg3": 33.0, "ft": 75.8},
             {"name": "Rudy Gobert", "pos": "C", "pts": 13.8, "reb": 12.7, "ast": 1.2, "stl": 0.6, "blk": 1.6, "tov": 1.5, "fg": 65.8, "fg3": 0.0, "ft": 63.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 18,
@@ -455,7 +487,8 @@ teams = [
             {"name": "Jalen Williams", "pos": "SF", "pts": 19.8, "reb": 4.3, "ast": 4.8, "stl": 1.3, "blk": 0.7, "tov": 1.9, "fg": 54.5, "fg3": 43.1, "ft": 82.0},
             {"name": "Chet Holmgren", "pos": "PF", "pts": 17.4, "reb": 8.4, "ast": 2.7, "stl": 0.7, "blk": 1.9, "tov": 1.7, "fg": 53.8, "fg3": 37.8, "ft": 80.5},
             {"name": "Isaiah Hartenstein", "pos": "C", "pts": 8.2, "reb": 8.6, "ast": 2.6, "stl": 1.0, "blk": 1.1, "tov": 1.2, "fg": 64.8, "fg3": 33.3, "ft": 71.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 19,
@@ -477,7 +510,8 @@ teams = [
             {"name": "Toumani Camara", "pos": "SF", "pts": 8.6, "reb": 5.4, "ast": 1.6, "stl": 1.2, "blk": 0.5, "tov": 1.1, "fg": 46.2, "fg3": 35.0, "ft": 77.5},
             {"name": "Jerami Grant", "pos": "PF", "pts": 21.0, "reb": 3.5, "ast": 2.8, "stl": 0.8, "blk": 0.6, "tov": 2.1, "fg": 45.1, "fg3": 40.2, "ft": 81.7},
             {"name": "Donovan Clingan", "pos": "C", "pts": 9.2, "reb": 8.1, "ast": 1.4, "stl": 0.5, "blk": 1.7, "tov": 1.3, "fg": 59.5, "fg3": 25.0, "ft": 60.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 20,
@@ -499,7 +533,8 @@ teams = [
             {"name": "Lauri Markkanen", "pos": "SF", "pts": 22.8, "reb": 8.0, "ast": 2.1, "stl": 0.8, "blk": 0.6, "tov": 1.4, "fg": 47.8, "fg3": 39.5, "ft": 89.5},
             {"name": "Jaren Jackson Jr.", "pos": "PF", "pts": 22.2, "reb": 5.4, "ast": 2.2, "stl": 1.2, "blk": 1.8, "tov": 2.1, "fg": 44.8, "fg3": 32.5, "ft": 81.2},
             {"name": "Jusuf Nurkić", "pos": "C", "pts": 10.6, "reb": 10.8, "ast": 3.8, "stl": 1.0, "blk": 1.1, "tov": 2.1, "fg": 50.8, "fg3": 24.0, "ft": 63.8}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 21,
@@ -521,7 +556,8 @@ teams = [
             {"name": "Jimmy Butler", "pos": "SF", "pts": 20.2, "reb": 5.1, "ast": 4.8, "stl": 1.4, "blk": 0.4, "tov": 1.6, "fg": 49.5, "fg3": 41.0, "ft": 85.5},
             {"name": "Draymond Green", "pos": "PF", "pts": 8.4, "reb": 7.0, "ast": 5.8, "stl": 1.0, "blk": 0.9, "tov": 2.1, "fg": 49.2, "fg3": 39.0, "ft": 72.5},
             {"name": "Kristaps Porziņģis", "pos": "C", "pts": 19.8, "reb": 7.0, "ast": 1.9, "stl": 0.6, "blk": 1.8, "tov": 1.6, "fg": 51.2, "fg3": 37.2, "ft": 85.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 22,
@@ -543,7 +579,8 @@ teams = [
             {"name": "Brandon Ingram", "pos": "SF", "pts": 20.4, "reb": 5.0, "ast": 5.6, "stl": 0.9, "blk": 0.6, "tov": 2.4, "fg": 49.0, "fg3": 35.2, "ft": 80.5},
             {"name": "Rui Hachimura", "pos": "PF", "pts": 13.4, "reb": 4.2, "ast": 1.3, "stl": 0.5, "blk": 0.3, "tov": 1.0, "fg": 53.4, "fg3": 42.0, "ft": 74.2},
             {"name": "Ivica Zubac", "pos": "C", "pts": 12.4, "reb": 9.8, "ast": 1.5, "stl": 0.4, "blk": 1.3, "tov": 1.3, "fg": 65.2, "fg3": 0.0, "ft": 72.8}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 23,
@@ -565,7 +602,8 @@ teams = [
             {"name": "Quentin Grimes", "pos": "SF", "pts": 8.4, "reb": 2.4, "ast": 1.6, "stl": 0.8, "blk": 0.3, "tov": 0.9, "fg": 40.5, "fg3": 36.2, "ft": 80.1},
             {"name": "Sandro Mamukelashvili", "pos": "PF", "pts": 5.8, "reb": 3.9, "ast": 1.4, "stl": 0.4, "blk": 0.4, "tov": 0.7, "fg": 48.5, "fg3": 32.1, "ft": 76.0},
             {"name": "Walker Kessler", "pos": "C", "pts": 9.4, "reb": 8.8, "ast": 1.1, "stl": 0.5, "blk": 2.6, "tov": 1.2, "fg": 66.8, "fg3": 21.1, "ft": 62.4}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 24,
@@ -587,7 +625,8 @@ teams = [
             {"name": "Dillon Brooks", "pos": "SF", "pts": 12.5, "reb": 3.3, "ast": 1.6, "stl": 0.9, "blk": 0.2, "tov": 1.3, "fg": 42.5, "fg3": 35.5, "ft": 84.0},
             {"name": "Miles Bridges", "pos": "PF", "pts": 20.6, "reb": 7.1, "ast": 3.2, "stl": 0.9, "blk": 0.5, "tov": 1.9, "fg": 46.0, "fg3": 34.5, "ft": 82.0},
             {"name": "Mark Williams", "pos": "C", "pts": 12.5, "reb": 9.5, "ast": 1.1, "stl": 0.6, "blk": 0.9, "tov": 1.2, "fg": 64.5, "fg3": 0.0, "ft": 71.5}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 25,
@@ -609,7 +648,8 @@ teams = [
             {"name": "Keegan Murray", "pos": "SF", "pts": 16.1, "reb": 5.8, "ast": 1.9, "stl": 1.0, "blk": 0.7, "tov": 1.2, "fg": 46.2, "fg3": 36.8, "ft": 84.0},
             {"name": "Harrison Barnes", "pos": "PF", "pts": 12.2, "reb": 3.0, "ast": 1.2, "stl": 0.7, "blk": 0.1, "tov": 0.8, "fg": 47.4, "fg3": 38.5, "ft": 80.1},
             {"name": "Domantas Sabonis", "pos": "C", "pts": 19.4, "reb": 13.9, "ast": 8.2, "stl": 0.9, "blk": 0.6, "tov": 3.3, "fg": 59.4, "fg3": 37.9, "ft": 70.4}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 26,
@@ -631,7 +671,8 @@ teams = [
             {"name": "Zaccharie Risacher", "pos": "SF", "pts": 13.5, "reb": 4.2, "ast": 1.8, "stl": 0.9, "blk": 0.6, "tov": 1.4, "fg": 43.5, "fg3": 35.2, "ft": 74.5},
             {"name": "Cooper Flagg", "pos": "PF", "pts": 18.7, "reb": 8.1, "ast": 4.2, "stl": 1.4, "blk": 0.9, "tov": 2.2, "fg": 48.6, "fg3": 35.1, "ft": 81.4},
             {"name": "Dereck Lively II", "pos": "C", "pts": 9.8, "reb": 7.8, "ast": 1.5, "stl": 0.7, "blk": 1.5, "tov": 1.1, "fg": 73.2, "fg3": 0.0, "ft": 54.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 27,
@@ -653,7 +694,8 @@ teams = [
             {"name": "Kevin Durant", "pos": "SF", "pts": 26.8, "reb": 6.3, "ast": 4.2, "stl": 0.9, "blk": 0.9, "tov": 2.8, "fg": 52.5, "fg3": 41.5, "ft": 86.5},
             {"name": "Jabari Smith Jr.", "pos": "PF", "pts": 14.8, "reb": 8.6, "ast": 1.8, "stl": 0.8, "blk": 0.9, "tov": 1.3, "fg": 46.5, "fg3": 37.8, "ft": 83.5},
             {"name": "Alperen Şengün", "pos": "C", "pts": 21.4, "reb": 9.5, "ast": 5.2, "stl": 1.2, "blk": 1.1, "tov": 2.7, "fg": 54.0, "fg3": 30.0, "ft": 69.8}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 28,
@@ -675,7 +717,8 @@ teams = [
             {"name": "Cedric Coward", "pos": "SF", "pts": 7.8, "reb": 3.4, "ast": 1.4, "stl": 0.7, "blk": 0.4, "tov": 0.9, "fg": 44.8, "fg3": 35.5, "ft": 77.0},
             {"name": "Trey Lyles", "pos": "PF", "pts": 8.5, "reb": 4.6, "ast": 1.4, "stl": 0.5, "blk": 0.3, "tov": 0.8, "fg": 44.5, "fg3": 38.4, "ft": 76.5},
             {"name": "Zach Edey", "pos": "C", "pts": 14.2, "reb": 9.2, "ast": 1.2, "stl": 0.4, "blk": 1.6, "tov": 1.6, "fg": 62.5, "fg3": 0.0, "ft": 72.0}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 29,
@@ -697,7 +740,8 @@ teams = [
             {"name": "Herb Jones", "pos": "SF", "pts": 11.2, "reb": 3.7, "ast": 2.7, "stl": 1.5, "blk": 0.9, "tov": 1.3, "fg": 50.0, "fg3": 42.0, "ft": 87.0},
             {"name": "Zion Williamson", "pos": "PF", "pts": 23.2, "reb": 5.9, "ast": 5.1, "stl": 1.0, "blk": 0.7, "tov": 2.8, "fg": 57.4, "fg3": 33.5, "ft": 70.5},
             {"name": "Derik Queen", "pos": "C", "pts": 11.6, "reb": 7.2, "ast": 2.4, "stl": 0.8, "blk": 0.9, "tov": 1.7, "fg": 54.1, "fg3": 28.0, "ft": 72.8}
-        ]
+        ],
+        "bench_2026_27": []
     },
     {
         "id": 30,
@@ -719,7 +763,8 @@ teams = [
             {"name": "Devin Vassell", "pos": "SF", "pts": 19.2, "reb": 3.7, "ast": 4.0, "stl": 1.1, "blk": 0.4, "tov": 1.6, "fg": 47.0, "fg3": 37.0, "ft": 80.0},
             {"name": "Julian Champagnie", "pos": "PF", "pts": 9.3, "reb": 3.6, "ast": 1.4, "stl": 0.6, "blk": 0.4, "tov": 0.7, "fg": 45.0, "fg3": 38.0, "ft": 81.2},
             {"name": "Victor Wembanyama", "pos": "C", "pts": 24.3, "reb": 11.0, "ast": 3.7, "stl": 1.3, "blk": 3.1, "tov": 3.1, "fg": 47.5, "fg3": 34.5, "ft": 82.5}
-        ]
+        ],
+        "bench_2026_27": []
     }
 ]
 
@@ -743,8 +788,6 @@ def verify_api_key(x_api_key: Optional[str] = Header(default=None)):
 # ==============================================================================
 # ROUTE ENDPOINTS
 # ==============================================================================
-
-# HEALTH CHECK (Public)
 @app.get("/health")
 def health_check():
     return {
@@ -754,26 +797,18 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
-# SEARCH TEAMS (Protected - Step 6)
 @app.get("/api/v1/teams/search", dependencies=[Depends(verify_api_key)])
 def search_teams(q: str = Query(..., min_length=1)):
     query = q.lower()
     results = []
-
     for team in teams:
         starter_names = " ".join([p["name"] for p in team.get("starters_2026_27", [])])
-        
+        bench_names = " ".join([p["name"] for p in team.get("bench_2026_27", [])])
         searchable_text = (
-            f"{team['name']} "
-            f"{team['conference']} "
-            f"{team['division']} "
-            f"{team['featured_star']} "
-            f"{team['tax_status']} "
-            f"{team['last_season_record']} "
-            f"{starter_names} "
-            f"{team['description']}"
+            f"{team['name']} {team['conference']} {team['division']} "
+            f"{team['featured_star']} {team['tax_status']} {team['last_season_record']} "
+            f"{starter_names} {bench_names} {team['description']}"
         ).lower()
-
         if query in searchable_text:
             results.append(team)
 
@@ -783,7 +818,6 @@ def search_teams(q: str = Query(..., min_length=1)):
         "results": results
     }
 
-# GET ALL TEAMS (Protected)
 @app.get("/api/v1/teams", dependencies=[Depends(verify_api_key)])
 def get_teams():
     return {
@@ -791,7 +825,6 @@ def get_teams():
         "teams": teams
     }
 
-# GET ONE TEAM (Protected)
 @app.get("/api/v1/teams/{team_id}", dependencies=[Depends(verify_api_key)])
 def get_team(team_id: int):
     for team in teams:
@@ -799,7 +832,6 @@ def get_team(team_id: int):
             return team
     raise HTTPException(status_code=404, detail="Team not found.")
 
-# Legacy routes for backwards compatibility
 @app.get("/teams")
 def get_teams_legacy():
     return {"teams": teams}
