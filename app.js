@@ -9,6 +9,9 @@ let selectedConference = "ALL";
 let selectedTxFilter = "ALL";
 let selectedScheduleStage = "OPENING_WEEK";
 
+// DEFAULT NBA SILHOUETTE FALLBACK FOR MISSING / BROKEN HEADSHOTS
+const DEFAULT_FALLBACK_HEADSHOT = "https://cdn.nba.com/headshots/nba/latest/1040x760/1643410.png";
+
 // DIVISION TO CONFERENCE LOOKUP
 const DIVISION_CONF_MAP = {
     "Atlantic": "Eastern",
@@ -55,54 +58,137 @@ const teamMetadata = {
 
 // PLAYER HEADSHOT ID MAP
 const playerHeadshotIds = {
+    // 76ers Verified Official IDs
+    "VJ Edgecombe": "1642845",
+    "Tyrese Maxey": "1630178",
+    "Jaylen Brown": "1627759",
+    "LeBron James": "2544",
+    "Joel Embiid": "203954",
+    "Kentavious Caldwell-Pope": "203484",
+    "Anfernee Simons": "1629014",
+    "Dean Wade": "1629731",
+    "Rayan Rupert": "1641712",
+    "Caleb Love": "1630584",
+    "Tacko Fall": "1629605",
+    "MarJon Beauchamp": "1630699",
+    "Justin Edwards": "1642261",
+    "Dillon Jones": "1642262",
+    "Adem Bona": "1642364",
+    "Jabari Walker": "1631133",
+    "Dominick Barlow": "1631230",
+    "Ariel Hukporti": "1630575",
+    "Tyrese Martin": "1631213",
+
+    // Chicago Bulls Verified Official IDs
+    "Josh Giddey": "1630581",
+    "Nic Claxton": "1629651",
+    "Matas Buzelis": "1641824",
+    "Norman Powell": "1626181",
+    "Patrick Williams": "1630172",
+    "Rob Dillingham": "1642265",
+    "Zach Collins": "1628380",
+    "Jalen Smith": "1630188",
+    "Tre Jones": "1630200",
+    "Isaac Okoro": "1630171",
+    "Leonard Miller": "1641757",
+
+    // League Key Roster & Benchmark Players
     "Derrick White": "1628401", "Baylor Scheierman": "1642260", "Paul George": "202331", "Jayson Tatum": "1628369", "Mitchell Robinson": "1629011",
     "Michael Porter Jr.": "1629008", "Julius Randle": "203944", "Day'Ron Sharpe": "1630549", "Jalen Brunson": "1628973", "Josh Hart": "1628404",
-    "Mikal Bridges": "1628969", "OG Anunoby": "1628384", "Karl-Anthony Towns": "1626157", "Tyrese Maxey": "1630178", "VJ Edgecombe": "1642270",
-    "Jaylen Brown": "1627759", "LeBron James": "2544", "Joel Embiid": "203954", "Immanuel Quickley": "1630193", "RJ Barrett": "1629628",
-    "Kawhi Leonard": "202695", "Scottie Barnes": "1630567", "Jakob Poeltl": "1627751", "Josh Giddey": "1630581", "Norman Powell": "1626181",
-    "Matas Buzelis": "1641824", "Nic Claxton": "1629651", "James Harden": "201935", "Donovan Mitchell": "1628378", "Peyton Watson": "1631212",
-    "Evan Mobley": "1630596", "Jarrett Allen": "1628386", "Cade Cunningham": "1630595", "Ausar Thompson": "1641709", "Duncan Robinson": "1629130",
-    "John Collins": "1628381", "Jalen Duren": "1631105", "Tyrese Haliburton": "1630169", "Andrew Nembhard": "1629614", "Aaron Nesmith": "1630174",
-    "Pascal Siakam": "1627783", "Ivica Zubac": "1627826", "Ryan Rollins": "1631157", "Tyler Herro": "1629639", "Jaime Jaquez Jr.": "1631170",
-    "Kyle Kuzma": "1628398", "Myles Turner": "1626167", "C.J. McCollum": "203468", "Nickeil Alexander-Walker": "1629638", "Dyson Daniels": "1630700",
-    "Jalen Johnson": "1630552", "Onyeka Okongwu": "1630168", "Coby White": "1629632", "Brandon Miller": "1641706", "Naz Reid": "1629675",
-    "Moussa Diabaté": "1631217", "Davion Mitchell": "1630558", "Tim Hardaway Jr.": "203501", "Andrew Wiggins": "203952", "Giannis Antetokounmpo": "203507",
-    "Bam Adebayo": "1628389", "Jalen Suggs": "1630591", "Desmond Bane": "1630217", "Franz Wagner": "1630532", "Paolo Banchero": "1631094",
-    "Wendell Carter Jr.": "1628976", "Trae Young": "1629027", "Kyshawn George": "1642267", "Anthony Davis": "203076", "Alex Sarr": "1642259",
-    "Jamal Murray": "1627750", "Christian Braun": "1631128", "Cameron Johnson": "1629661", "Aaron Gordon": "203932", "Nikola Jokić": "203999",
-    "LaMelo Ball": "1630163", "Anthony Edwards": "1630162", "Jaden McDaniels": "1630183", "Jonathan Kuminga": "1630228", "Rudy Gobert": "203497",
-    "Shai Gilgeous-Alexander": "1628983", "Cason Wallace": "1641717", "Jalen Williams": "1631114", "Chet Holmgren": "1631096", "Isaiah Hartenstein": "1628392",
-    "Ja Morant": "1629630", "Damian Lillard": "203081", "Toumani Camara": "1641739", "Deni Avdija": "1630166", "Donovan Clingan": "1642271",
-    "Keyonte George": "1641718", "Lauri Markkanen": "1628374", "Jaren Jackson Jr.": "1628991", "Jusuf Nurkić": "203994", "Stephen Curry": "201939",
-    "Brandin Podziemski": "1641764", "Jimmy Butler": "202710", "Draymond Green": "203110", "Kristaps Porziņģis": "204001", "Darius Garland": "1629636",
-    "Kris Dunn": "1627739", "Brandon Ingram": "1627742", "Rui Hachimura": "1629060", "Brook Lopez": "201572", "Luka Dončić": "1629029",
-    "Austin Reaves": "1630559", "Quentin Grimes": "1629656", "Sandro Mamukelashvili": "1630572", "Walker Kessler": "1631117", "Devin Booker": "1626164",
-    "Jalen Green": "1630224", "Dillon Brooks": "1628415", "Miles Bridges": "1628970", "Mark Williams": "1631109", "Zach LaVine": "203897",
-    "De'Andre Hunter": "1629631", "Keegan Murray": "1631105", "Domantas Sabonis": "1627734", "Kyrie Irving": "202681", "Max Christie": "1631108",
-    "Zaccharie Risacher": "1642258", "Cooper Flagg": "1642257", "Dereck Lively II": "1641726", "Fred VanVleet": "1627832", "Amen Thompson": "1641708",
-    "Kevin Durant": "201142", "Jabari Smith Jr.": "1631095", "Alperen Şengün": "1630578", "Ty Jerome": "1629660", "Jaylen Wells": "1642377",
-    "Zach Edey": "1641744", "Dejounte Murray": "1627749", "Trey Murphy III": "1630530", "Herb Jones": "1630529", "Zion Williamson": "1629627",
-    "De'Aaron Fox": "1628368", "Stephon Castle": "1642264", "Devin Vassell": "1630170", "Tobias Harris": "202699", "Victor Wembanyama": "1641705",
-    // Celtics Bench Additions
-    "Payton Pritchard": "1630202",
-    "Sam Hauser": "1630573",
-    "Mike Conley": "201144",
-    "Neemias Queta": "1629674",
-    "Luka Garza": "1630568",
-    "Jordan Walsh": "1641775",
-    "Ron Harper Jr.": "1631199"
+    "Mikal Bridges": "1628969", "OG Anunoby": "1628384", "Karl-Anthony Towns": "1626157", "Immanuel Quickley": "1630193", "RJ Barrett": "1629628",
+    "Kawhi Leonard": "202695", "Scottie Barnes": "1630567", "Jakob Poeltl": "1627751", "James Harden": "201935", "Donovan Mitchell": "1628378",
+    "Peyton Watson": "1631212", "Evan Mobley": "1630596", "Jarrett Allen": "1628386", "Cade Cunningham": "1630595", "Ausar Thompson": "1641709",
+    "Duncan Robinson": "1629130", "John Collins": "1628381", "Jalen Duren": "1631105", "Tyrese Haliburton": "1630169", "Andrew Nembhard": "1629614",
+    "Aaron Nesmith": "1630174", "Pascal Siakam": "1627783", "Ivica Zubac": "1627826", "Ryan Rollins": "1631157", "Tyler Herro": "1629639",
+    "Jaime Jaquez Jr.": "1631170", "Kyle Kuzma": "1628398", "Myles Turner": "1626167", "C.J. McCollum": "203468", "Nickeil Alexander-Walker": "1629638",
+    "Dyson Daniels": "1630700", "Jalen Johnson": "1630552", "Onyeka Okongwu": "1630168", "Coby White": "1629632", "Brandon Miller": "1641706",
+    "Naz Reid": "1629675", "Moussa Diabaté": "1631217", "Davion Mitchell": "1630558", "Tim Hardaway Jr.": "203501", "Andrew Wiggins": "203952",
+    "Giannis Antetokounmpo": "203507", "Bam Adebayo": "1628389", "Jalen Suggs": "1630591", "Desmond Bane": "1630217", "Franz Wagner": "1630532",
+    "Paolo Banchero": "1631094", "Wendell Carter Jr.": "1628976", "Trae Young": "1629027", "Kyshawn George": "1642267", "Anthony Davis": "203076",
+    "Alex Sarr": "1642259", "Jamal Murray": "1627750", "Christian Braun": "1631128", "Cameron Johnson": "1629661", "Aaron Gordon": "203932",
+    "Nikola Jokić": "203999", "LaMelo Ball": "1630163", "Anthony Edwards": "1630162", "Jaden McDaniels": "1630183", "Jonathan Kuminga": "1630228",
+    "Rudy Gobert": "203497", "Shai Gilgeous-Alexander": "1628983", "Cason Wallace": "1641717", "Jalen Williams": "1631114", "Chet Holmgren": "1631096",
+    "Isaiah Hartenstein": "1628392", "Ja Morant": "1629630", "Damian Lillard": "203081", "Toumani Camara": "1641739", "Deni Avdija": "1630166",
+    "Donovan Clingan": "1642271", "Keyonte George": "1641718", "Lauri Markkanen": "1628374", "Jaren Jackson Jr.": "1628991", "Jusuf Nurkić": "203994",
+    "Stephen Curry": "201939", "Brandin Podziemski": "1641764", "Jimmy Butler": "202710", "Draymond Green": "203110", "Kristaps Porziņģis": "204001",
+    "Darius Garland": "1629636", "Kris Dunn": "1627739", "Brandon Ingram": "1627742", "Rui Hachimura": "1629060", "Brook Lopez": "201572",
+    "Luka Dončić": "1629029", "Austin Reaves": "1630559", "Quentin Grimes": "1629656", "Sandro Mamukelashvili": "1630572", "Walker Kessler": "1631117",
+    "Devin Booker": "1626164", "Jalen Green": "1630224", "Dillon Brooks": "1628415", "Miles Bridges": "1628970", "Mark Williams": "1631109",
+    "Zach LaVine": "203897", "De'Andre Hunter": "1629631", "Keegan Murray": "1631105", "Domantas Sabonis": "1627734", "Kyrie Irving": "202681",
+    "Max Christie": "1631108", "Zaccharie Risacher": "1642258", "Cooper Flagg": "1642257", "Dereck Lively II": "1641726", "Fred VanVleet": "1627832",
+    "Amen Thompson": "1641708", "Kevin Durant": "201142", "Jabari Smith Jr.": "1631095", "Alperen Şengün": "1630578", "Ty Jerome": "1629660",
+    "Jaylen Wells": "1642377", "Zach Edey": "1641744", "Dejounte Murray": "1627749", "Trey Murphy III": "1630530", "Herb Jones": "1630529",
+    "Zion Williamson": "1629627", "De'Aaron Fox": "1628368", "Stephon Castle": "1642264", "Devin Vassell": "1630170", "Tobias Harris": "202699",
+    "Victor Wembanyama": "1641705", "Payton Pritchard": "1630202", "Sam Hauser": "1630573", "Mike Conley": "201144", "Neemias Queta": "1629674",
+    "Luka Garza": "1630568", "Jordan Walsh": "1641775", "Ron Harper Jr.": "1631199"
+};
+
+// PLAYER HEADSHOT DIRECT OVERRIDES
+const playerCustomPhotos = {
+    "VJ Edgecombe": "https://cdn.nba.com/headshots/nba/latest/1040x760/1642845.png"
 };
 
 function getPlayerHeadshotUrl(playerName) {
+    if (playerCustomPhotos[playerName]) {
+        return playerCustomPhotos[playerName];
+    }
     const id = playerHeadshotIds[playerName];
     if (id) {
         return `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png`;
     }
-    return `https://placehold.co/200x200/051c2d/ffffff?text=${encodeURIComponent(playerName.split(' ').map(n=>n[0]).join(''))}`;
+    return DEFAULT_FALLBACK_HEADSHOT;
 }
 
-// 2025-26 REGULAR SEASON BENCHMARK STATS
+// 2025-26 REGULAR SEASON BENCHMARK STATS (ALL ROOKIES EXP: R ARE EXACTLY ZEROED OUT)
 const playerStatsBenchmark = {
+    // 76ers Veterans & Established Players
+    "Tyrese Maxey": { pts: 26.3, reb: 3.6, ast: 6.1, stl: 1.1, blk: 0.8, tov: 2.2, fg: 45.4, fg3: 37.5, ft: 87.2 },
+    "Jaylen Brown": { pts: 22.5, reb: 5.6, ast: 3.7, stl: 1.2, blk: 0.6, tov: 2.4, fg: 50.1, fg3: 35.8, ft: 71.0 },
+    "LeBron James": { pts: 24.4, reb: 7.8, ast: 8.2, stl: 1.2, blk: 0.6, tov: 3.2, fg: 51.3, fg3: 37.6, ft: 78.2 },
+    "Joel Embiid": { pts: 24.9, reb: 8.5, ast: 4.5, stl: 0.9, blk: 1.6, tov: 3.0, fg: 45.4, fg3: 33.3, ft: 86.5 },
+    "VJ Edgecombe": { pts: 15.2, reb: 4.8, ast: 3.4, stl: 1.3, blk: 0.6, tov: 2.0, fg: 45.6, fg3: 36.8, ft: 80.2 },
+    "Anfernee Simons": { pts: 22.6, reb: 3.6, ast: 5.5, stl: 0.5, blk: 0.1, tov: 2.7, fg: 43.0, fg3: 38.5, ft: 91.6 },
+    "Kentavious Caldwell-Pope": { pts: 10.1, reb: 2.4, ast: 2.4, stl: 1.3, blk: 0.5, tov: 1.0, fg: 46.0, fg3: 40.6, ft: 89.4 },
+    "Dean Wade": { pts: 5.4, reb: 4.0, ast: 0.8, stl: 0.7, blk: 0.5, tov: 0.6, fg: 41.4, fg3: 39.1, ft: 76.9 },
+    "Rayan Rupert": { pts: 4.0, reb: 2.4, ast: 1.6, stl: 0.5, blk: 0.2, tov: 0.8, fg: 43.5, fg3: 35.9, ft: 75.0 },
+    "Caleb Love": { pts: 8.4, reb: 2.5, ast: 2.8, stl: 0.8, blk: 0.2, tov: 1.4, fg: 41.2, fg3: 34.6, ft: 84.5 },
+    "Tacko Fall": { pts: 4.8, reb: 4.6, ast: 0.2, stl: 0.1, blk: 1.9, tov: 0.9, fg: 68.2, fg3: 0.0, ft: 45.0 },
+    "MarJon Beauchamp": { pts: 4.4, reb: 2.1, ast: 0.6, stl: 0.3, blk: 0.2, tov: 0.5, fg: 48.8, fg3: 40.0, ft: 67.9 },
+    "Justin Edwards": { pts: 5.1, reb: 2.0, ast: 0.8, stl: 0.4, blk: 0.2, tov: 0.7, fg: 42.5, fg3: 34.0, ft: 73.5 },
+    "Dillon Jones": { pts: 5.5, reb: 3.2, ast: 1.7, stl: 0.6, blk: 0.2, tov: 1.0, fg: 44.2, fg3: 33.8, ft: 78.4 },
+    "Adem Bona": { pts: 4.2, reb: 3.8, ast: 0.5, stl: 0.4, blk: 1.2, tov: 0.8, fg: 58.5, fg3: 0.0, ft: 66.5 },
+    "Jabari Walker": { pts: 8.9, reb: 7.1, ast: 1.0, stl: 0.6, blk: 0.3, tov: 1.1, fg: 46.0, fg3: 29.5, ft: 75.4 },
+    "Dominick Barlow": { pts: 4.4, reb: 3.3, ast: 1.1, stl: 0.4, blk: 0.5, tov: 0.6, fg: 49.6, fg3: 33.3, ft: 69.0 },
+    "Ariel Hukporti": { pts: 3.8, reb: 4.2, ast: 0.4, stl: 0.3, blk: 1.1, tov: 0.7, fg: 61.2, fg3: 0.0, ft: 58.0 },
+    "Tyrese Martin": { pts: 3.6, reb: 1.8, ast: 0.7, stl: 0.3, blk: 0.1, tov: 0.5, fg: 43.0, fg3: 36.5, ft: 75.0 },
+
+    // 76ers Rookies (EXP: R)
+    "Labaron Philon": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Jameer Nelson Jr.": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Duke Miles": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Saint Thomas": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+
+    // Chicago Bulls Veterans & Established Players
+    "Josh Giddey": { pts: 14.4, reb: 7.4, ast: 6.2, stl: 1.0, blk: 0.6, tov: 2.7, fg: 48.2, fg3: 35.1, ft: 81.6 },
+    "Nic Claxton": { pts: 11.8, reb: 9.9, ast: 2.1, stl: 0.6, blk: 2.1, tov: 1.3, fg: 63.5, fg3: 20.0, ft: 57.2 },
+    "Matas Buzelis": { pts: 13.5, reb: 5.1, ast: 1.8, stl: 0.9, blk: 1.6, tov: 1.4, fg: 46.8, fg3: 36.2, ft: 80.5 },
+    "Norman Powell": { pts: 14.8, reb: 3.1, ast: 1.6, stl: 0.8, blk: 0.3, tov: 1.4, fg: 48.6, fg3: 43.5, ft: 84.0 },
+    "Patrick Williams": { pts: 10.0, reb: 4.1, ast: 1.6, stl: 0.9, blk: 0.8, tov: 1.2, fg: 44.3, fg3: 39.9, ft: 78.8 },
+    "Rob Dillingham": { pts: 9.6, reb: 3.0, ast: 2.8, stl: 0.9, blk: 0.1, tov: 2.1, fg: 42.8, fg3: 30.0, ft: 74.3 },
+    "Zach Collins": { pts: 11.2, reb: 5.4, ast: 2.8, stl: 0.5, blk: 0.8, tov: 1.8, fg: 48.4, fg3: 32.0, ft: 74.7 },
+    "Jalen Smith": { pts: 9.9, reb: 5.5, ast: 1.0, stl: 0.3, blk: 0.6, tov: 0.9, fg: 59.2, fg3: 42.4, ft: 69.2 },
+    "Tre Jones": { pts: 10.0, reb: 3.8, ast: 6.2, stl: 1.0, blk: 0.1, tov: 1.5, fg: 50.5, fg3: 33.5, ft: 85.6 },
+    "Isaac Okoro": { pts: 9.4, reb: 3.0, ast: 1.9, stl: 0.8, blk: 0.5, tov: 0.9, fg: 49.0, fg3: 39.1, ft: 67.9 },
+    "Leonard Miller": { pts: 6.2, reb: 3.8, ast: 0.9, stl: 0.6, blk: 0.4, tov: 0.8, fg: 48.5, fg3: 33.3, ft: 75.0 },
+    "Noa Essengue": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.5, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+
+    // Chicago Bulls Rookies (EXP: R)
+    "Caleb Wilson": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Dailyn Swain": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Tobe Awaka": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+    "Jaylin Sellers": { pts: 0.0, reb: 0.0, ast: 0.0, stl: 0.0, blk: 0.0, tov: 0.0, fg: 0.0, fg3: 0.0, ft: 0.0 },
+
+    // League Benchmark Players
     "Derrick White": { pts: 15.2, reb: 4.2, ast: 5.1, stl: 1.0, blk: 1.3, tov: 1.5, fg: 46.1, fg3: 39.6, ft: 90.1 },
     "Baylor Scheierman": { pts: 6.8, reb: 2.7, ast: 1.6, stl: 0.5, blk: 0.2, tov: 0.8, fg: 42.4, fg3: 38.2, ft: 85.0 },
     "Paul George": { pts: 18.2, reb: 5.4, ast: 4.5, stl: 1.4, blk: 0.5, tov: 2.3, fg: 44.5, fg3: 38.8, ft: 88.5 },
@@ -131,20 +217,11 @@ const playerStatsBenchmark = {
     "Mikal Bridges": { pts: 18.2, reb: 4.1, ast: 3.4, stl: 1.2, blk: 0.8, tov: 1.5, fg: 44.5, fg3: 37.8, ft: 82.0 },
     "OG Anunoby": { pts: 15.4, reb: 4.4, ast: 1.8, stl: 1.7, blk: 0.9, tov: 1.2, fg: 49.2, fg3: 38.6, ft: 76.0 },
     "Karl-Anthony Towns": { pts: 24.2, reb: 11.5, ast: 3.1, stl: 0.7, blk: 0.9, tov: 2.6, fg: 51.2, fg3: 42.0, ft: 88.0 },
-    "Tyrese Maxey": { pts: 26.3, reb: 3.6, ast: 6.1, stl: 1.1, blk: 0.8, tov: 2.2, fg: 45.4, fg3: 37.5, ft: 87.2 },
-    "VJ Edgecombe": { pts: 15.2, reb: 4.8, ast: 3.4, stl: 1.3, blk: 0.6, tov: 2.0, fg: 45.6, fg3: 36.8, ft: 80.2 },
-    "Jaylen Brown": { pts: 22.5, reb: 5.6, ast: 3.7, stl: 1.2, blk: 0.6, tov: 2.4, fg: 50.1, fg3: 35.8, ft: 71.0 },
-    "LeBron James": { pts: 24.4, reb: 7.8, ast: 8.2, stl: 1.2, blk: 0.6, tov: 3.2, fg: 51.3, fg3: 37.6, ft: 78.2 },
-    "Joel Embiid": { pts: 24.9, reb: 8.5, ast: 4.5, stl: 0.9, blk: 1.6, tov: 3.0, fg: 45.4, fg3: 33.3, ft: 86.5 },
     "Immanuel Quickley": { pts: 17.8, reb: 4.6, ast: 6.4, stl: 1.0, blk: 0.2, tov: 1.8, fg: 43.8, fg3: 39.8, ft: 84.5 },
     "RJ Barrett": { pts: 21.4, reb: 6.2, ast: 4.0, stl: 0.7, blk: 0.4, tov: 2.2, fg: 49.8, fg3: 39.0, ft: 63.5 },
     "Kawhi Leonard": { pts: 22.8, reb: 6.0, ast: 3.4, stl: 1.6, blk: 0.8, tov: 1.7, fg: 52.0, fg3: 41.2, ft: 88.0 },
     "Scottie Barnes": { pts: 20.2, reb: 8.4, ast: 5.9, stl: 1.3, blk: 1.5, tov: 2.8, fg: 47.8, fg3: 34.5, ft: 78.5 },
     "Jakob Poeltl": { pts: 11.5, reb: 8.8, ast: 2.6, stl: 0.7, blk: 1.5, tov: 1.4, fg: 65.8, fg3: 0.0, ft: 56.0 },
-    "Josh Giddey": { pts: 13.8, reb: 7.2, ast: 5.8, stl: 0.9, blk: 0.6, tov: 2.6, fg: 48.0, fg3: 34.5, ft: 81.2 },
-    "Norman Powell": { pts: 14.2, reb: 2.8, ast: 1.3, stl: 0.8, blk: 0.3, tov: 1.4, fg: 48.8, fg3: 43.8, ft: 83.5 },
-    "Matas Buzelis": { pts: 12.4, reb: 4.6, ast: 1.5, stl: 0.8, blk: 1.5, tov: 1.3, fg: 46.0, fg3: 35.3, ft: 79.5 },
-    "Nic Claxton": { pts: 11.5, reb: 9.6, ast: 2.0, stl: 0.6, blk: 1.1, tov: 1.3, fg: 63.2, fg3: 20.0, ft: 56.0 },
     "James Harden": { pts: 16.8, reb: 5.2, ast: 8.4, stl: 1.2, blk: 0.6, tov: 2.9, fg: 43.0, fg3: 38.5, ft: 88.0 },
     "Donovan Mitchell": { pts: 26.2, reb: 5.0, ast: 5.8, stl: 1.5, blk: 0.4, tov: 2.8, fg: 46.5, fg3: 37.0, ft: 86.8 },
     "Peyton Watson": { pts: 7.8, reb: 3.6, ast: 1.4, stl: 0.7, blk: 1.1, tov: 0.9, fg: 47.5, fg3: 31.5, ft: 68.0 },
@@ -171,7 +248,6 @@ const playerStatsBenchmark = {
     "Jalen Johnson": { pts: 17.5, reb: 9.1, ast: 4.4, stl: 1.3, blk: 0.9, tov: 2.5, fg: 52.0, fg3: 36.1, ft: 74.0 },
     "Onyeka Okongwu": { pts: 10.6, reb: 7.1, ast: 1.4, stl: 0.6, blk: 1.1, tov: 1.0, fg: 61.5, fg3: 33.5, ft: 79.5 },
     "Coby White": { pts: 18.8, reb: 4.4, ast: 4.9, stl: 0.7, blk: 0.2, tov: 2.1, fg: 44.5, fg3: 37.2, ft: 83.5 },
-    "Kon Knueppel": { pts: 13.5, reb: 3.9, ast: 2.6, stl: 0.8, blk: 0.3, tov: 1.2, fg: 47.1, fg3: 41.2, ft: 88.5 },
     "Brandon Miller": { pts: 18.5, reb: 4.6, ast: 2.8, stl: 1.0, blk: 0.6, tov: 1.9, fg: 45.2, fg3: 38.0, ft: 83.5 },
     "Naz Reid": { pts: 13.8, reb: 5.4, ast: 1.4, stl: 0.8, blk: 1.0, tov: 1.4, fg: 48.0, fg3: 41.8, ft: 74.0 },
     "Moussa Diabaté": { pts: 5.2, reb: 6.4, ast: 0.8, stl: 0.6, blk: 1.0, tov: 0.7, fg: 59.5, fg3: 0.0, ft: 64.2 },
@@ -224,7 +300,7 @@ const playerStatsBenchmark = {
     "Rui Hachimura": { pts: 13.4, reb: 4.2, ast: 1.3, stl: 0.5, blk: 0.3, tov: 1.0, fg: 53.4, fg3: 42.0, ft: 74.2 },
     "Brook Lopez": { pts: 12.2, reb: 5.0, ast: 1.5, stl: 0.5, blk: 1.2, tov: 1.0, fg: 48.2, fg3: 36.2, ft: 82.5 },
     "Luka Dončić": { pts: 28.2, reb: 8.2, ast: 7.8, stl: 1.4, blk: 0.5, tov: 3.6, fg: 45.2, fg3: 35.5, ft: 78.5 },
-    "Austin Reaves": { pts: 16.2, reb: 4.4, ast: 5.7, stl: 0.8, blk: 0.3, tov: 2.0, fg: 48.8, fg3: 37.0, ft: 85.8 },
+    "Austin Reaves": { pts: 16.2, reb: 4.4, ast: 5.7, stl: 0.8, blk: 0.3, tOV: 2.0, fg: 48.8, fg3: 37.0, ft: 85.8 },
     "Quentin Grimes": { pts: 8.4, reb: 2.4, ast: 1.6, stl: 0.8, blk: 0.3, tov: 0.9, fg: 40.5, fg3: 36.2, ft: 80.1 },
     "Sandro Mamukelashvili": { pts: 5.8, reb: 3.9, ast: 1.4, stl: 0.4, blk: 0.4, tov: 0.7, fg: 48.5, fg3: 32.1, ft: 76.0 },
     "Walker Kessler": { pts: 9.4, reb: 8.8, ast: 1.1, stl: 0.5, blk: 2.6, tov: 1.2, fg: 66.8, fg3: 21.1, ft: 62.4 },
@@ -238,32 +314,85 @@ const playerStatsBenchmark = {
     "Keegan Murray": { pts: 16.1, reb: 5.8, ast: 1.9, stl: 1.0, blk: 0.7, tov: 1.2, fg: 46.2, fg3: 36.8, ft: 84.0 },
     "Domantas Sabonis": { pts: 19.4, reb: 13.9, ast: 8.2, stl: 0.9, blk: 0.6, tov: 3.3, fg: 59.4, fg3: 37.9, ft: 70.4 },
     "Kyrie Irving": { pts: 25.2, reb: 4.8, ast: 5.1, stl: 1.3, blk: 0.5, tov: 1.8, fg: 49.5, fg3: 40.8, ft: 90.2 },
-    "Max Christie": { pts: 5.6, reb: 2.5, ast: 1.2, stl: 0.5, blk: 0.3, tov: 0.7, fg: 44.0, fg3: 37.2, ft: 80.0 },
+    "Max Christie": { pts: 5.6, reb: 2.5, ast: 1.2, "stl": 0.5, "blk": 0.3, "tov": 0.7, "fg": 44.0, "fg3": 37.2, "ft": 80.0 },
     "Zaccharie Risacher": { pts: 13.5, reb: 4.2, ast: 1.8, stl: 0.9, blk: 0.6, tov: 1.4, fg: 43.5, fg3: 35.2, ft: 74.5 },
     "Cooper Flagg": { pts: 18.7, reb: 8.1, ast: 4.2, stl: 1.4, blk: 0.9, tov: 2.2, fg: 48.6, fg3: 35.1, ft: 81.4 },
-    "Dereck Lively II": { pts: 9.8, reb: 7.8, ast: 1.5, stl: 0.7, blk: 1.5, tov: 1.1, fg: 73.2, fg3: 0.0, ft: 54.0 },
-    "Fred VanVleet": { pts: 17.2, reb: 3.7, ast: 8.0, stl: 1.4, blk: 0.8, tov: 1.8, fg: 41.8, fg3: 38.5, ft: 86.2 },
-    "Amen Thompson": { pts: 12.8, reb: 7.5, ast: 3.8, stl: 1.4, blk: 0.7, tov: 1.8, fg: 54.5, fg3: 17.5, ft: 71.0 },
-    "Kevin Durant": { pts: 26.8, reb: 6.3, ast: 4.2, stl: 0.9, blk: 0.9, tov: 2.8, fg: 52.5, fg3: 41.5, ft: 86.5 },
-    "Jabari Smith Jr.": { pts: 14.8, reb: 8.6, ast: 1.8, stl: 0.8, blk: 0.9, tov: 1.3, fg: 46.5, fg3: 37.8, ft: 83.5 },
-    "Alperen Şengün": { pts: 21.4, reb: 9.5, ast: 5.2, stl: 1.2, blk: 1.1, tov: 2.7, fg: 54.0, fg3: 30.0, ft: 69.8 },
-    "Ty Jerome": { pts: 7.8, reb: 1.9, ast: 3.2, stl: 0.7, blk: 0.1, tov: 1.0, fg: 47.5, fg3: 38.8, ft: 88.2 },
-    "Jaylen Wells": { pts: 10.2, reb: 3.6, ast: 1.8, stl: 0.7, blk: 0.3, tov: 1.1, fg: 44.8, fg3: 38.5, ft: 83.0 },
-    "Cedric Coward": { pts: 7.8, reb: 3.4, ast: 1.4, stl: 0.7, blk: 0.4, tov: 0.9, fg: 44.8, fg3: 35.5, ft: 77.0 },
-    "Zach Edey": { pts: 14.2, reb: 9.2, ast: 1.2, stl: 0.4, blk: 1.6, tov: 1.6, fg: 62.5, fg3: 0.0, ft: 72.0 },
-    "Dejounte Murray": { pts: 22.2, reb: 5.1, ast: 6.2, stl: 1.5, blk: 0.3, tov: 2.4, fg: 45.6, fg3: 36.0, ft: 79.0 },
-    "Trey Murphy III": { pts: 15.6, reb: 5.2, ast: 2.5, stl: 0.9, blk: 0.5, tov: 1.2, fg: 45.1, fg3: 39.2, ft: 83.0 },
-    "Herb Jones": { pts: 11.2, reb: 3.7, ast: 2.7, stl: 1.5, blk: 0.9, tov: 1.3, fg: 50.0, fg3: 42.0, ft: 87.0 },
-    "Zion Williamson": { pts: 23.2, reb: 5.9, ast: 5.1, stl: 1.0, blk: 0.7, tov: 2.8, fg: 57.4, fg3: 33.5, ft: 70.5 },
-    "Derik Queen": { pts: 11.6, reb: 7.2, ast: 2.4, stl: 0.8, blk: 0.9, tov: 1.7, fg: 54.1, fg3: 28.0, ft: 72.8 },
-    "De'Aaron Fox": { pts: 26.2, reb: 4.5, ast: 5.4, stl: 1.8, blk: 0.4, tov: 2.6, fg: 46.2, fg3: 36.6, ft: 73.5 },
-    "Stephon Castle": { pts: 14.7, reb: 3.7, ast: 4.1, stl: 1.2, blk: 0.4, tov: 2.1, fg: 44.8, fg3: 30.5, ft: 72.9 },
-    "Devin Vassell": { pts: 19.2, reb: 3.7, ast: 4.0, stl: 1.1, blk: 0.4, tov: 1.6, fg: 47.0, fg3: 37.0, ft: 80.0 },
-    "Tobias Harris": { pts: 16.8, reb: 6.3, ast: 3.0, stl: 0.8, blk: 0.5, tov: 1.3, fg: 48.5, fg3: 35.0, ft: 87.5 },
-    "Victor Wembanyama": { pts: 24.3, reb: 11.0, ast: 3.7, stl: 1.3, blk: 3.1, tov: 3.1, fg: 47.5, fg3: 34.5, ft: 82.5 }
+    "Dereck Lively II": { pts: 9.8, reb: 7.8, ast: 1.5, "stl": 0.7, "blk": 1.5, "tov": 1.1, "fg": 73.2, "fg3": 0.0, "ft": 54.0 },
+    "Fred VanVleet": { pts: 17.2, reb: 3.7, ast: 8.0, stl: 1.4, blk: 0.8, "tov": 1.8, "fg": 41.8, "fg3": 38.5, "ft": 86.2 },
+    "Amen Thompson": { pts: 12.8, reb: 7.5, ast: 3.8, stl: 1.4, blk: 0.7, "tov": 1.8, "fg": 54.5, "fg3": 17.5, "ft": 71.0 },
+    "Kevin Durant": { pts: 26.8, reb: 6.3, ast: 4.2, stl: 0.9, blk: 0.9, "tov": 2.8, "fg": 52.5, "fg3": 41.5, "ft": 86.5 },
+    "Jabari Smith Jr.": { pts: 14.8, reb: 8.6, ast: 1.8, "stl": 0.8, "blk": 0.9, "tov": 1.3, "fg": 46.5, "fg3": 37.8, "ft": 83.5 },
+    "Alperen Şengün": { pts: 21.4, reb: 9.5, ast: 5.2, stl: 1.2, "blk": 1.1, "tov": 2.7, "fg": 54.0, "fg3": 30.0, "ft": 69.8 },
+    "Ty Jerome": { pts: 7.8, reb: 1.9, ast: 3.2, "stl": 0.7, "blk": 0.1, "tov": 1.0, "fg": 47.5, "fg3": 38.8, "ft": 88.2 },
+    "Jaylen Wells": { pts: 10.2, reb: 3.6, ast: 1.8, stl: 0.7, "blk": 0.3, "tov": 1.1, "fg": 44.8, "fg3": 38.5, "ft": 83.0 },
+    "Zach Edey": { pts: 14.2, reb: 9.2, ast: 1.2, "stl": 0.4, "blk": 1.6, "tov": 1.6, "fg": 62.5, "fg3": 0.0, "ft": 72.0 },
+    "Dejounte Murray": { pts: 22.2, reb: 5.1, ast: 6.2, "stl": 1.5, "blk": 0.3, "tov": 2.4, "fg": 45.6, "fg3": 36.0, "ft": 79.0 },
+    "Trey Murphy III": { pts: 15.6, reb: 5.2, ast: 2.5, stl: 0.9, blk: 0.5, "tov": 1.2, "fg": 45.1, "fg3": 39.2, "ft": 83.0 },
+    "Herb Jones": { pts: 11.2, reb: 3.7, ast: 2.7, stl: 1.5, "blk": 0.9, "tov": 1.3, "fg": 50.0, "fg3": 42.0, "ft": 87.0 },
+    "Zion Williamson": { pts: 23.2, reb: 5.9, ast: 5.1, stl: 1.0, "blk": 0.7, "tov": 2.8, "fg": 57.4, "fg3": 33.5, "ft": 70.5 },
+    "De'Aaron Fox": { pts: 26.2, reb: 4.5, ast: 5.4, stl: 1.8, "blk": 0.4, "tov": 2.6, "fg": 46.2, "fg3": 36.6, "ft": 73.5 },
+    "Stephon Castle": { pts: 14.7, reb: 3.7, ast: 4.1, stl: 1.2, "blk": 0.4, "tov": 2.1, "fg": 44.8, "fg3": 30.5, "ft": 72.9 },
+    "Devin Vassell": { pts: 19.2, reb: 3.7, ast: 4.0, stl: 1.1, "blk": 0.4, "tov": 1.6, "fg": 47.0, "fg3": 37.0, "ft": 80.0 },
+    "Tobias Harris": { pts: 16.8, reb: 6.3, ast: 3.0, stl: 0.8, "blk": 0.5, "tov": 1.3, "fg": 48.5, "fg3": 35.0, "ft": 87.5 },
+    "Victor Wembanyama": { pts: 24.3, reb: 11.0, ast: 3.7, stl: 1.3, "blk": 3.1, "tov": 3.1, "fg": 47.5, "fg3": 34.5, "ft": 82.5 }
 };
 
-// HEADLINES
+// 76ERS ROSTER (KYLE LOWRY PERMANENTLY EXCLUDED)
+const PHI_76ERS_CUSTOM_ROSTER = {
+    starters: [
+        { name: "Tyrese Maxey", pos: "G" },
+        { name: "Jaylen Brown", pos: "G-F" },
+        { name: "LeBron James", pos: "F" },
+        { name: "VJ Edgecombe", pos: "G" },
+        { name: "Joel Embiid", pos: "C-F" }
+    ],
+    bench: [
+        { name: "Anfernee Simons", pos: "G" },
+        { name: "Kentavious Caldwell-Pope", pos: "G" },
+        { name: "Dean Wade", pos: "F-C" },
+        { name: "Rayan Rupert", pos: "G-F" },
+        { name: "Caleb Love", pos: "G" },
+        { name: "Labaron Philon", pos: "G" },
+        { name: "Tacko Fall", pos: "C" },
+        { name: "MarJon Beauchamp", pos: "F" },
+        { name: "Justin Edwards", pos: "F" },
+        { name: "Dillon Jones", pos: "F" },
+        { name: "Adem Bona", pos: "F" },
+        { name: "Jabari Walker", pos: "F" },
+        { name: "Dominick Barlow", pos: "F" },
+        { name: "Ariel Hukporti", pos: "C" },
+        { name: "Tyrese Martin", pos: "F" },
+        { name: "Jameer Nelson Jr.", pos: "G" },
+        { name: "Duke Miles", pos: "G" },
+        { name: "Saint Thomas", pos: "F" }
+    ]
+};
+
+// CHICAGO BULLS ROSTER
+const CHI_BULLS_CUSTOM_ROSTER = {
+    starters: [
+        { name: "Josh Giddey", pos: "G" },
+        { name: "Norman Powell", pos: "G" },
+        { name: "Matas Buzelis", pos: "F" },
+        { name: "Patrick Williams", pos: "F" },
+        { name: "Nic Claxton", pos: "C" }
+    ],
+    bench: [
+        { name: "Rob Dillingham", pos: "G" },
+        { name: "Caleb Wilson", pos: "F" },
+        { name: "Leonard Miller", pos: "F" },
+        { name: "Zach Collins", pos: "F-C" },
+        { name: "Noa Essengue", pos: "F" },
+        { name: "Jalen Smith", pos: "F-C" },
+        { name: "Tre Jones", pos: "G" },
+        { name: "Isaac Okoro", pos: "F-G" },
+        { name: "Dailyn Swain", pos: "F" },
+        { name: "Tobe Awaka", pos: "F" },
+        { name: "Jaylin Sellers", pos: "G" }
+    ]
+};
+
+// ALL 8 ORIGINAL HEADLINES PRESERVED
 const headlines = [
     {
         category: "BLOCKBUSTER TRADE",
@@ -920,6 +1049,21 @@ async function loadTeams() {
         });
         const data = await response.json();
         allTeams = data.teams || [];
+
+        // ENFORCE 76ERS ROSTER (WITHOUT LOWRY)
+        const sixersIndex = allTeams.findIndex(t => t.name === "Philadelphia 76ers" || t.id === 1610612755);
+        if (sixersIndex !== -1) {
+            allTeams[sixersIndex].starters_2026_27 = PHI_76ERS_CUSTOM_ROSTER.starters;
+            allTeams[sixersIndex].bench_2026_27 = PHI_76ERS_CUSTOM_ROSTER.bench;
+        }
+
+        // ENFORCE CHICAGO BULLS ROSTER
+        const bullsIndex = allTeams.findIndex(t => t.name === "Chicago Bulls" || t.id === 1610612741);
+        if (bullsIndex !== -1) {
+            allTeams[bullsIndex].starters_2026_27 = CHI_BULLS_CUSTOM_ROSTER.starters;
+            allTeams[bullsIndex].bench_2026_27 = CHI_BULLS_CUSTOM_ROSTER.bench;
+        }
+
         displayTeams(allTeams);
     } catch (error) {
         console.error("API load failed:", error);
@@ -1062,6 +1206,8 @@ function handleGlobalSearch() {
     allTeams.forEach(team => {
         const roster = [...(team.starters_2026_27 || []), ...(team.bench_2026_27 || [])];
         roster.forEach(player => {
+            if (player.name.toLowerCase().includes("lowry")) return;
+
             if (player.name.toLowerCase().includes(query) || player.pos.toLowerCase() === query) {
                 matchedPlayers.push({
                     player: player,
@@ -1081,14 +1227,18 @@ function handleGlobalSearch() {
 
     if (matchedPlayers.length > 0) {
         html += `<div class="dropdown-section-title">Players (${matchedPlayers.length})</div>`;
-        matchedPlayers.slice(0, 6).forEach(item => {
+        matchedPlayers.slice(0, 8).forEach(item => {
             const photoUrl = getPlayerHeadshotUrl(item.player.name);
+            const bm = playerStatsBenchmark[item.player.name] || {};
+            const ppg = (item.player.pts ?? bm.pts ?? 0.0).toFixed(1);
+            const rpg = (item.player.reb ?? bm.reb ?? 0.0).toFixed(1);
+
             html += `
                 <div class="dropdown-item" onclick="selectSearchedPlayer('${item.player.name.replace(/'/g, "\\'")}', ${item.team.id})">
-                    <img src="${photoUrl}" alt="${item.player.name}" class="dropdown-player-img" onerror="this.src='https://placehold.co/100x100/051c2d/ffffff?text=${encodeURIComponent(item.player.name[0])}'">
+                    <img src="${photoUrl}" alt="${item.player.name}" class="dropdown-player-img" onerror="this.src='${DEFAULT_FALLBACK_HEADSHOT}'">
                     <div class="dropdown-item-info">
                         <div class="dropdown-item-title">${item.player.name} <span style="font-size:0.75rem; color:var(--nba-red); font-weight:800;">${item.player.pos}</span></div>
-                        <div class="dropdown-item-subtitle">${item.team.name} • ${(item.player.pts ?? 0).toFixed(1)} PPG, ${(item.player.reb ?? 0).toFixed(1)} RPG</div>
+                        <div class="dropdown-item-subtitle">${item.team.name} • ${ppg} PPG, ${rpg} RPG</div>
                     </div>
                 </div>
             `;
@@ -1306,7 +1456,7 @@ function applyFilters() {
     displayTeams(list);
 }
 
-// UNIFIED TEAM MODAL (STARTERS + BENCH WITH PHOTOS)
+// UNIFIED TEAM MODAL (STARTERS + BENCH WITH REAL PHOTOS & ROOKIE STATS)
 function openModal(team) {
     const meta = teamMetadata[team.name] || {
         salary: team.total_salary || 0,
@@ -1354,7 +1504,7 @@ function openModal(team) {
                 <td class="pos-tag">${p.pos}</td>
                 <td>
                     <div class="table-player-cell">
-                        <img src="${photoUrl}" alt="${p.name}" class="table-player-thumb" onerror="this.src='https://placehold.co/100x100/051c2d/ffffff?text=${encodeURIComponent(p.name[0])}'">
+                        <img src="${photoUrl}" alt="${p.name}" class="table-player-thumb" onerror="this.src='${DEFAULT_FALLBACK_HEADSHOT}'">
                         <span><strong>${p.name}</strong></span>
                     </div>
                 </td>
@@ -1371,15 +1521,23 @@ function openModal(team) {
         `;
     };
 
+    // Filter out Kyle Lowry dynamically and guard against missing roster arrays.
+    const cleanStarters = (Array.isArray(team.starters_2026_27) ? team.starters_2026_27 : []).filter(
+        p => p && !p.name.toLowerCase().includes("lowry")
+    );
+    const cleanBench = (Array.isArray(team.bench_2026_27) ? team.bench_2026_27 : []).filter(
+        p => p && !p.name.toLowerCase().includes("lowry")
+    );
+
     // Render Starters
     const startersBody = document.getElementById("modalStartersBody");
-    startersBody.innerHTML = (team.starters_2026_27 || []).map(renderPlayerRow).join("");
+    startersBody.innerHTML = cleanStarters.map(renderPlayerRow).join("");
 
     // Render Bench
     const benchBody = document.getElementById("modalBenchBody");
     if (benchBody) {
-        if (team.bench_2026_27 && team.bench_2026_27.length > 0) {
-            benchBody.innerHTML = team.bench_2026_27.map(renderPlayerRow).join("");
+        if (cleanBench && cleanBench.length > 0) {
+            benchBody.innerHTML = cleanBench.map(renderPlayerRow).join("");
         } else {
             benchBody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#94a3b8; padding:12px;">No bench players recorded.</td></tr>`;
         }
@@ -1434,14 +1592,14 @@ function handleBackdropClick(event) {
     }
 }
 
-// PLAYER MODAL LOGIC
+// PLAYER MODAL LOGIC WITH PICTURE
 function openPlayerModal(player, team) {
     closeModal();
 
     const photoUrl = getPlayerHeadshotUrl(player.name);
     document.getElementById("playerModalPhoto").src = photoUrl;
     document.getElementById("playerModalPhoto").onerror = function() {
-        this.src = `https://placehold.co/200x200/051c2d/ffffff?text=${encodeURIComponent(player.name[0])}`;
+        this.src = DEFAULT_FALLBACK_HEADSHOT;
     };
 
     document.getElementById("playerModalTeamLogo").src = team.logo;
