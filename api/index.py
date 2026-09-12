@@ -146,8 +146,8 @@ teams = [
         "last_season_record": "53-29",
         "total_salary": 217948756,
         "tax_status": "1st Apron",
-        "championships": 2,
-        "championship_years": [1970, 1973],
+        "championships": 3,
+        "championship_years": [1970, 1973, 2026],
         "logo": "https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg",
         "description": "High-powered Manhattan roster boasting Jalen Brunson, Karl-Anthony Towns, Mikal Bridges, and OG Anunoby.",
         "starters_2026_27": [
@@ -226,7 +226,7 @@ teams = [
         "championships": 1,
         "championship_years": [2019],
         "logo": "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg",
-        "description": "Dynamic young Eastern roster built around All-Star forward Scottie Barnes, RJ Barrett, Immanuel Quickley, and Kawhi Leonard (Ingram & Dick excluded).",
+        "description": "Dynamic young Eastern roster built around All-Star forward Scottie Barnes, RJ Barrett, Immanuel Quickley, and Kawhi Leonard.",
         "starters_2026_27": [
             {"name": "Immanuel Quickley", "pos": "PG", "pts": 17.8, "reb": 4.6, "ast": 6.4, "stl": 1.0, "blk": 0.2, "tov": 1.8, "fg": 43.8, "fg3": 39.8, "ft": 84.5},
             {"name": "RJ Barrett", "pos": "SG", "pts": 21.4, "reb": 6.2, "ast": 4.0, "stl": 0.7, "blk": 0.4, "tov": 2.2, "fg": 49.8, "fg3": 39.0, "ft": 63.5},
@@ -411,7 +411,7 @@ teams = [
         "championships": 2,
         "championship_years": [1971, 2021],
         "logo": "https://cdn.nba.com/logos/nba/1610612749/primary/L/logo.svg",
-        "description": "Restructured lineup commanded by Ryan Rollins, Myles Turner, Tyler Herro, and Jaime Jaquez Jr. (Giannis excluded).",
+        "description": "Restructured lineup commanded by Ryan Rollins, Myles Turner, Tyler Herro, and Jaime Jaquez Jr.",
         "starters_2026_27": [
             {"name": "Ryan Rollins", "pos": "PG", "pts": 6.8, "reb": 2.1, "ast": 2.4, "stl": 0.7, "blk": 0.2, "tov": 1.0, "fg": 43.5, "fg3": 36.8, "ft": 78.5},
             {"name": "Tyler Herro", "pos": "SG", "pts": 21.2, "reb": 5.4, "ast": 4.6, "stl": 0.8, "blk": 0.2, "tov": 2.2, "fg": 44.5, "fg3": 39.8, "ft": 86.0},
@@ -611,7 +611,7 @@ teams = [
         "championships": 1,
         "championship_years": [1978],
         "logo": "https://cdn.nba.com/logos/nba/1610612764/primary/L/logo.svg",
-        "description": "Revitalized attack featuring elite playmaker Trae Young, rim protector Anthony Davis, and rookie Alex Sarr.",
+        "description": "Revitalized attack featuring elite playmaker Trae Young, rim protector Anthony Davis, and Alex Sarr.",
         "starters_2026_27": [
             {"name": "Trae Young", "pos": "PG", "pts": 24.5, "reb": 3.1, "ast": 11.6, "stl": 1.3, "blk": 0.2, "tov": 4.1, "fg": 42.5, "fg3": 36.0, "ft": 86.5},
             {"name": "Kyshawn George", "pos": "SG", "pts": 9.8, "reb": 3.6, "ast": 2.5, "stl": 0.9, "blk": 0.5, "tov": 1.3, "fg": 42.8, "fg3": 36.5, "ft": 78.5},
@@ -721,8 +721,8 @@ teams = [
         "last_season_record": "64-18",
         "total_salary": 214798992,
         "tax_status": "1st Apron",
-        "championships": 1,
-        "championship_years": [1979],
+        "championships": 2,
+        "championship_years": [1979, 2025],
         "logo": "https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg",
         "description": "Championship favorite led by Shai Gilgeous-Alexander, Chet Holmgren, and Jalen Williams.",
         "starters_2026_27": [
@@ -798,7 +798,7 @@ teams = [
         "championships": 0,
         "championship_years": [],
         "logo": "https://cdn.nba.com/logos/nba/1610612762/primary/L/logo.svg",
-        "description": "Floor-spacing lineup keyed by Lauri Markkanen, Keyonte George, and defensive anchor Jusuf Nurkic (Kevin Love excluded).",
+        "description": "Floor-spacing lineup keyed by Lauri Markkanen, Keyonte George, and defensive anchor Jusuf Nurkic.",
         "starters_2026_27": [
             {"name": "Keyonte George", "pos": "PG", "pts": 14.5, "reb": 3.2, "ast": 5.2, "stl": 0.7, "blk": 0.2, "tov": 2.5, "fg": 40.8, "fg3": 34.9, "ft": 79.2},
             {"name": "Josh Green", "pos": "SG", "pts": 8.2, "reb": 3.2, "ast": 2.3, "stl": 0.8, "blk": 0.2, "tov": 1.1, "fg": 47.9, "fg3": 38.5, "ft": 75.5},
@@ -877,7 +877,7 @@ teams = [
         "championships": 0,
         "championship_years": [],
         "logo": "https://cdn.nba.com/logos/nba/1610612746/primary/L/logo.svg",
-        "description": "Disciplined Western squad leaning into Darius Garland, Brandon Ingram, Gradey Dick, and center Brook Lopez (Zubac & Kawhi excluded).",
+        "description": "Disciplined Western squad leaning into Darius Garland, Brandon Ingram, Gradey Dick, and center Brook Lopez.",
         "starters_2026_27": [
             {"name": "Kris Dunn", "pos": "PG", "pts": 5.6, "reb": 3.0, "ast": 4.0, "stl": 1.5, "blk": 0.4, "tov": 1.2, "fg": 47.5, "fg3": 37.2, "ft": 69.2},
             {"name": "Darius Garland", "pos": "SG", "pts": 18.4, "reb": 2.8, "ast": 6.8, "stl": 1.1, "blk": 0.1, "tov": 2.4, "fg": 44.8, "fg3": 37.5, "ft": 83.8},
