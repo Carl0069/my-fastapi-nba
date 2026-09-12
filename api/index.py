@@ -26,18 +26,6 @@ app.add_middleware(
 )
 
 # ==============================================================================
-# SECURITY DEPENDENCY
-# ==============================================================================
-def verify_api_key(x_api_key: Optional[str] = Header(default=None)):
-    """Validates the client header API key if required by secured routes."""
-    if x_api_key != API_KEY:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or missing API Key"
-        )
-    return x_api_key
-
-# ==============================================================================
 # DATA MODEL (PYDANTIC SCHEMAS)
 # ==============================================================================
 class PlayerStarter(BaseModel):
@@ -736,57 +724,86 @@ teams = [
 ]
 
 # ==============================================================================
-# ON-BOOT VALIDATION ROUTINE (STEP 3)
+# ON-BOOT VALIDATION ROUTINE
 # ==============================================================================
-# Unpacks each raw team dictionary into Team(**team) and converts it back
-# with .model_dump(). Throws ValidationError on startup if fields are invalid.
 validated_teams = [Team(**team).model_dump() for team in teams]
 teams = validated_teams
 
 # ==============================================================================
+# API KEY AUTHENTICATION
+# ==============================================================================
+def verify_api_key(x_api_key: Optional[str] = Header(default=None)):
+    if x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key."
+        )
+    return True
+
+# ==============================================================================
 # ROUTE ENDPOINTS
 # ==============================================================================
-@app.get("/")
-def root():
-    return {
-        "status": "online",
-        "service": "NBA Hub API",
-        "version": API_VERSION,
-        "docs": "/docs"
-    }
 
-@app.get("/api/v1/health")
+# HEALTH CHECK (Public)
+@app.get("/health")
 def health_check():
     return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "status": "ok",
+        "service": "NBA Hub API",
         "version": API_VERSION,
-        "teams_count": len(teams)
+        "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
-@app.get("/api/v1/teams")
-def get_teams_v1(
-    conference: Optional[Literal["Eastern", "Western"]] = Query(default=None, description="Filter by Conference"),
-    division: Optional[Literal["Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"]] = Query(default=None, description="Filter by Division")
-):
-    results = teams
-    if conference:
-        results = [t for t in results if t["conference"] == conference]
-    if division:
-        results = [t for t in results if t["division"] == division]
+# SEARCH TEAMS (Protected - Step 6)
+@app.get("/api/v1/teams/search", dependencies=[Depends(verify_api_key)])
+def search_teams(q: str = Query(..., min_length=1)):
+    query = q.lower()
+    results = []
+
+    for team in teams:
+        starter_names = " ".join([p["name"] for p in team.get("starters_2026_27", [])])
+        
+        searchable_text = (
+            f"{team['name']} "
+            f"{team['conference']} "
+            f"{team['division']} "
+            f"{team['featured_star']} "
+            f"{team['tax_status']} "
+            f"{team['last_season_record']} "
+            f"{starter_names} "
+            f"{team['description']}"
+        ).lower()
+
+        if query in searchable_text:
+            results.append(team)
+
     return {
-        "teams": results,
-        "total_count": len(results)
+        "query": q,
+        "count": len(results),
+        "results": results
     }
 
-@app.get("/api/v1/teams/{team_id}")
-def get_team_by_id_v1(team_id: int):
-    team = next((t for t in teams if t["id"] == team_id), None)
-    if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
-    return team
+# GET ALL TEAMS (Protected)
+@app.get("/api/v1/teams", dependencies=[Depends(verify_api_key)])
+def get_teams():
+    return {
+        "count": len(teams),
+        "teams": teams
+    }
 
-# Legacy route for backwards compatibility
+# GET ONE TEAM (Protected)
+@app.get("/api/v1/teams/{team_id}", dependencies=[Depends(verify_api_key)])
+def get_team(team_id: int):
+    for team in teams:
+        if team["id"] == team_id:
+            return team
+    raise HTTPException(status_code=404, detail="Team not found.")
+
+# Legacy routes for backwards compatibility
 @app.get("/teams")
 def get_teams_legacy():
     return {"teams": teams}
+
+@app.get("/api/v1/health")
+def health_check_v1():
+    return health_check()
