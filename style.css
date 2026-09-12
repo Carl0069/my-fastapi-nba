@@ -9,7 +9,7 @@
     --text-muted: #64748b;
     --border-subtle: #e2e8f0;
 
-    /* Professional Timing Tokens */
+    /* Motion Curves */
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -27,16 +27,25 @@ html {
 }
 
 /* ==========================================================================
-   ANIMATIONS
+   ANIMATION KEYFRAMES
    ========================================================================== */
 @keyframes heroSlideIn {
     0% {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translateY(24px) scale(0.98);
     }
     100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes floatLogo {
+    0%, 100% { 
+        transform: translateY(0px) rotate(0deg); 
+    }
+    50% { 
+        transform: translateY(-8px) rotate(1deg); 
     }
 }
 
@@ -133,7 +142,7 @@ html {
     box-shadow: 0 6px 18px rgba(201, 8, 42, 0.5);
 }
 
-/* SEARCH BAR */
+/* TOP RIGHT SEARCH BAR */
 .nav-search-container {
     position: relative;
     width: 280px;
@@ -221,6 +230,7 @@ html {
     color: #475569;
 }
 
+/* SEARCH DROPDOWN */
 .search-dropdown-menu {
     display: none;
     position: absolute;
@@ -989,9 +999,7 @@ html {
     font-weight: 600;
 }
 
-/* ==========================================================================
-   TEAM DETAIL MODAL (CLEANED ARCHITECTURE)
-   ========================================================================== */
+/* MODAL OVERLAYS */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -1004,9 +1012,9 @@ html {
     z-index: 200;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 20px;
     opacity: 0;
-    transition: opacity 0.28s var(--ease-smooth);
+    transition: opacity 0.28s var(--ease-smooth), backdrop-filter 0.28s ease;
 }
 
 .modal-overlay.open {
@@ -1017,18 +1025,18 @@ html {
 .modal-card {
     background-color: #ffffff;
     width: 100%;
-    max-width: 1080px;
-    border-radius: 16px;
+    max-width: 960px;
+    border-radius: 12px;
     position: relative;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
     overflow: hidden;
-    height: 88vh;
-    max-height: 900px;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
-    transform: scale(0.96) translateY(14px);
+    transform: scale(0.94) translateY(18px);
     opacity: 0;
-    transition: transform 0.32s var(--ease-out-expo), opacity 0.28s ease;
+    transition: transform 0.35s var(--ease-out-expo), opacity 0.28s ease;
+    will-change: transform, opacity;
 }
 
 .modal-overlay.open .modal-card {
@@ -1038,131 +1046,84 @@ html {
 
 .modal-close {
     position: absolute;
-    top: 18px;
-    right: 22px;
-    background: #f1f5f9;
-    border: 1px solid var(--border-subtle);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
+    top: 14px;
+    right: 18px;
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
     color: var(--text-dark);
     cursor: pointer;
-    z-index: 30;
-    transition: all 0.2s ease;
+    z-index: 10;
+    transition: transform 0.25s var(--ease-spring), color 0.2s ease;
 }
 
 .modal-close:hover {
-    background: var(--nba-red);
-    color: #ffffff;
-    transform: rotate(90deg) scale(1.08);
+    transform: scale(1.2) rotate(90deg);
+    color: var(--nba-red);
 }
 
-/* Two-column container: Sticky left sidebar + single scrolling right column */
 .modal-body {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    overflow-y: auto;
 }
 
-/* LEFT SIDEBAR: Static, firmly pinned, never scrolls away or disappears */
 .modal-image-col {
-    width: 300px;
-    min-width: 300px;
     background-color: #f8fafc;
-    border-right: 1px solid var(--border-subtle);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px 24px;
-    z-index: 10;
-    flex-shrink: 0;
+    border-right: 1px solid var(--border-subtle);
 }
 
 .modal-image-col img {
-    max-width: 190px;
-    max-height: 190px;
-    width: 100%;
+    max-width: 180px;
+    max-height: 180px;
     object-fit: contain;
-    margin-bottom: 30px;
-    filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.12));
-    transition: transform 0.3s var(--ease-spring);
-}
-
-.modal-image-col:hover img {
-    transform: scale(1.06);
+    margin-bottom: 16px;
+    animation: floatLogo 4s ease-in-out infinite;
 }
 
 .modal-record {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: #475569;
+    color: var(--text-muted);
     text-align: center;
-    width: 100%;
-    line-height: 1.6;
 }
 
-.modal-record strong {
-    color: var(--text-dark);
-    font-weight: 800;
-}
-
-/* RIGHT COLUMN: The ONLY scrolling element inside the modal */
 .modal-info-col {
-    flex: 1;
-    padding: 38px 36px;
+    padding: 36px 30px;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 100%;
-}
-
-.modal-info-col::-webkit-scrollbar {
-    width: 7px;
-}
-.modal-info-col::-webkit-scrollbar-track {
-    background: #f1f5f9;
-}
-.modal-info-col::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-.modal-info-col::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
 }
 
 .modal-conference {
     font-size: 0.8rem;
-    font-weight: 900;
+    font-weight: 800;
     color: var(--nba-red);
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     text-transform: uppercase;
     margin-bottom: 6px;
 }
 
 .modal-title {
-    font-size: 2.1rem;
+    font-size: 1.7rem;
     font-weight: 900;
     color: var(--text-dark);
-    letter-spacing: -0.5px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .modal-star {
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--nba-royal);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .modal-description {
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     line-height: 1.6;
     color: #475569;
 }
@@ -1170,107 +1131,71 @@ html {
 .modal-divider {
     height: 1px;
     background-color: var(--border-subtle);
-    margin: 22px 0 18px;
-    flex-shrink: 0;
+    margin: 16px 0;
 }
 
 .modal-lineup-heading {
-    font-size: 0.9rem;
-    font-weight: 900;
+    font-size: 0.85rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
     color: var(--text-dark);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    margin-bottom: 10px;
 }
 
-/* TABLE SYSTEM: Fully visible rows without internal scrollbars */
 .table-responsive {
-    width: 100%;
     overflow-x: auto;
-    overflow-y: visible !important;
-    max-height: none !important;
-    margin-bottom: 6px;
-}
-
-.table-responsive::-webkit-scrollbar {
-    height: 5px;
-}
-.table-responsive::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
 }
 
 .stats-table {
     width: 100%;
-    min-width: 620px;
     border-collapse: collapse;
     font-size: 0.82rem;
-    text-align: right;
 }
 
 .stats-table th, .stats-table td {
-    padding: 10px 8px;
+    padding: 8px 6px;
+    text-align: right;
     border-bottom: 1px solid var(--border-subtle);
-    vertical-align: middle;
 }
 
-.stats-table th:first-child, .stats-table td:first-child {
-    text-align: center;
-    width: 44px;
-}
-
+.stats-table th:first-child, .stats-table td:first-child,
 .stats-table th:nth-child(2), .stats-table td:nth-child(2) {
     text-align: left;
-    min-width: 180px;
 }
 
 .stats-table th {
-    background-color: #f8fafc;
+    background-color: #f1f5f9;
     font-size: 0.72rem;
-    font-weight: 900;
-    color: #64748b;
+    font-weight: 800;
+    color: #475569;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    position: sticky;
-    top: 0;
-    z-index: 2;
 }
 
 .stats-table tbody tr {
-    transition: background-color 0.15s ease, transform 0.15s var(--ease-out-expo);
+    transition: background-color 0.18s ease, transform 0.18s var(--ease-out-expo);
 }
 
 .stats-table tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: #f1f5f9;
     transform: translateX(4px);
 }
 
 .pos-tag {
-    font-weight: 900;
+    font-weight: 800;
     color: var(--nba-red);
-    font-size: 0.8rem;
 }
 
 .table-player-cell {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-weight: 700;
 }
 
-.table-player-name {
-    color: var(--text-dark);
-    font-size: 0.88rem;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
 .table-player-thumb {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     object-fit: cover;
     background: #e2e8f0;
@@ -1278,32 +1203,27 @@ html {
     flex-shrink: 0;
 }
 
-/* TRANSACTIONS ACCORDION LIST: No internal scroll cutoff */
 .modal-team-transactions-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-height: none !important;
-    overflow-y: visible !important;
-    padding-bottom: 10px;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 6px;
 }
 
 .modal-tx-item {
     background: #f8fafc;
     border-left: 3px solid var(--nba-red);
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-size: 0.84rem;
-    line-height: 1.45;
-    border-top: 1px solid var(--border-subtle);
-    border-right: 1px solid var(--border-subtle);
-    border-bottom: 1px solid var(--border-subtle);
-    transition: transform 0.2s var(--ease-smooth), background 0.2s ease;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    transition: transform 0.18s var(--ease-smooth);
 }
 
 .modal-tx-item:hover {
     transform: translateX(4px);
-    background: #f1f5f9;
 }
 
 /* OFFICIAL NBA WIDESCREEN HERO PLAYER MODAL */
@@ -1311,16 +1231,17 @@ html {
     background-color: #031320;
     width: 95%;
     max-width: 1060px;
-    border-radius: 16px;
+    border-radius: 14px;
     position: relative;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.75);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    transform: scale(0.96) translateY(14px);
+    transform: scale(0.94) translateY(18px);
     opacity: 0;
-    transition: transform 0.32s var(--ease-out-expo), opacity 0.28s ease;
+    transition: transform 0.35s var(--ease-out-expo), opacity 0.28s ease;
+    will-change: transform, opacity;
 }
 
 .modal-overlay.open .player-hero-modal-card {
@@ -1531,7 +1452,6 @@ html {
     transform: translateX(2px);
 }
 
-/* RESPONSIVE BREAKPOINTS */
 @media (max-width: 992px) {
     .nav-container { flex-wrap: wrap; }
     .nav-search-container { width: 100%; order: 3; margin-top: 8px; }
@@ -1542,12 +1462,8 @@ html {
     .hero-section { padding: 40px 20px; }
     .hero-container { grid-template-columns: 1fr; text-align: center; }
     .breaking-badge-row, .hero-pills { justify-content: center; }
-
-    /* Modal Mobile / Tablet Stacking */
-    .modal-card { height: 92vh; }
-    .modal-body { flex-direction: column; overflow-y: auto; }
-    .modal-image-col { width: 100%; min-width: 100%; border-right: none; border-bottom: 1px solid var(--border-subtle); padding: 28px 20px; }
-    .modal-info-col { overflow-y: visible; height: auto; padding: 24px 20px; }
+    .modal-body { grid-template-columns: 1fr; }
+    .modal-image-col { border-right: none; border-bottom: 1px solid var(--border-subtle); padding: 24px; }
     .division-divider { display: none; }
 }
 
