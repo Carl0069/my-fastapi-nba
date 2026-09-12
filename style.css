@@ -966,7 +966,7 @@ html {
 .modal-card {
     background-color: #ffffff;
     width: 100%;
-    max-width: 920px;
+    max-width: 960px;
     border-radius: 12px;
     position: relative;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
@@ -1111,6 +1111,24 @@ html {
 .pos-tag {
     font-weight: 800;
     color: var(--nba-red);
+}
+
+/* TABLE PLAYER WITH HEADSHOT */
+.table-player-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+.table-player-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #e2e8f0;
+    border: 1px solid var(--border-subtle);
+    flex-shrink: 0;
 }
 
 .modal-team-transactions-list {
