@@ -1,4 +1,5 @@
 const API_URL = "https://my-fastapi-nba.vercel.app";
+const API_KEY = "student-api-key-123";
 
 let allTeams = [];
 let currentHeadlineIndex = 0;
@@ -830,7 +831,11 @@ async function loadTeams() {
     renderSchedule();
 
     try {
-        const response = await fetch(`${API_URL}/teams`);
+        const response = await fetch(`${API_URL}/api/v1/teams`, {
+            headers: {
+                "x-api-key": API_KEY
+            }
+        });
         const data = await response.json();
         allTeams = data.teams || [];
         displayTeams(allTeams);
