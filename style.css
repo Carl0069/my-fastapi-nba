@@ -999,7 +999,9 @@ html {
     font-weight: 600;
 }
 
-/* MODAL OVERLAYS */
+/* ==========================================================================
+   TEAM MODAL: TWO-COLUMN LAYOUT WITH STATIC PINNED LOGO
+   ========================================================================== */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -1025,11 +1027,12 @@ html {
 .modal-card {
     background-color: #ffffff;
     width: 100%;
-    max-width: 960px;
-    border-radius: 12px;
+    max-width: 1260px;
+    border-radius: 14px;
     position: relative;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
     overflow: hidden;
+    height: 90vh;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -1048,53 +1051,140 @@ html {
     position: absolute;
     top: 14px;
     right: 18px;
-    background: transparent;
-    border: none;
-    font-size: 1.8rem;
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
     color: var(--text-dark);
     cursor: pointer;
-    z-index: 10;
-    transition: transform 0.25s var(--ease-spring), color 0.2s ease;
+    z-index: 30;
+    transition: transform 0.25s var(--ease-spring), color 0.2s ease, background 0.2s ease;
 }
 
 .modal-close:hover {
-    transform: scale(1.2) rotate(90deg);
-    color: var(--nba-red);
+    transform: scale(1.15) rotate(90deg);
+    color: #ffffff;
+    background: var(--nba-red);
 }
 
 .modal-body {
     display: grid;
-    grid-template-columns: 1fr 2fr;
-    overflow-y: auto;
+    grid-template-columns: 310px 1fr;
+    height: 100%;
+    overflow: hidden;
 }
 
+/* STATIC FIXED LEFT COLUMN */
 .modal-image-col {
     background-color: #f8fafc;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     padding: 40px 24px;
     border-right: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    height: 100%;
+    overflow-y: auto;
+    text-align: center;
+    z-index: 10;
+}
+
+.modal-sticky-logo-card {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
 }
 
 .modal-image-col img {
-    max-width: 180px;
-    max-height: 180px;
+    max-width: 170px;
+    max-height: 170px;
     object-fit: contain;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     animation: floatLogo 4s ease-in-out infinite;
 }
 
 .modal-record {
+    width: 100%;
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--text-muted);
-    text-align: center;
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 16px;
+    line-height: 1.6;
 }
 
+.modal-season-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+    margin-bottom: 16px;
+}
+
+.modal-season-stat-box {
+    background: #f8fafc;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-height: 56px;
+}
+
+.modal-season-stat-box span {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modal-season-stat-box strong {
+    color: #0f172a;
+    font-size: 0.9rem;
+    font-weight: 900;
+}
+
+.modal-record-transactions {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-inline-title {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--nba-red);
+    margin-bottom: 4px;
+}
+
+/* SCROLLABLE RIGHT COLUMN */
 .modal-info-col {
-    padding: 36px 30px;
+    padding: 34px 36px 40px;
+    overflow-y: auto;
+    height: 100%;
     display: flex;
     flex-direction: column;
 }
@@ -1105,11 +1195,11 @@ html {
     color: var(--nba-red);
     letter-spacing: 1px;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .modal-title {
-    font-size: 1.7rem;
+    font-size: 2rem;
     font-weight: 900;
     color: var(--text-dark);
     margin-bottom: 2px;
@@ -1131,78 +1221,197 @@ html {
 .modal-divider {
     height: 1px;
     background-color: var(--border-subtle);
-    margin: 16px 0;
+    margin: 22px 0;
 }
 
-.modal-lineup-heading {
-    font-size: 0.85rem;
-    font-weight: 800;
+.modal-section-title {
+    font-size: 0.95rem;
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     color: var(--text-dark);
-    margin-bottom: 10px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.table-responsive {
-    overflow-x: auto;
+.modal-section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
 }
 
-.stats-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.82rem;
+/* ==========================================================================
+   REALGM AUTHENTIC PLAYER CARD GRID LAYOUT
+   ========================================================================== */
+.player-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 16px;
 }
 
-.stats-table th, .stats-table td {
-    padding: 8px 6px;
-    text-align: right;
-    border-bottom: 1px solid var(--border-subtle);
+.nba-player-card {
+    background: #ffffff;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.22s var(--ease-smooth), box-shadow 0.22s ease, border-color 0.22s ease;
 }
 
-.stats-table th:first-child, .stats-table td:first-child,
-.stats-table th:nth-child(2), .stats-table td:nth-child(2) {
-    text-align: left;
+.nba-player-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 22px rgba(5, 28, 45, 0.12);
+    border-color: #cbd5e1;
 }
 
-.stats-table th {
-    background-color: #f1f5f9;
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.card-player-identity {
+    max-width: 75%;
+}
+
+.card-player-name {
+    font-size: 1.05rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: #111827;
+}
+
+.card-player-pos {
     font-size: 0.72rem;
     font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+}
+
+.card-jersey-number {
+    font-size: 2.1rem;
+    font-weight: 900;
+    color: var(--nba-red);
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.card-center-row {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.card-bio-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.68rem;
+}
+
+.card-bio-table tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.card-bio-table td {
+    padding: 2.5px 0;
+}
+
+.bio-key {
+    font-weight: 900;
     color: #475569;
     text-transform: uppercase;
 }
 
-.stats-table tbody tr {
-    transition: background-color 0.18s ease, transform 0.18s var(--ease-out-expo);
+.bio-val {
+    font-weight: 700;
+    color: #1e293b;
+    text-align: right;
 }
 
-.stats-table tbody tr:hover {
-    background-color: #f1f5f9;
-    transform: translateX(4px);
+.card-headshot-box {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 110px;
+    background: radial-gradient(circle at 50% 70%, #f1f5f9 0%, #ffffff 70%);
+    border-radius: 6px;
+    overflow: hidden;
 }
 
-.pos-tag {
+.card-player-headshot {
+    max-height: 108px;
+    width: auto;
+    object-fit: contain;
+    transition: transform 0.25s ease;
+}
+
+.nba-player-card:hover .card-player-headshot {
+    transform: scale(1.08);
+}
+
+.card-stats-strip {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr;
+    text-align: center;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.stat-cell {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-title {
+    font-size: 0.62rem;
     font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.stat-num {
+    font-size: 0.88rem;
+    font-weight: 900;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+}
+
+.card-footer-links {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #64748b;
+    padding: 0 4px;
+}
+
+.card-footer-links span {
+    cursor: pointer;
+    transition: color 0.18s ease;
+}
+
+.card-footer-links span:hover {
     color: var(--nba-red);
 }
 
-.table-player-cell {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-}
-
-.table-player-thumb {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #e2e8f0;
-    border: 1px solid var(--border-subtle);
-    flex-shrink: 0;
-}
-
+/* MODAL TRANSACTIONS LIST */
 .modal-team-transactions-list {
     display: flex;
     flex-direction: column;
@@ -1463,7 +1672,13 @@ html {
     .hero-container { grid-template-columns: 1fr; text-align: center; }
     .breaking-badge-row, .hero-pills { justify-content: center; }
     .modal-body { grid-template-columns: 1fr; }
-    .modal-image-col { border-right: none; border-bottom: 1px solid var(--border-subtle); padding: 24px; }
+    .modal-image-col { 
+        position: relative; 
+        height: auto; 
+        border-right: none; 
+        border-bottom: 1px solid var(--border-subtle); 
+        padding: 24px; 
+    }
     .division-divider { display: none; }
 }
 
@@ -1478,6 +1693,7 @@ html {
 
 @media (max-width: 576px) {
     .watch-grid { grid-template-columns: 1fr; }
+    .player-cards-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 1.8rem; }
     .division-filter-bar { gap: 10px; padding: 12px; }
     .division-group { justify-content: center; }
