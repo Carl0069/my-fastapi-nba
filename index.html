@@ -114,7 +114,7 @@
         </div>
     </section>
 
-    <!-- CATALOG / TEAMS DIRECTORY SECTION -->
+    <!-- CATALOG / TEAMS DIRECTORY SECTION -->S
     <section id="teamsSection" class="catalog-section">
         <div class="catalog-container">
             
@@ -154,7 +154,9 @@
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <div class="modal-body">
                 <div class="modal-image-col">
-                    <img id="modalLogo" src="" alt="Team Logo">
+                    <div class="modal-sticky-logo-card">
+                        <img id="modalLogo" src="" alt="Team Logo">
+                    </div>
                     <div class="modal-record" id="modalRecord"></div>
                 </div>
                 <div class="modal-info-col">
@@ -166,53 +168,15 @@
                     <p class="modal-description" id="modalDescription"></p>
                     <div class="modal-divider"></div>
 
-                    <h4 class="modal-lineup-heading">2026–27 Projected Starting Lineup</h4>
-                    <div class="table-responsive">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>POS</th>
-                                    <th>PLAYER</th>
-                                    <th>PTS</th>
-                                    <th>REB</th>
-                                    <th>AST</th>
-                                    <th>STL</th>
-                                    <th>BLK</th>
-                                    <th>TOV</th>
-                                    <th>FG%</th>
-                                    <th>3P%</th>
-                                    <th>FT%</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalStartersBody"></tbody>
-                        </table>
-                    </div>
+                    <h4 class="modal-section-title">2026–27 Projected Starting Lineup</h4>
+                    <div id="modalStartersGrid" class="player-cards-grid"></div>
 
                     <div class="modal-divider"></div>
-                    <h4 class="modal-lineup-heading" style="color: var(--nba-royal);">2026–27 Bench & Reserves</h4>
-                    <div class="table-responsive">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>POS</th>
-                                    <th>PLAYER</th>
-                                    <th>PTS</th>
-                                    <th>REB</th>
-                                    <th>AST</th>
-                                    <th>STL</th>
-                                    <th>BLK</th>
-                                    <th>TOV</th>
-                                    <th>FG%</th>
-                                    <th>3P%</th>
-                                    <th>FT%</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalBenchBody"></tbody>
-                        </table>
-                    </div>
+                    <h4 class="modal-section-title" style="color: var(--nba-royal);">2026–27 Bench & Reserves</h4>
+                    <div id="modalBenchGrid" class="player-cards-grid"></div>
 
                     <div class="modal-divider"></div>
-                    <h4 class="modal-lineup-heading" style="color: var(--nba-red);">Team Offseason Transactions</h4>
+                    <h4 class="modal-section-title" style="color: var(--nba-red);">Team Offseason Transactions</h4>
                     <div id="modalTeamTransactions" class="modal-team-transactions-list"></div>
                 </div>
             </div>
