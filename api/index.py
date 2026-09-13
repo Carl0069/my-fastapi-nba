@@ -1000,10 +1000,10 @@ teams = [
         "logo": "https://cdn.nba.com/logos/nba/1610612758/primary/L/logo.svg",
         "description": "High-IQ passing and scoring unit led by triple-double machine Domantas Sabonis and Zach LaVine.",
         "starters_2026_27": [
-            {"name": "Zach LaVine", "pos": "PG", "pts": 19.2, "reb": 5.0, "ast": 3.8, "stl": 0.8, "blk": 0.3, "tov": 2.2, "fg": 45.0, "fg3": 34.5, "ft": 85.0},
+            {"name": "Darius Acuff Jr.", "pos": "PG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "De'Andre Hunter", "pos": "SG", "pts": 15.4, "reb": 3.8, "ast": 1.4, "stl": 0.8, "blk": 0.3, "tov": 1.3, "fg": 45.5, "fg3": 38.2, "ft": 84.2},
             {"name": "Keegan Murray", "pos": "SF", "pts": 16.1, "reb": 5.8, "ast": 1.9, "stl": 1.0, "blk": 0.7, "tov": 1.2, "fg": 46.2, "fg3": 36.8, "ft": 84.0},
-            {"name": "Harrison Barnes", "pos": "PF", "pts": 12.2, "reb": 3.0, "ast": 1.2, "stl": 0.7, "blk": 0.1, "tov": 0.8, "fg": 47.4, "fg3": 38.5, "ft": 80.1},
+            {"name": "Zach LaVine", "pos": "PF", "pts": 19.2, "reb": 5.0, "ast": 3.8, "stl": 0.8, "blk": 0.3, "tov": 2.2, "fg": 45.0, "fg3": 34.5, "ft": 85.0},
             {"name": "Domantas Sabonis", "pos": "C", "pts": 19.4, "reb": 13.9, "ast": 8.2, "stl": 0.9, "blk": 0.6, "tov": 3.3, "fg": 59.4, "fg3": 37.9, "ft": 70.4}
         ],
         "bench_2026_27": [
