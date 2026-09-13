@@ -1118,7 +1118,7 @@ teams = [
             {"name": "Ty Jerome", "pos": "PG", "pts": 7.8, "reb": 1.9, "ast": 3.2, "stl": 0.7, "blk": 0.1, "tov": 1.0, "fg": 47.5, "fg3": 38.8, "ft": 88.2},
             {"name": "Jaylen Wells", "pos": "SG", "pts": 10.2, "reb": 3.6, "ast": 1.8, "stl": 0.7, "blk": 0.3, "tov": 1.1, "fg": 44.8, "fg3": 38.5, "ft": 83.0},
             {"name": "Cedric Coward", "pos": "SF", "pts": 7.8, "reb": 3.4, "ast": 1.4, "stl": 0.7, "blk": 0.4, "tov": 0.9, "fg": 44.8, "fg3": 35.5, "ft": 77.0},
-            {"name": "Trey Lyles", "pos": "PF", "pts": 8.5, "reb": 4.6, "ast": 1.4, "stl": 0.5, "blk": 0.3, "tov": 0.8, "fg": 44.5, "fg3": 38.4, "ft": 76.5},
+            {"name": "Cameron Boozer", "pos": "PF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Zach Edey", "pos": "C", "pts": 14.2, "reb": 9.2, "ast": 1.2, "stl": 0.4, "blk": 1.6, "tov": 1.6, "fg": 62.5, "fg3": 0.0, "ft": 72.0}
         ],
         "bench_2026_27": [
@@ -1136,7 +1136,6 @@ teams = [
             {"name": "Jordan Hawkins", "pos": "SG", "pts": 7.8, "reb": 2.2, "ast": 1.1, "stl": 0.5, "blk": 0.2, "tov": 0.8, "fg": 41.5, "fg3": 36.5, "ft": 85.0},
             {"name": "Cam Spencer", "pos": "SG", "pts": 3.5, "reb": 1.4, "ast": 1.2, "stl": 0.4, "blk": 0.1, "tov": 0.4, "fg": 43.0, "fg3": 39.0, "ft": 80.0},
             {"name": "Kris Murray", "pos": "PF", "pts": 4.5, "reb": 2.6, "ast": 0.9, "stl": 0.5, "blk": 0.4, "tov": 0.6, "fg": 40.0, "fg3": 33.0, "ft": 74.0},
-            {"name": "Cameron Boozer", "pos": "PF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Isaiah Stewart", "pos": "C", "pts": 7.8, "reb": 6.6, "ast": 1.6, "stl": 0.4, "blk": 0.8, "tov": 1.0, "fg": 48.0, "fg3": 35.0, "ft": 73.0},
             {"name": "Karim Lopez", "pos": "SF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "GG Jackson", "pos": "PF", "pts": 14.6, "reb": 4.1, "ast": 1.2, "stl": 0.6, "blk": 0.5, "tov": 1.6, "fg": 42.8, "fg3": 35.7, "ft": 82.5}
