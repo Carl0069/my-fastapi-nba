@@ -80,6 +80,11 @@ const realGmPlayerData = {
     "Austin Reaves": { number: 15, pos: "GUARD", height: "6'5\"", weight: "197 lbs", age: 28, exp: 5, country: "USA", gp: 72, ppg: 16.2, apg: 5.7, rpg: 4.4 },
     "Quentin Grimes": { number: 5, pos: "FORWARD", height: "6'5\"", weight: "210 lbs", age: 26, exp: 5, country: "USA", gp: 60, ppg: 8.4, apg: 1.6, rpg: 2.4 },
     "Sandro Mamukelashvili": { number: 54, pos: "FORWARD", height: "6'10\"", weight: "240 lbs", age: 27, exp: 5, country: "Georgia", gp: 55, ppg: 5.8, apg: 1.4, rpg: 3.9 },
+    "Fred VanVleet": { number: 5, pos: "GUARD", height: "6'1\"", weight: "197 lbs", age: 31, exp: 10, country: "USA", gp: 79, ppg: 17.2, apg: 8.0, rpg: 3.7 },
+    "Amen Thompson": { number: 1, pos: "GUARD", height: "6'7\"", weight: "220 lbs", age: 22, exp: 2, country: "USA", gp: 74, ppg: 12.8, apg: 3.8, rpg: 7.5 },
+    "Kevin Durant": { number: 35, pos: "FORWARD", height: "6'10\"", weight: "240 lbs", age: 37, exp: 18, country: "USA", gp: 75, ppg: 26.8, apg: 4.2, rpg: 6.3 },
+    "Jabari Smith Jr.": { number: 10, pos: "FORWARD", height: "6'10\"", weight: "220 lbs", age: 22, exp: 4, country: "USA", gp: 74, ppg: 14.8, apg: 1.8, rpg: 8.6 },
+    "Alperen Şengün": { number: 28, pos: "CENTER", height: "6'10\"", weight: "243 lbs", age: 22, exp: 4, country: "Turkey", gp: 75, ppg: 21.4, apg: 5.2, rpg: 9.5 },
     "Walker Kessler": { number: 14, pos: "CENTER", height: "7'0\"", weight: "245 lbs", age: 25, exp: 4, country: "USA", gp: 68, ppg: 9.4, apg: 1.1, rpg: 8.8 },
     "Matisse Thybulle": { number: 26, pos: "GUARD", height: "6'5\"", weight: "200 lbs", age: 29, exp: 7, country: "Australia", gp: 65, ppg: 5.8, apg: 1.1, rpg: 1.6 },
     "Collin Sexton": { number: 10, pos: "GUARD", height: "6'3\"", weight: "190 lbs", age: 27, exp: 8, country: "USA", gp: 66, ppg: 18.2, apg: 4.9, rpg: 2.6 },
@@ -110,7 +115,7 @@ const realGmPlayerData = {
 const teamMetadata = {
     "Boston Celtics": { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg", salary: 201437932, status: "Luxury Tax", rings: 18, years: [1957, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1968, 1969, 1974, 1976, 1981, 1984, 1986, 2008, 2024] },
     "Brooklyn Nets": { logo: "https://cdn.nba.com/logos/nba/1610612751/primary/L/logo.svg", salary: 160105139, status: "Under Cap", rings: 0, years: [] },
-    "New York Knicks": { logo: "https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg", salary: 217948756, status: "1st Apron", rings: 2, years: [1970, 1973] },
+    "New York Knicks": { logo: "https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg", salary: 217948756, status: "1st Apron", rings: 3, years: [1970, 1973, 2026] },
     "Philadelphia 76ers": { logo: "https://cdn.nba.com/logos/nba/1610612755/primary/L/logo.svg", salary: 206643098, status: "Luxury Tax", rings: 3, years: [1955, 1967, 1983] },
     "Toronto Raptors": { logo: "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg", salary: 202743041, status: "Luxury Tax", rings: 1, years: [2019] },
     "Chicago Bulls": { logo: "https://cdn.nba.com/logos/nba/1610612741/primary/L/logo.svg", salary: 161545080, status: "Under Cap", rings: 6, years: [1991, 1992, 1993, 1996, 1997, 1998] },
@@ -125,7 +130,7 @@ const teamMetadata = {
     "Washington Wizards": { logo: "https://cdn.nba.com/logos/nba/1610612764/primary/L/logo.svg", salary: 189013104, status: "Over Cap", rings: 1, years: [1978] },
     "Denver Nuggets": { logo: "https://cdn.nba.com/logos/nba/1610612743/primary/L/logo.svg", salary: 215333328, status: "1st Apron", rings: 1, years: [2023] },
     "Minnesota Timberwolves": { logo: "https://cdn.nba.com/logos/nba/1610612750/primary/L/logo.svg", salary: 215871829, status: "1st Apron", rings: 0, years: [] },
-    "Oklahoma City Thunder": { logo: "https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg", salary: 214798992, status: "1st Apron", rings: 1, years: [1979] },
+    "Oklahoma City Thunder": { logo: "https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg", salary: 214798992, status: "1st Apron", rings: 2, years: [1979, 2025] },
     "Portland Trail Blazers": { logo: "https://cdn.nba.com/logos/nba/1610612757/primary/L/logo.svg", salary: 194511148, status: "Over Cap", rings: 1, years: [1977] },
     "Utah Jazz": { logo: "https://cdn.nba.com/logos/nba/1610612762/primary/L/logo.svg", salary: 179365019, status: "Over Cap", rings: 0, years: [] },
     "Golden State Warriors": { logo: "https://cdn.nba.com/logos/nba/1610612744/primary/L/logo.svg", salary: 219763627, status: "1st Apron", rings: 7, years: [1947, 1956, 1975, 2015, 2017, 2018, 2022] },
@@ -205,6 +210,36 @@ const teamSeasonStats2025_26 = {
     "New Orleans Pelicans": { record: "40-42", ppg: 115.6, rpg: 43.9, apg: 24.9, opp_ppg: 115.8, net: "-0.2" },
     "San Antonio Spurs": { record: "34-48", ppg: 112.2, rpg: 43.1, apg: 25.2, opp_ppg: 116.1, net: "-3.9" }
 };
+
+function getTeamTransactions(teamName) {
+    const normalizedTeamName = teamName.toLowerCase();
+    const directMatches = [];
+
+    rawTimelineTransactions.forEach(group => {
+        group.items.forEach(item => {
+            const isDirectTeamMatch = item.team && item.team.toLowerCase() === normalizedTeamName;
+            const isReferencedInText = item.text && item.text.toLowerCase().includes(normalizedTeamName);
+
+            if (isDirectTeamMatch || isReferencedInText) {
+                directMatches.push({
+                    date: group.date,
+                    type: item.type,
+                    text: item.text
+                });
+            }
+        });
+    });
+
+    if (directMatches.length > 0) {
+        return directMatches;
+    }
+
+    return [{
+        date: "Offseason 2026",
+        type: "STATUS",
+        text: `${teamName} has not announced a major offseason transaction yet.`
+    }];
+}
 
 const playerHeadshotIds = {
     "Donovan Mitchell": "1628378", "James Harden": "201935", "Evan Mobley": "1630596", "Jarrett Allen": "1628386",
@@ -476,11 +511,11 @@ const playerStatsBenchmark = {
 
 const PHI_76ERS_CUSTOM_ROSTER = {
     starters: [
-        { name: "Tyrese Maxey", pos: "G" },
-        { name: "Jaylen Brown", pos: "G-F" },
-        { name: "LeBron James", pos: "F" },
-        { name: "VJ Edgecombe", pos: "G" },
-        { name: "Joel Embiid", pos: "C-F" }
+        { name: "Tyrese Maxey", pos: "G", height: "6'2\"", weight: "200 lbs", age: 25, exp: 6, country: "USA" },
+        { name: "Jaylen Brown", pos: "G-F", height: "6'6\"", weight: "223 lbs", age: 29, exp: 10, country: "USA" },
+        { name: "LeBron James", pos: "F", height: "6'9\"", weight: "250 lbs", age: 41, exp: 23, country: "USA" },
+        { name: "VJ Edgecombe", pos: "G", height: "6'5\"", weight: "190 lbs", age: 21, exp: 2, country: "Bahamas" },
+        { name: "Joel Embiid", pos: "C-F", height: "7'0\"", weight: "280 lbs", age: 32, exp: 10, country: "Cameroon" }
     ],
     bench: [
         { name: "Anfernee Simons", pos: "G" },
@@ -506,11 +541,11 @@ const PHI_76ERS_CUSTOM_ROSTER = {
 
 const CHI_BULLS_CUSTOM_ROSTER = {
     starters: [
-        { name: "Josh Giddey", pos: "G" },
-        { name: "Norman Powell", pos: "G" },
-        { name: "Matas Buzelis", pos: "F" },
-        { name: "Patrick Williams", pos: "F" },
-        { name: "Nic Claxton", pos: "C" }
+        { name: "Josh Giddey", pos: "G", height: "6'8\"", weight: "216 lbs", age: 23, exp: 5, country: "Australia" },
+        { name: "Norman Powell", pos: "G", height: "6'4\"", weight: "215 lbs", age: 33, exp: 11, country: "USA" },
+        { name: "Matas Buzelis", pos: "F", height: "6'10\"", weight: "209 lbs", age: 21, exp: 2, country: "USA" },
+        { name: "Patrick Williams", pos: "F", height: "6'7\"", weight: "215 lbs", age: 25, exp: 6, country: "USA" },
+        { name: "Nic Claxton", pos: "C", height: "6'11\"", weight: "215 lbs", age: 27, exp: 7, country: "USA" }
     ],
     bench: [
         { name: "Rob Dillingham", pos: "G" },
@@ -1518,6 +1553,14 @@ function filterTransactions() {
     });
 }
 
+function applyTeamThemeToElement(element, teamName) {
+    const colors = teamColors[teamName] || { primary: "#c9082a", dark: "#051c2d" };
+    if (!element) return;
+
+    element.style.setProperty("--team-primary", colors.primary);
+    element.style.setProperty("--team-dark", colors.dark);
+}
+
 function displayTeams(teams) {
     const grid = document.getElementById("teamGrid");
     grid.innerHTML = "";
@@ -1533,6 +1576,7 @@ function displayTeams(teams) {
         card.style.animation = `heroSlideIn 0.42s var(--ease-out-expo) forwards`;
         card.style.animationDelay = `${Math.min(index * 0.035, 0.45)}s`;
         card.onclick = () => openModal(team);
+        applyTeamThemeToElement(card, team.name);
 
         const meta = teamMetadata[team.name] || { salary: team.total_salary || 0, status: team.tax_status || "Over Cap", rings: team.championships || 0, years: team.championship_years || [] };
         const formattedSalary = `$${(meta.salary).toLocaleString()}`;
@@ -1637,12 +1681,12 @@ function renderRealGmCard(p, team) {
     const info = {
         number: jerseyNumber,
         pos: staticInfo.pos || p.pos || "FORWARD",
-        height: staticInfo.height || "6'7\"",
-        weight: staticInfo.weight || "215 lbs",
-        age: staticInfo.age ?? 26,
-        exp: staticInfo.exp ?? 4,
-        country: staticInfo.country || "USA",
-        gp: staticInfo.gp ?? 65,
+        height: staticInfo.height || p.height || "N/A",
+        weight: staticInfo.weight || p.weight || "N/A",
+        age: staticInfo.age ?? p.age ?? "N/A",
+        exp: staticInfo.exp ?? p.experience ?? p.exp ?? "N/A",
+        country: staticInfo.country || p.country || "N/A",
+        gp: staticInfo.gp ?? p.gp ?? "N/A",
         ppg: staticInfo.ppg ?? pts,
         apg: staticInfo.apg ?? ast,
         rpg: staticInfo.rpg ?? reb
@@ -1660,17 +1704,9 @@ function renderRealGmCard(p, team) {
                         <div class="card-player-name">${p.name}</div>
                         <div class="card-player-pos">${info.pos}</div>
                     </div>
-                    <div class="card-jersey-number">${info.number}</div>
                 </div>
 
-                <div class="card-center-row">
-                    <table class="card-bio-table">
-                        <tr><td class="bio-key">HEIGHT</td><td class="bio-val">${info.height}</td></tr>
-                        <tr><td class="bio-key">WEIGHT</td><td class="bio-val">${info.weight}</td></tr>
-                        <tr><td class="bio-key">AGE</td><td class="bio-val">${info.age}</td></tr>
-                        <tr><td class="bio-key">YEARS PRO</td><td class="bio-val">${info.exp}</td></tr>
-                        <tr><td class="bio-key">COUNTRY</td><td class="bio-val">${info.country}</td></tr>
-                    </table>
+                <div class="card-center-row single-visual-layout">
                     <div class="card-headshot-box">
                         <img src="${photoUrl}" alt="${p.name}" class="card-player-headshot" onerror="this.src='${DEFAULT_AVATAR_FALLBACK}'">
                     </div>
@@ -1691,6 +1727,9 @@ function renderRealGmCard(p, team) {
 }
 
 function openModal(team) {
+    const modalCard = document.querySelector(".modal-card");
+    applyTeamThemeToElement(modalCard, team.name);
+
     const meta = teamMetadata[team.name] || {
         salary: team.total_salary || 0,
         status: team.tax_status || "Over Cap",
@@ -1710,18 +1749,7 @@ function openModal(team) {
     };
 
     const teamTxContainer = document.getElementById("modalTeamTransactions");
-    const teamTxList = [];
-    rawTimelineTransactions.forEach(group => {
-        group.items.forEach(item => {
-            if (item.team.toLowerCase() === team.name.toLowerCase() || item.text.toLowerCase().includes(team.name.toLowerCase())) {
-                teamTxList.push({
-                    date: group.date,
-                    type: item.type,
-                    text: item.text
-                });
-            }
-        });
-    });
+    const teamTxList = getTeamTransactions(team.name);
 
     document.getElementById("modalConference").innerText = `${team.conference.toUpperCase()} CONFERENCE • ${team.division.toUpperCase()}`;
     document.getElementById("modalTitle").innerText = team.name;
@@ -1732,7 +1760,7 @@ function openModal(team) {
         <div style="margin-bottom: 6px;">Championships: <strong>${meta.rings}</strong></div>
         <div style="font-size: 0.78rem; line-height: 1.4; color: #475569; margin-bottom: 14px;">Years: <strong>${yearsString}</strong></div>
         <div class="modal-season-stats-grid">
-            <div class="modal-season-stat-box"><span>2025-26</span><strong>${teamStats.record}</strong></div>
+            <div class="modal-season-stat-box"><span>2025-26</span><strong>${team.last_season_record}</strong></div>
             <div class="modal-season-stat-box"><span>PPG</span><strong>${typeof teamStats.ppg === 'number' ? teamStats.ppg.toFixed(1) : teamStats.ppg}</strong></div>
             <div class="modal-season-stat-box"><span>RPG</span><strong>${typeof teamStats.rpg === 'number' ? teamStats.rpg.toFixed(1) : teamStats.rpg}</strong></div>
             <div class="modal-season-stat-box"><span>APG</span><strong>${typeof teamStats.apg === 'number' ? teamStats.apg.toFixed(1) : teamStats.apg}</strong></div>
