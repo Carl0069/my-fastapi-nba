@@ -933,6 +933,7 @@ html {
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border-subtle);
+    border-top: 4px solid var(--team-primary, var(--nba-red));
     opacity: 0;
     will-change: transform, box-shadow;
     transition: transform 0.32s var(--ease-out-expo), 
@@ -943,7 +944,7 @@ html {
 .watch-card:hover {
     transform: translateY(-8px) scale(1.015);
     box-shadow: 0 20px 35px -8px rgba(5, 28, 45, 0.16);
-    border-color: #cbd5e1;
+    border-color: var(--team-primary, #cbd5e1);
 }
 
 .watch-card:active {
@@ -980,7 +981,7 @@ html {
 .card-brand {
     font-size: 0.75rem;
     font-weight: 800;
-    color: var(--nba-red);
+    color: var(--team-primary, var(--nba-red));
     letter-spacing: 1px;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -1036,9 +1037,10 @@ html {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
+    border-top: 5px solid var(--team-primary, var(--nba-red));
     transform: scale(0.94) translateY(18px);
     opacity: 0;
-    transition: transform 0.35s var(--ease-out-expo), opacity 0.28s ease;
+    transition: transform 0.35s var(--ease-out-expo), opacity 0.28s ease, border-color 0.2s ease;
     will-change: transform, opacity;
 }
 
@@ -1069,7 +1071,7 @@ html {
 .modal-close:hover {
     transform: scale(1.15) rotate(90deg);
     color: #ffffff;
-    background: var(--nba-red);
+    background: var(--team-primary, var(--nba-red));
 }
 
 .modal-body {
@@ -1192,7 +1194,7 @@ html {
 .modal-conference {
     font-size: 0.8rem;
     font-weight: 800;
-    color: var(--nba-red);
+    color: var(--team-primary, var(--nba-red));
     letter-spacing: 1px;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -1208,7 +1210,7 @@ html {
 .modal-star {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--nba-royal);
+    color: var(--team-primary, var(--nba-royal));
     margin-bottom: 14px;
 }
 
@@ -1253,23 +1255,43 @@ html {
 }
 
 .nba-player-card {
-    background: #ffffff;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
     border: 1px solid var(--border-subtle);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 14px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
     cursor: pointer;
     position: relative;
-    transition: transform 0.22s var(--ease-smooth), box-shadow 0.22s ease, border-color 0.22s ease;
+    overflow: hidden;
+    isolation: isolate;
+    transform: translateY(0) scale(1);
+    transition: transform 0.28s cubic-bezier(.2,.8,.2,1), box-shadow 0.28s ease, border-color 0.28s ease;
+    will-change: transform;
+}
+
+.nba-player-card::before {
+    content: "";
+    position: absolute;
+    inset: -30% auto auto -25%;
+    width: 140%;
+    height: 140%;
+    background: radial-gradient(circle at center, rgba(239, 68, 68, 0.08), transparent 48%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .nba-player-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 22px rgba(5, 28, 45, 0.12);
-    border-color: #cbd5e1;
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+    border-color: rgba(148, 163, 184, 0.8);
+}
+
+.nba-player-card:hover::before {
+    opacity: 1;
 }
 
 .card-header-row {
@@ -1299,20 +1321,16 @@ html {
     letter-spacing: 0.5px;
 }
 
-.card-jersey-number {
-    font-size: 2.1rem;
-    font-weight: 900;
-    color: var(--nba-red);
-    line-height: 1;
-    letter-spacing: -1px;
-}
-
 .card-center-row {
     display: grid;
-    grid-template-columns: 1fr 1.15fr;
+    grid-template-columns: 1fr;
     gap: 10px;
     align-items: center;
     margin-bottom: 12px;
+}
+
+.single-visual-layout {
+    display: block;
 }
 
 .card-bio-table {
@@ -1345,21 +1363,25 @@ html {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    height: 110px;
-    background: radial-gradient(circle at 50% 70%, #f1f5f9 0%, #ffffff 70%);
-    border-radius: 6px;
+    height: 132px;
+    background: linear-gradient(135deg, rgba(241,245,249,1), rgba(255,255,255,0.92));
+    border-radius: 8px;
     overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .card-player-headshot {
     max-height: 108px;
     width: auto;
     object-fit: contain;
-    transition: transform 0.25s ease;
+    filter: drop-shadow(0 8px 12px rgba(15, 23, 42, 0.12));
+    transform: translateY(0) scale(1);
+    transition: transform 0.28s cubic-bezier(.2,.8,.2,1), filter 0.28s ease;
 }
 
 .nba-player-card:hover .card-player-headshot {
-    transform: scale(1.08);
+    transform: translateY(-4px) scale(1.08);
+    filter: drop-shadow(0 12px 16px rgba(15, 23, 42, 0.18));
 }
 
 .card-stats-strip {
