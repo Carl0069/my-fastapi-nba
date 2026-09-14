@@ -4,9 +4,7 @@ from fastapi import FastAPI, HTTPException, Header, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# ==============================================================================
-# CONFIGURATION
-# ==============================================================================
+
 API_KEY = "student-api-key-123"
 API_VERSION = "1.0"
 
