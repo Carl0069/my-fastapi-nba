@@ -38,6 +38,15 @@ class PlayerStat(BaseModel):
     fg3: float = Field(..., ge=0.0, le=100.0, description="Three-point percentage")
     ft: float = Field(..., ge=0.0, le=100.0, description="Free throw percentage")
 
+class DraftPick(BaseModel):
+    year: int = Field(..., ge=2026, le=2040, description="Draft year")
+    round: Literal[1, 2] = Field(..., description="Draft round (1 or 2)")
+    original_owner: str = Field(..., description="Abbreviation or name of original team (e.g., 'ATL', 'MIL')")
+    current_owner_id: int = Field(..., description="Team ID currently holding the pick")
+    is_swap: bool = Field(default=False, description="Whether pick is subject to pick swap rights")
+    protection: Optional[str] = Field(default=None, description="Pick protection conditions")
+    details: str = Field(..., description="Readable conditions and trade pathway details")
+
 class Team(BaseModel):
     id: int = Field(..., ge=1, le=30, description="Unique team identifier")
     name: str = Field(..., min_length=2, description="Team full name")
@@ -54,9 +63,1747 @@ class Team(BaseModel):
     description: str = Field(..., min_length=10, description="Roster overview and team summary")
     starters_2026_27: List[PlayerStat] = Field(..., min_length=5, max_length=5, description="Projected starting five")
     bench_2026_27: List[PlayerStat] = Field(default_factory=list, description="Bench rotation and reserves")
+    draft_picks: List[DraftPick] = Field(default_factory=list, description="Future draft pick assets")
+    
+def generate_standard_picks(team_id: int, team_abbr: str) -> List[dict]:
+    picks = []
+
+    for yr in range(2027, 2034):
+        picks.append({
+            "year": yr,
+            "round": 1,
+            "original_owner": team_abbr,
+            "current_owner_id": team_id,
+            "is_swap": False,
+            "protection": None,
+            "details": "Own",
+        })
+
+        picks.append({
+            "year": yr,
+            "round": 2,
+            "original_owner": team_abbr,
+            "current_owner_id": team_id,
+            "is_swap": False,
+            "protection": None,
+            "details": "Own",
+        })
+
+    return picks
+
+
+atlanta_draft_picks = [
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "MIL/NOP",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": "Protected 1-4",
+        "details": "To SAN; Less favorable of MIL and NOP if either or both 5-30 (via NOP)",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": "Protected 56-60",
+        "details": "31-55 Own; 56-60 to DAL",
+    },
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of (i) ATL and (ii) less favorable of UTH and CLE then least favorable of all to CLE (via UTH swap for CLE; via ATL swap for CLE or UTH)",
+    },
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "CLE",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "CLE (More favorable of ATL and MIA to CHA then other to OKC)",
+    },
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "NYK",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "NYK (via POR; Own to OKC)",
+    },
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own (Own 2nd to OKC/HOU)",
+    },
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own (Own 2nd to OKC)",
+    },
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "ATL",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "SAC",
+        "current_owner_id": 12,
+        "is_swap": False,
+        "protection": None,
+        "details": "SAC",
+    },
+]
+
+
+brooklyn_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "BRK/HOU",
+        "current_owner_id": 2,
+        "is_swap": True,
+        "protection": None,
+        "details": "Own or HOU (via HOU swap for BRK)",
+    },
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "NYK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "NYK",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "BRK/DAL",
+        "current_owner_id": 2,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of BRK and DAL to WAS, then other to MIL (via DAL to BRK to DET to MIL; via DET to WAS)",
+    },
+
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "BRK/PHI/PHX/NYK",
+        "current_owner_id": 2,
+        "is_swap": True,
+        "protection": "PHL 9-30 conditional",
+        "details": "If (I) PHL 9-30 is third most favorable and (II) NYK is most or second most favorable of BRK, PHL 9-30, PHX and NYK, then most and third most favorable to BRK; or most/two most favorable to BRK in all other scenarios; least favorable of BRK, PHX and NYK to NYK if PHL 9-30 is less favorable than BRK and PHX; or second most favorable of BRK, PHX and NYK to NYK in all other scenarios. More favorable of (I) WAS and (II) least/less favorable of BRK, PHL 9-30 and PHX to WAS then least favorable of all to PHX (WAS can then swap with MIL).",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "ATL",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "ATL (via GOS)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "MEM",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "MEM (via PHX)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "PHL",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "PHL 1-8 in 2028",
+    },
+
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "DAL/PHX/HOU",
+        "current_owner_id": 2,
+        "is_swap": True,
+        "protection": None,
+        "details": "Least favorable of DAL, PHX and HOU (via DAL and PHX to BRK; via DAL or PHX to HOU; via HOU swap for DAL or PHX)",
+    },
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "NYK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "NYK",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "DAL",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "DAL",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "GOS",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "GOS",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "MEM",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "MEM (via PHX)",
+    },
+
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "BOS",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "BOS (via HOU)",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "DAL",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "DAL (via BOS to MEM)",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "LAL",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "LAL",
+    },
+
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "NYK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "NYK",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "LAL",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "LAL",
+    },
+
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "DEN",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "DEN",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "DEN",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "DEN",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "MIA",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "MIA",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "TOR",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "TOR",
+    },
+
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "BRK",
+        "current_owner_id": 2,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+
+boston_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "BOS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "BOS/SAN",
+        "current_owner_id": 1,
+        "is_swap": True,
+        "protection": "Protected 1",
+        "details": "1 Own; 2-30 Own or SAN via SAN swap for BOS; BOS then has a complex swap right with PHL",
+    },
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "LAC/PHI",
+        "current_owner_id": 1,
+        "is_swap": True,
+        "protection": "LAC 17-30; PHI 1-8",
+        "details": "LAC 17-30 or, by swap from BOS, more favorable of (i) less favorable of BOS and SAN and (ii) more favorable of PHL 1-8 and LAC 1-16; if PHL 9-30, then LAC 1-16. Least favorable of all goes to PHL.",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "BOS/SAN/NYK",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": "31-45 to SAN if BOS 1",
+        "details": "31-45 to SAN if BOS picks 1st in 2028; 46-60 to NYK (via ORL to PHX)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "GSW/MIL/OKC",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Most favorable of GSW, MIL and OKC (via GSW to POR to WAS to PHL; via MIL to BRK to HOU to OKC to PHL; via OKC to PHL)",
+    },
+
+    # 2029
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "BOS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "CHA",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": "Protected 31-55",
+        "details": "CHA 56-60",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "PHX/POR/WAS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Most favorable of PHX, POR and WAS (via PHX and POR to WAS to PHL)",
+    },
+
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "BOS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "PHI",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "PHI",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "BOS/CLE",
+        "current_owner_id": 1,
+        "is_swap": True,
+        "protection": "HOU 56-60",
+        "details": "Less favorable of BOS and CLE then other to UTH (via CLE to ATL to BOS); HOU 56-60",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "HOU",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": "Protected 56-60",
+        "details": "HOU 56-60",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "BOS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": "Frozen through 2027-28",
+        "details": "Frozen (through 2027-28)",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "BOS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "BOS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "BOS",
+        "current_owner_id": 1,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+chicago_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "CLE",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "CLE (via ATL to MIN)",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "CHI/IND/PHX",
+        "current_owner_id": 6,
+        "is_swap": True,
+        "protection": None,
+        "details": "Most favorable of CHI, IND and PHX; less favorable of (I) CHI and (II) more favorable of IND and PHX to IND (via PHX to IND; via CHI swap for IND or PHX)",
+    },
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "DET/MIL/NYK",
+        "current_owner_id": 6,
+        "is_swap": True,
+        "protection": None,
+        "details": "Least favorable of DET, MIL and NYK (via MIL to BRK to DET; via NYK to DET; via SAC to CHI)",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "CHI/IND",
+        "current_owner_id": 6,
+        "is_swap": True,
+        "protection": None,
+        "details": "Own or swap for IND",
+    },
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "DEN",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "DEN (via PHX to CHA)",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "MIN/GOS",
+        "current_owner_id": 6,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of MIN and GOS (via MIN swap for GOS)",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "NYK",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "NYK (via CHA)",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "PHX/HOU",
+        "current_owner_id": 6,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of PHX and HOU (via PHX to MIN)",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "CHI",
+        "current_owner_id": 6,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+
+cleveland_draft_picks = [
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "CLE/UTH/ATL",
+        "current_owner_id": 7,
+        "is_swap": True,
+        "protection": None,
+        "details": "Least favorable of CLE, UTH and ATL; less favorable of (I) more favorable of CLE and UTH and (II) LAL to LAL then most favorable of all to UTH; more favorable of (I) ATL and (II) less favorable of CLE and UTH to ATL (via UTH swap for CLE; via UTH swap of UTH or CLE for LAL; via ATL swap for CLE or UTH)",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "CLE",
+        "current_owner_id": 7,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "CLE",
+        "current_owner_id": 7,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "CLE",
+        "current_owner_id": 7,
+        "is_swap": False,
+        "protection": "Frozen through 2028-29",
+        "details": "Frozen (through 2028-29)",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "CLE",
+        "current_owner_id": 7,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+
+charlotte_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "DAL",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": "Protected 1-2",
+        "details": "DAL 3-30",
+    },
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "MIA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": "Protected 1-14",
+        "details": "MIA 15-30",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "MEM",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "MEM (via LAC to HOU)",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "POR/NOP",
+        "current_owner_id": 13,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of POR and NOP (via POR)",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "CHA/MIN",
+        "current_owner_id": 13,
+        "is_swap": True,
+        "protection": None,
+        "details": "Own or swap for MIN",
+    },
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "MIA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": "Conditional",
+        "details": "MIA if not already settled",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "CHA/LAC",
+        "current_owner_id": 13,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of CHA and LAC then other to DET [DET may convey to UTH] (via CHA to DAL)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "HOU",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "HOU",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "MIA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": "Conditional",
+        "details": "MIA if DAL does not convey 1st round pick to CHA in 2027 (via SAN to DAL)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "ORL",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "ORL",
+    },
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "UTH/CLE/MIN",
+        "current_owner_id": 13,
+        "is_swap": True,
+        "protection": "Protected 1-5 (MIN)",
+        "details": "Least / less favorable of UTH, CLE and MIN 6-30 (via UTH to PHX); CHA will also have a complex swap right with MIN and PHX will receive a least favorable pick",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "ATL/MIA",
+        "current_owner_id": 13,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of ATL and MIA (via OKC)",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "DEN",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": "Conditional",
+        "details": "DEN if DEN has conveyed a first potential 1st round pick to OKC by 2029",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "MIN",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": "Conditional",
+        "details": "MIN if MIN conveys 1st round pick to UTH in 2029",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": True,
+        "protection": None,
+        "details": "Own; CHA will have a complex swap right with MIN, receiving MIN, SAN or DAL",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": "Protected 31-55",
+        "details": "31-55 Own; 56-60 to BOS",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "UTH/LAC",
+        "current_owner_id": 13,
+        "is_swap": True,
+        "protection": None,
+        "details": "More favorable of UTH and LAC (via UTH)",
+    },
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "MIL",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "MIL",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "PHX",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "PHX",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "MIL",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "MIL",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "MIN",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "MIN",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "MIN",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "MIN",
+    },
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "PHX",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "PHX",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "CHA",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "HOU",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "HOU",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "MIN",
+        "current_owner_id": 13,
+        "is_swap": False,
+        "protection": None,
+        "details": "MIN",
+    },
+dallas_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "DAL",
+        "current_owner_id": 26,
+        "is_swap": False,
+        "protection": "Protected 1-2",
+        "details": "1-2 Own; 3-30 to CHA",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "ATL",
+        "current_owner_id": 26,
+        "is_swap": False,
+        "protection": "Protected 56-60",
+        "details": "ATL 56-60",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "DAL/OKC",
+        "current_owner_id": 26,
+        "is_swap": True,
+        "protection": None,
+        "details": "Own or OKC (via OKC swap for DAL)",
+    },
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "LAL",
+        "current_owner_id": 26,
+        "is_swap": False,
+        "protection": None,
+        "details": "LAL",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "DAL/SAN/MIN",
+        "current_owner_id": 26,
+        "is_swap": True,
+        "protection": None,
+        "details": "Own or SAN (via SAN swap for DAL); less favorable of (I) MIN 2-30 and (II) more favorable of DAL and SAN [or MIN if MIN not conveyable] to MIN then most / more favorable of all to SAN [MIN may convey to CHA] (via SAN swap for DAL; via SAN swap of SAN or DAL for MIN)",
+    },
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "DAL",
+        "current_owner_id": 26,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "DAL",
+        "current_owner_id": 26,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "DAL",
+        "current_owner_id": 26,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+
+denver_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": True,
+        "protection": "Protected 1-5",
+        "details": "1-5 Own; two most / more favorable of DEN 6-30, OKC and LAC to OKC; more favorable of (I) least / less favorable of DEN 6-30, OKC and LAC and (II) TOR to LAC then least favorable of all to TOR (via OKC swap of OKC or DEN for LAC; via LAC swap of DEN, OKC or LAC for TOR)",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": "Protected 1-5",
+        "details": "1-5 Own; 6-30 to OKC if not already settled",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": "Protected 31-33",
+        "details": "31-33 Own; 34-60 to WAS (via SAN to SAC)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "MIN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": None,
+        "details": "MIN (via SAN)",
+    },
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": "Protected 1-5",
+        "details": "1-5 Own; 6-30 to OKC if not already settled; or 1-5 Own; 6-30 to OKC if DEN conveys a first potential 1st round pick to OKC in 2027",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": "Protected 1-5",
+        "details": "1-5 Own; 6-30 to OKC if not already settled and if DEN has conveyed a first potential 1st round pick to OKC by 2028",
+    },
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "CLE",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": None,
+        "details": "CLE",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "SAC",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": None,
+        "details": "SAC (via SAN)",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "SAC",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": None,
+        "details": "SAC (via CLE)",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "DEN",
+        "current_owner_id": 16,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+
+detroit_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": "Protected 31-55",
+        "details": "31-55 Own; 56-60 to PHL",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "CHA/LAC",
+        "current_owner_id": 8,
+        "is_swap": True,
+        "protection": None,
+        "details": "Less favorable of CHA and LAC (via CHA to DAL; least / less favorable of these to UTH)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "NYK",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "NYK (least / less favorable of these to UTH)",
+    },
+    {
+        "year": 2028,
+        "round": 2,
+        "original_owner": "MIA",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": "Conditional",
+        "details": "MIA if DAL conveys 1st round pick to CHA in 2027 (via SAN to DAL; least / less favorable of these to UTH)",
+    },
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "DET/MIL/NYK",
+        "current_owner_id": 8,
+        "is_swap": True,
+        "protection": None,
+        "details": "Most favorable of DET, MIL and NYK (via MIL to BRK to DET; via NYK to DET; via SAC to CHI)",
+    },
+    {
+        "year": 2029,
+        "round": 2,
+        "original_owner": "DET/MIL/NYK",
+        "current_owner_id": 8,
+        "is_swap": True,
+        "protection": None,
+        "details": "Second most favorable of DET, MIL and NYK then other to CHI (via MIL to BRK to DET; via NYK to DET; via DET to MEM; via MEM to DET; via SAC to CHI)",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "DAL",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "DAL (via PHL to DET to MEM)",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "GOS/MIN",
+        "current_owner_id": 8,
+        "is_swap": True,
+        "protection": None,
+        "details": "Less favorable of GOS and MIN (via MIN swap for GOS)",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own (via MEM)",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "DET",
+        "current_owner_id": 8,
+        "is_swap": False,
+        "protection": "Heavily protected",
+        "details": "Own (DET heavily protected and unspecified 2nd round pick to LAC)",
+    },
+]
+
+golden_state_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": "Protected 1-20",
+        "details": "1-20 Own; 21-30 to MEM (via WAS to DAL)",
+    },
+    {
+        "year": 2030,
+        "round": 2,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": "Conditional",
+        "details": "Own; To MEM if GOS does not convey 1st round pick to MEM in 2030 (via WAS to DAL)",
+    },
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2032,
+        "round": 2,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": "Protected 31-50",
+        "details": "31-50 Own; 51-60 to MEM",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2033,
+        "round": 2,
+        "original_owner": "GSW",
+        "current_owner_id": 21,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+
+houston_draft_picks = [
+    # 2027
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "HOU/BRK",
+        "current_owner_id": 27,
+        "is_swap": True,
+        "protection": None,
+        "details": "Own or swap for BRK",
+    },
+    {
+        "year": 2027,
+        "round": 1,
+        "original_owner": "PHX",
+        "current_owner_id": 27,
+        "is_swap": False,
+        "protection": None,
+        "details": "PHX (via BRK)",
+    },
+    {
+        "year": 2027,
+        "round": 2,
+        "original_owner": "POR/NOP",
+        "current_owner_id": 27,
+        "is_swap": True,
+        "protection": "Protected 56-60",
+        "details": "Less favorable of POR and NOP if 56-60 (via POR to BOS)",
+    },
+    # 2028
+    {
+        "year": 2028,
+        "round": 1,
+        "original_owner": "HOU",
+        "current_owner_id": 27,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2029
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "HOU/DAL/PHX",
+        "current_owner_id": 27,
+        "is_swap": True,
+        "protection": None,
+        "details": "Most favorable of HOU, DAL and PHX (via DAL and PHX to BRK; via DAL or PHX to HOU; via HOU swap for DAL or PHX)",
+    },
+    {
+        "year": 2029,
+        "round": 1,
+        "original_owner": "HOU/DAL/PHX",
+        "current_owner_id": 27,
+        "is_swap": True,
+        "protection": None,
+        "details": "Second most favorable of HOU, DAL and PHX then other to BRK (via DAL and PHX to BRK; via DAL or PHX to HOU; via HOU swap for DAL or PHX)",
+    },
+    # 2030
+    {
+        "year": 2030,
+        "round": 1,
+        "original_owner": "HOU",
+        "current_owner_id": 27,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2031
+    {
+        "year": 2031,
+        "round": 1,
+        "original_owner": "HOU",
+        "current_owner_id": 27,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    {
+        "year": 2031,
+        "round": 2,
+        "original_owner": "HOU/ATL",
+        "current_owner_id": 27,
+        "is_swap": True,
+        "protection": "Protected 31-55",
+        "details": "Less favorable of HOU 31-55 and ATL then other [or ATL if HOU 56-60] to OKC (via ATL swap for HOU); 56-60 to BOS",
+    },
+    # 2032
+    {
+        "year": 2032,
+        "round": 1,
+        "original_owner": "HOU",
+        "current_owner_id": 27,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+    # 2033
+    {
+        "year": 2033,
+        "round": 1,
+        "original_owner": "HOU",
+        "current_owner_id": 27,
+        "is_swap": False,
+        "protection": None,
+        "details": "Own",
+    },
+]
+]
 
 # ==============================================================================
-# DATASET
+#DATASET
 # ==============================================================================
 teams = [
     {
@@ -95,7 +1842,8 @@ teams = [
             {"name": "Tucker DeVries", "pos": "SG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Dillon Mitchell", "pos": "SF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Milos Uzan", "pos": "PG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
-        ]
+        ],
+        "draft_picks": boston_draft_picks
     },
     {
         "id": 2,
@@ -132,7 +1880,9 @@ teams = [
             {"name": "Chaney Johnson", "pos": "SF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Tyler Bilodeau", "pos": "PF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Ben Saraf", "pos": "PG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
-        ]
+        ],
+        "draft_picks": brooklyn_draft_picks
+
     },
     {
         "id": 3,
@@ -284,6 +2034,7 @@ teams = [
             {"name": "Tobe Awaka", "pos": "PF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Jaylin Sellers", "pos": "SG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
         ]
+        "draft_picks": chicago_draft_picks
     },
     {
         "id": 7,
@@ -320,6 +2071,7 @@ teams = [
             {"name": "Nae'Qwan Tomlin", "pos": "PF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0},
             {"name": "Ernest Udeh, Jr.", "pos": "C", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
         ]
+        "draft_picks": cleveland_draft_picks
     },
     {
         "id": 8,
@@ -359,6 +2111,7 @@ teams = [
             {"name": "Javonte Green", "pos": "SG", "pts": 6.4, "reb": 3.2, "ast": 0.7, "stl": 0.9, "blk": 0.4, "tov": 0.5, "fg": 52.0, "fg3": 33.0, "ft": 74.0},
             {"name": "Tolu Smith", "pos": "C", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
         ]
+        "draft_picks": detroit_draft_picks
     },
     {
         "id": 9,
@@ -557,6 +2310,7 @@ teams = [
             {"name": "Tidjane Salaün", "pos": "PF", "pts": 5.5, "reb": 4.1, "ast": 0.8, "stl": 0.4, "blk": 0.3, "tov": 0.8, "fg": 38.0, "fg3": 31.0, "ft": 70.0},
             {"name": "Liam McNeeley", "pos": "SF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
         ]
+        "draft_picks": charlotte_draft_picks
     },
     {
         "id": 14,
@@ -671,6 +2425,7 @@ teams = [
             {"name": "Marvin Bagley III", "pos": "PF", "pts": 10.2, "reb": 6.1, "ast": 0.9, "stl": 0.5, "blk": 0.6, "tov": 1.1, "fg": 53.0, "fg3": 29.0, "ft": 70.0},
             {"name": "David Roddy", "pos": "SF", "pts": 4.5, "reb": 2.8, "ast": 0.8, "stl": 0.4, "blk": 0.2, "tov": 0.6, "fg": 41.0, "fg3": 30.0, "ft": 68.0}
         ]
+        "draft_picks": denver_draft_picks
     },
     {
         "id": 17,
@@ -861,6 +2616,7 @@ teams = [
             {"name": "Georges Niang", "pos": "PF", "pts": 8.5, "reb": 3.4, "ast": 1.0, "stl": 0.3, "blk": 0.2, "tov": 0.6, "fg": 45.0, "fg3": 38.0, "ft": 85.0},
             {"name": "Malevy Leons", "pos": "PF", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
         ]
+        "draft_picks": golden_state_draft_picks
     },
     {
         "id": 22,
@@ -1057,6 +2813,7 @@ teams = [
             {"name": "Santi Aldama", "pos": "PF", "pts": 8.5, "reb": 5.8, "ast": 2.3, "stl": 0.7, "blk": 0.9, "tov": 1.0, "fg": 43.2, "fg3": 35.0, "ft": 72.0},
             {"name": "Sergio de Larrea", "pos": "PG", "pts": 0.0, "reb": 0.0, "ast": 0.0, "stl": 0.0, "blk": 0.0, "tov": 0.0, "fg": 0.0, "fg3": 0.0, "ft": 0.0}
         ]
+        "draft_picks": dallas_draft_picks
     },
     {
         "id": 27,
@@ -1097,6 +2854,7 @@ teams = [
             {"name": "Oscar Tshiebwe", "pos": "C", "pts": 2.5, "reb": 3.0, "ast": 0.2, "stl": 0.2, "blk": 0.2, "tov": 0.4, "fg": 55.0, "fg3": 0.0, "ft": 65.0},
             {"name": "Marcus Smart", "pos": "PG", "pts": 11.5, "reb": 2.7, "ast": 4.3, "stl": 1.5, "blk": 0.3, "tov": 1.8, "fg": 41.0, "fg3": 33.0, "ft": 77.0}
         ]
+        "draft_picks": houston_draft_picks
     },
     {
         "id": 28,
