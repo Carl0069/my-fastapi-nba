@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NBA Trade Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="trade-machine.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="topbar__brand">
+          <div class="brand-mark">NBA</div>
+          <div>
+            <p class="eyebrow">FRONT OFFICE / 2026–27</p>
+            <h1>NBA Trade Desk</h1>
+          </div>
+        </div>
+        <div class="topbar__info">
+          <span class="pill pill--primary" id="apiStatus">Connecting to API…</span>
+          <span class="pill" id="teamCountLabel">0 of 5 teams</span>
+        </div>
+      </header>
+
+      <main class="trade-workspace">
+        <section class="workspace-toolbar" aria-label="Trade controls">
+          <div class="workspace-toolbar__season">
+            <span class="muted">SEASON</span>
+            <strong>2026–2027</strong>
+          </div>
+          <div class="workspace-toolbar__actions">
+            <button type="button" class="button button--ghost" id="clearTradeBtn">Reset</button>
+            <button type="button" class="button button--ghost" id="savedTradesBtn">Saved trades</button>
+            <button type="button" class="button button--add" id="addTeamBtn">+ Add team</button>
+            <button type="button" class="button button--primary" id="reviewTradeBtn">Review trade</button>
+          </div>
+        </section>
+
+        <div id="teamGrid" class="team-grid" aria-live="polite"></div>
+      </main>
+
+      <div id="tradeToast" class="trade-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+
+      <dialog id="tradeReviewDialog" class="trade-review-dialog" aria-labelledby="reviewTitle">
+        <div class="review-header">
+          <div>
+            <p class="eyebrow">TRADE DESK</p>
+            <h2 id="reviewTitle">Trade review</h2>
+          </div>
+          <button type="button" class="icon-button" id="closeReviewBtn" aria-label="Close trade review" title="Close">×</button>
+        </div>
+        <div id="reviewContent" class="review-content"></div>
+        <div class="review-footer">
+          <span class="review-disclaimer">Trade checker estimate · protected pick language requires manual confirmation</span>
+          <button type="button" class="button button--ghost" id="editSavedTradeBtn" hidden>Edit this trade</button>
+          <button type="button" class="button button--add" id="saveTradeBtn">Submit &amp; save</button>
+          <button type="button" class="button button--primary" id="doneReviewBtn">Done</button>
+        </div>
+      </dialog>
+
+      <dialog id="savedTradesDialog" class="trade-review-dialog saved-trades-dialog" aria-labelledby="savedTradesTitle">
+        <div class="review-header">
+          <div>
+            <p class="eyebrow">TRADE DESK</p>
+            <h2 id="savedTradesTitle">Saved trades</h2>
+          </div>
+          <button type="button" class="icon-button" id="closeSavedTradesBtn" aria-label="Close saved trades" title="Close">×</button>
+        </div>
+        <div id="savedTradesContent" class="review-content"></div>
+      </dialog>
+    </div>
+
+    <script src="trade-machine.js"></script>
+  </body>
+</html>
