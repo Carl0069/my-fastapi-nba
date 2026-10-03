@@ -5686,7 +5686,7 @@ payroll_2026_27 = {
         "Jaylon Tyson": 3_600_000, "Thomas Bryant": 3_500_000,
         "Nae'Qwan Tomlin": 2_400_000, "Craig Porter Jr.": 2_400_000,
         "Tyrese Proctor": 2_100_000, "Tristan Enaruna": 0,
-        "Riley Minix": 0, "James Harden": 0,
+        "Riley Minix": 0, "James Harden": 30_647_619,
     },
     "Dallas Mavericks": {
         "Kyrie Irving": 39_400_000, "P.J. Washington": 19_800_000,
@@ -5714,7 +5714,7 @@ payroll_2026_27 = {
         "Javonte Green": 3_900_000, "Gary Harris": 3_800_000,
         "Taurean Prince": 3_800_000, "Tolu Smith": 2_400_000,
         "Chaz Lanier": 2_100_000, "Isaac Jones": 0,
-        "Elijah Harkless": 0, "Jalen Duren": 6_500_000,
+        "Elijah Harkless": 0, "Jalen Duren": 34_482_759,
     },
     "Golden State Warriors": {
         "Stephen Curry": 62_500_000, "Jimmy Butler": 56_800_000,
@@ -5722,7 +5722,7 @@ payroll_2026_27 = {
         "Al Horford": 6_800_000, "Yaxel Lendeborg": 6_000_000,
         "Brandin Podziemski": 5_600_000, "Gui Santos": 4_600_000,
         "Charles Bassey": 2_800_000, "Will Richard": 2_100_000,
-        "Malevy Leons": 0, "Draymond Green": 0, "LJ Cryer": 0,
+        "Malevy Leons": 0, "Draymond Green": 27_678_571, "LJ Cryer": 0,
     },
     "Houston Rockets": {
         "Kevin Durant": 43_900_000, "Alperen Şengün": 35_600_000,
@@ -5932,7 +5932,7 @@ payroll_2026_27 = {
 
 payroll_contract_notes = {
     ("Detroit Pistons", "Jalen Duren"): (
-        "5-year, $200M extension; begins in 2027-28. 2026-27 is his current rookie-contract season."
+        "2026-27 base salary: $34,482,759. His five-year, $200M extension averages $40M per year; actual future-year salaries vary."
     ),
 }
 
