@@ -5653,6 +5653,7 @@ payroll_2026_27 = {
         "Terance Mann": 15_500_000, "Day'Ron Sharpe": 10_000_000,
         "Keon Ellis": 9_000_000, "Mikel Brown Jr.": 8_700_000,
         "Egor Dëmin": 7_200_000, "Noah Clowney": 5_400_000,
+        "Moritz Wagner": 9_000_000,
         "Josh Minott": 4_500_000, "Nolan Traore": 4_000_000,
         "Drake Powell": 3_500_000, "Ben Saraf": 3_000_000,
         "Joshua Jefferson": 2_900_000, "Danny Wolf": 2_900_000,
@@ -5931,6 +5932,9 @@ payroll_2026_27 = {
 }
 
 payroll_contract_notes = {
+    ("Brooklyn Nets", "Moritz Wagner"): (
+        "2-year, $18.45M contract: $9M in 2026-27; $9.45M in 2027-28 (mutual option)."
+    ),
     ("Detroit Pistons", "Jalen Duren"): (
         "2026-27 base salary: $34,482,759. His five-year, $200M extension averages $40M per year; actual future-year salaries vary."
     ),
@@ -5965,6 +5969,8 @@ for team in teams:
         contract_note = payroll_contract_notes.get((team["name"], player_name))
         if contract_note:
             player["contract_note"] = contract_note
+            if player_name == "Moritz Wagner":
+                player["contract_label"] = "2027-28 mutual option"
 
 # ==============================================================================
 # API KEY AUTHENTICATION
