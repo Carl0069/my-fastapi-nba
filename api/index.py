@@ -5743,7 +5743,7 @@ payroll_2026_27 = {
         "Quenton Jackson": 2_500_000, "Johnny Furphy": 2_200_000,
         "Ethan Thompson": 0, "Kobe Brown": 0, "Taelon Peter": 0,
     },
-    "Washington Wizards": {
+    "LA Clippers": {
         "Darius Garland": 42_166_510, "Brandon Ingram": 40_000_000,
         "Max Strus": 16_660_836, "Rui Hachimura": 14_000_000,
         "Derrick Jones Jr.": 10_476_190, "Keaton Wagler": 9_674_760,
