@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f0e7" />
+    <title>Build a $15 Team | Cap Space Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="cap-space-manager.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <a class="masthead__brand" href="cap-space-manager.html" aria-label="Cap Space Manager home">
+        <span class="brand-ball" aria-hidden="true">◎</span>
+        <span><small>THE BASKETBALL PICKER</small><strong>CAP SPACE <i>MANAGER</i></strong></span>
+      </a>
+      <div class="masthead__right">
+        <span class="api-status" id="apiStatus" role="status">Loading NBA player pool…</span>
+        <a href="trade-machine.html" class="desk-link">Trade Desk <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main class="game-shell">
+      <section class="game-intro">
+        <div class="game-intro__copy">
+          <span class="overline"><span class="live-dot"></span> PICK FIVE. STAY UNDER FIFTEEN.</span>
+          <h1>Build a team<br /><em>with $15.</em></h1>
+          <p>Five picks. One tiny budget. How good a lineup can you draft?</p>
+        </div>
+        <div class="game-intro__stamp" aria-label="Five players for fifteen dollars">
+          <span>THE</span><strong>$15</strong><span>CHALLENGE</span>
+          <i aria-hidden="true">✳</i>
+        </div>
+      </section>
+
+      <section class="scoreboard" aria-label="Live budget scoreboard">
+        <div class="scoreboard__budget">
+          <span class="scoreboard__label">YOUR BUDGET</span>
+          <strong id="remainingAmount">$15</strong>
+          <span class="scoreboard__sub">OF $15 LEFT</span>
+        </div>
+        <div class="scoreboard__progress">
+          <div class="progress-copy"><span id="lineupCount">0 / 5 PICKS</span><span id="spentAmount">$0 SPENT</span></div>
+          <div id="budgetProgress" class="budget-track" role="progressbar" aria-label="Fantasy budget spent" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0">
+            <span id="budgetFill"></span>
+          </div>
+          <div class="budget-ticks" aria-hidden="true"><span>$0</span><span>$5</span><span>$10</span><span>$15</span></div>
+        </div>
+        <button type="button" class="new-board-button" id="newBoard"><span aria-hidden="true">⟳</span> New board</button>
+      </section>
+
+      <section class="challenge-section" aria-labelledby="officialTitle">
+        <div class="section-title">
+          <div class="section-title__label"><span class="title-icon title-icon--official" aria-hidden="true">♜</span><span><span class="overline">CURATED LINEUP MODES</span><h2 id="officialTitle">Official Challenges</h2></span></div>
+          <span class="category-hint">Pick a challenge. Draft your best five.</span>
+        </div>
+        <div class="challenge-grid challenge-grid--official" id="officialChallenges"></div>
+      </section>
+
+      <section class="challenge-section community-section" aria-labelledby="communityTitle">
+        <div class="section-title">
+          <div class="section-title__label"><span class="title-icon title-icon--community" aria-hidden="true">♧</span><span><span class="overline">MADE BY PLAYERS</span><h2 id="communityTitle">Community Challenges</h2></span></div>
+          <button type="button" class="create-challenge-button" id="openCreateChallenge"><span aria-hidden="true">＋</span> Create Challenge</button>
+        </div>
+        <p id="communityStatus" class="community-status" role="status">Loading shared challenges…</p>
+        <div class="challenge-grid" id="communityChallenges"></div>
+      </section>
+
+      <section class="market-section" aria-labelledby="marketTitle">
+        <div class="section-title market-heading">
+          <div><span class="overline" id="activeChallengeOverline">BUILD A $15 TEAM</span><h2 id="marketTitle">Who’s worth the pick?</h2><p id="activeChallengeDescription" class="active-challenge-description"></p></div>
+          <span class="market-note">2025–26 regular-season averages · randomized player board</span>
+        </div>
+        <div class="tier-board" id="tierBoard" aria-live="polite">
+          <div class="loading-message">Loading the league. Warming up the randomizer…</div>
+        </div>
+      </section>
+
+      <section class="lineup-section" aria-labelledby="lineupTitle">
+        <div class="section-title">
+          <div><span class="overline">YOUR FIVE</span><h2 id="lineupTitle">Drafted lineup</h2></div>
+          <button type="button" id="clearLineup" class="clear-button" disabled>Clear picks</button>
+        </div>
+        <div class="lineup-board" id="lineupBoard" aria-live="polite"></div>
+      </section>
+
+      <section id="gradePanel" class="grade-card" aria-live="polite" hidden>
+        <div class="grade-card__stamp"><span>TEAM</span><strong id="gradeMark">A</strong></div>
+        <div class="grade-card__copy"><span class="overline">DRAFT COMPLETE</span><h2 id="gradeTitle">A complete five</h2><p id="gradeDescription"></p></div>
+        <div class="grade-stats">
+          <div><strong id="pointsTotal">0.0</strong><span>POINTS</span></div>
+          <div><strong id="reboundsTotal">0.0</strong><span>BOARDS</span></div>
+          <div><strong id="assistsTotal">0.0</strong><span>DIMES</span></div>
+        </div>
+      </section>
+      <footer class="page-footer">Player pool from the NBA roster API · stats are 2025–26 regular-season averages · Build another team with <button id="footerNewBoard" type="button">a fresh board</button>.</footer>
+    </main>
+    <dialog id="createChallengeDialog" class="create-dialog" aria-labelledby="createChallengeTitle">
+      <form id="createChallengeForm">
+        <header class="create-dialog__header">
+          <div><span class="overline">COMMUNITY MADE</span><h2 id="createChallengeTitle">Create a challenge</h2></div>
+          <button type="button" class="dialog-close" id="closeCreateChallenge" aria-label="Close">×</button>
+        </header>
+        <p class="create-dialog__intro">Make a public player-pool challenge. It will be shared with everyone using Cap Space Manager.</p>
+        <label class="form-field">Challenge name<input name="title" required minlength="3" maxlength="48" placeholder="e.g. Triple-double threat" /></label>
+        <label class="form-field">Your display name<input name="creator" required minlength="2" maxlength="24" placeholder="Name shown on the challenge" /></label>
+        <label class="form-field">Challenge category
+          <select name="rule_type" required>
+            <option value="all">Open pool · any player</option>
+            <option value="scorers">Bucket getters · 18+ PPG</option>
+            <option value="playmakers">Floor generals · 5+ APG</option>
+            <option value="rebounders">Board crashers · 8+ RPG</option>
+            <option value="guards">Guard room · guards only</option>
+            <option value="forwards">Forward focus · forwards only</option>
+            <option value="bigs">Bigs only · centers / forwards</option>
+            <option value="defenders">Defensive wall · 2+ steals + blocks</option>
+          </select>
+        </label>
+        <label class="form-field">Challenge note <span class="optional-label">OPTIONAL</span><textarea name="description" maxlength="220" rows="3" placeholder="Add a short description or house rule…"></textarea></label>
+        <p class="create-dialog__privacy">Public display name only—don’t enter private or sensitive information.</p>
+        <div class="create-dialog__actions">
+          <button type="button" class="cancel-create" id="cancelCreateChallenge">Cancel</button>
+          <button type="submit" class="submit-challenge" id="submitChallenge">Publish Challenge</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <script src="nba-player-ids.js"></script>
+    <script src="cap-space-manager.js"></script>
+  </body>
+</html>
