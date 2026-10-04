@@ -70,6 +70,7 @@ class CommunityChallengeCreate(BaseModel):
         "all", "scorers", "playmakers", "rebounders", "guards",
         "forwards", "bigs", "defenders"
     ]
+    selected_player_ids: List[str] = Field(..., min_length=5, max_length=590)
 
 class Team(BaseModel):
     id: int = Field(..., ge=1, le=30, description="Unique team identifier")
@@ -5146,7 +5147,6 @@ teams = [
             {"name":"Ajay Mitchell","pos":"PG","stats_season":"2025-26","gp":57,"pts":13.6,"reb":3.3,"ast":3.6,"stl":1.2,"blk":0.3,"tov":1.4,"fg":48.5,"fg3":34.7,"ft":87,"salary":2800000},
             {"name":"Kenrich Williams","pos":"SF","stats_season":"2025-26","gp":56,"pts":6.5,"reb":3.3,"ast":1.4,"stl":0.6,"blk":0.1,"tov":0.8,"fg":47.3,"fg3":38.8,"ft":63.5,"salary":5000000},
             {"name":"Nikola Topić","pos":"PG","stats_season":"2025-26","gp":10,"pts":5.2,"reb":1.9,"ast":4.4,"stl":0.5,"blk":0,"tov":2.5,"fg":43.1,"fg3":40,"ft":40,"salary":5400000},
-            {"name":"Luguentz Dort","pos":"F","stats_season":"2025-26","gp":69,"pts":8.3,"reb":3.6,"ast":1.2,"stl":0.9,"blk":0.4,"tov":0.8,"fg":38.5,"fg3":34.4,"ft":75.9,"salary":17700000},
         ],
         "draft_picks": oklahoma_city_draft_picks
     },
@@ -5753,7 +5753,7 @@ def get_team(team_id: int):
 @app.get("/api/v1/community-challenges", dependencies=[Depends(verify_api_key)])
 def get_community_challenges():
     result = supabase_rest_request(
-        "community_challenges?select=id,title,description,creator,rule_type,created_at"
+        "community_challenges?select=id,title,description,creator,rule_type,selected_player_ids,created_at"
         "&order=created_at.desc&limit=100"
     )
     if not isinstance(result, list):
@@ -5762,6 +5762,15 @@ def get_community_challenges():
 
 @app.post("/api/v1/community-challenges", dependencies=[Depends(verify_api_key)], status_code=201)
 def create_community_challenge(challenge: CommunityChallengeCreate):
+    if len(set(challenge.selected_player_ids)) != len(challenge.selected_player_ids):
+        raise HTTPException(status_code=422, detail="Selected player IDs must be unique.")
+    valid_player_ids = {
+        f"{team['id']}:{player['name'].lower()}"
+        for team in teams
+        for player in team["starters_2026_27"] + team["bench_2026_27"]
+    }
+    if any(player_id not in valid_player_ids for player_id in challenge.selected_player_ids):
+        raise HTTPException(status_code=422, detail="One or more selected player IDs are not in the NBA player pool.")
     result = supabase_rest_request(
         "community_challenges",
         method="POST",
