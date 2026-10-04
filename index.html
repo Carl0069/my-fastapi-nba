@@ -172,8 +172,10 @@
                     <div id="modalStartersGrid" class="player-cards-grid"></div>
 
                     <div class="modal-divider"></div>
-                    <h4 class="modal-section-title" style="color: var(--nba-royal);">2026–27 Bench & Reserves</h4>
-                    <div id="modalBenchGrid" class="player-cards-grid"></div>
+                    <details class="roster-disclosure">
+                        <summary class="modal-section-title roster-disclosure__summary">2026–27 Bench & Reserves <span id="modalBenchCount"></span></summary>
+                        <div id="modalBenchGrid" class="player-cards-grid"></div>
+                    </details>
 
                     <div class="modal-divider"></div>
                     <h4 class="modal-section-title" style="color: var(--nba-red);">Team Offseason Transactions</h4>
@@ -207,6 +209,10 @@
             </div>
 
             <div class="player-hero-tape" id="playerHeroTape">
+                <div class="hero-stat-cell">
+                    <span class="hero-stat-label">REGULAR SEASON</span>
+                    <span class="hero-stat-value" id="playerStatsSeason">2025-26</span>
+                </div>
                 <div class="hero-stat-cell">
                     <span class="hero-stat-label">PPG</span>
                     <span class="hero-stat-value" id="playerStatPpg">0.0</span>
@@ -254,6 +260,8 @@
         </div>
     </div>
 
+    <script src="nba-player-ids.js"></script>
+    <script src="player-headshots.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

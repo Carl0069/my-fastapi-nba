@@ -333,9 +333,10 @@ const PLAYER_CONTRACT_OVERRIDES = {
 };
 const CBA_ESTIMATES = {
   season: "2026–27 estimate",
-  salaryCap: 179_500_000,
-  firstApron: 227_500_000,
-  secondApron: 241_200_000,
+  salaryCap: 164_961_000,
+  firstApron: 209_015_000,
+  secondApron: 221_686_000,
+  minimumTeamSalary: 148_465_000,
   baseCap: 154_647_000,
   baseSmallOutgoing: 7_500_000,
   baseMediumOutgoing: 29_000_000,
@@ -385,6 +386,18 @@ function formatMoney(value) {
     currency: "USD",
     maximumFractionDigits: 0
   }).format(value);
+}
+
+function formatCompactMoney(value) {
+  if (!value) return "$0";
+  const amount = Math.abs(value / 1_000_000).toFixed(1);
+  return `${value < 0 ? "−" : ""}$${amount}M`;
+}
+
+function renderTeamMetricAmount(value, prefix = "", className = "") {
+  const fullAmount = `${prefix}${formatMoney(value)}`;
+  const compactAmount = `${prefix}${formatCompactMoney(value)}`;
+  return `<strong class="${className}" aria-label="${escapeHtml(fullAmount)}"><span class="team-metric-value-full" aria-hidden="true">${fullAmount}</span><span class="team-metric-value-compact" aria-hidden="true">${compactAmount}</span></strong>`;
 }
 
 function escapeHtml(value) {
@@ -666,12 +679,10 @@ function formatPlayerStats(player) {
   return [
     ["PTS", player.pts],
     ["REB", player.reb],
-    ["AST", player.ast],
-    ["STL", player.stl],
-    ["BLK", player.blk]
+    ["AST", player.ast]
   ].map(([label, value]) => {
     const stat = Number(value);
-    return `${label} ${Number.isFinite(stat) ? stat.toFixed(1) : "—"}`;
+    return `${label} ${player.stats_season === "2025-26" && value != null && Number.isFinite(stat) ? stat.toFixed(1) : "—"}`;
   }).join(" · ");
 }
 
@@ -1054,10 +1065,21 @@ function renderTeamCard(teamId, slotIndex) {
   const flow = getTeamFlow(team.id);
   const payroll = Number(team.total_salary || 0);
   const afterTrade = payroll - flow.outgoing + flow.incoming;
+  const capMetrics = [
+    { label: "After-trade payroll", value: afterTrade, className: "" },
+    { label: "Cap room", value: CBA_ESTIMATES.salaryCap - afterTrade, className: "team-cap-metric--cap" },
+    { label: "1st apron room", value: CBA_ESTIMATES.firstApron - afterTrade, className: "team-cap-metric--apron" },
+    { label: "2nd apron room", value: CBA_ESTIMATES.secondApron - afterTrade, className: "team-cap-metric--apron" },
+    { label: "Above minimum", value: afterTrade - CBA_ESTIMATES.minimumTeamSalary, className: "team-cap-metric--minimum" }
+  ];
   const rosterRows = getTeamPlayers(team).map((player, index) => {
     const playerId = getPlayerId(team.id, player.name);
     const destinationId = state.transfers[playerId];
     const salaryLabel = hasSalary(player) ? formatMoney(player.salary) : "Unavailable";
+    const headshotId = getPlayerHeadshotId(player.name);
+    const portrait = headshotId
+      ? `<img class="roster-player__headshot" src="${escapeHtml(getPlayerHeadshotUrl(player.name))}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_FALLBACK}'">`
+      : `<span class="roster-player__headshot roster-player__headshot--fallback" aria-label="Official portrait unavailable">${escapeHtml(getPlayerInitials(player.name))}</span>`;
     const destinations = state.teamIds
       .filter((id, index) => index !== slotIndex && id !== null)
       .map((id) => getTeam(id))
@@ -1070,13 +1092,14 @@ function renderTeamCard(teamId, slotIndex) {
       <div class="roster-row ${destinationId ? "roster-row--selected" : ""} ${index < 3 ? "roster-row--top-salary" : ""}">
         <div class="roster-player">
           <span class="roster-rank" aria-label="Salary rank ${index + 1}">${String(index + 1).padStart(2, "0")}</span>
+          ${portrait}
           <div class="roster-player__details">
             <div class="roster-player__heading">
               <span class="roster-player__name">${escapeHtml(player.name)}</span>
               <span class="roster-player__position">${escapeHtml(player.pos || "-")}</span>
               ${player.contract_type === "Two-Way" ? '<span class="roster-player__contract-type">2-WAY</span>' : ""}
             </div>
-            <span class="roster-player__stats" aria-label="Per-game stats: ${escapeHtml(formatPlayerStats(player))}">${escapeHtml(formatPlayerStats(player))}</span>
+            <span class="roster-player__stats" aria-label="${escapeHtml(player.stats_season || "Season stats unavailable")} regular-season per-game stats: ${escapeHtml(formatPlayerStats(player))}">${escapeHtml(formatPlayerStats(player))}</span>
           </div>
         </div>
         <span class="roster-salary" title="${escapeHtml(player.contract_note || "2026–27 salary")}">${salaryLabel}${player.contract_note ? `<span class="contract-note">${escapeHtml(player.contract_label || "Extension signed")}</span>` : ""}</span>
@@ -1187,11 +1210,32 @@ function renderTeamCard(teamId, slotIndex) {
         </div>
       </div>
       <div class="team-metrics">
-        <div><strong>${formatMoney(payroll)}</strong><span>Team payroll</span></div>
-        <div><strong class="money-out">-${formatMoney(flow.outgoing)}</strong><span>Outgoing</span></div>
-        <div><strong class="money-in">+${formatMoney(flow.incoming)}</strong><span>Incoming</span></div>
-        <div><strong>${formatMoney(afterTrade)}</strong><span>After trade</span></div>
+        <div>${renderTeamMetricAmount(payroll)}<span>Team payroll</span></div>
+        <div>${renderTeamMetricAmount(flow.outgoing, "-", "money-out")}<span>Outgoing</span></div>
+        <div>${renderTeamMetricAmount(flow.incoming, "+", "money-in")}<span>Incoming</span></div>
+        <div>${renderTeamMetricAmount(afterTrade)}<span>After trade</span></div>
       </div>
+      <section class="team-cap-outlook" aria-label="${escapeHtml(team.name)} cap outlook after trade">
+        <div class="team-cap-outlook__heading">
+          <strong>Team cap outlook</strong>
+          <span>2026–27 estimates</span>
+        </div>
+        <div class="team-cap-metrics">
+          ${capMetrics.map(({ label, value, className }) => {
+            const metricLabel = value >= 0
+              ? label
+              : label === "Above minimum"
+                ? "Below minimum"
+                : `Over ${label.replace(" room", "")}`;
+            return `
+            <div class="team-cap-metric ${className} ${value < 0 ? "is-over" : "has-room"}">
+              <strong>${formatCompactMoney(value)}</strong>
+              <span>${metricLabel}</span>
+            </div>
+          `;
+          }).join("")}
+        </div>
+      </section>
       <div class="asset-tabs" role="tablist" aria-label="${escapeHtml(team.name)} assets">
         <button type="button" class="asset-tab ${activeView === "roster" ? "is-active" : ""}" data-view="roster" data-team="${team.id}" role="tab" aria-selected="${activeView === "roster"}">Roster <span>${getTeamPlayers(team).length}</span></button>
         <button type="button" class="asset-tab ${activeView === "picks" ? "is-active" : ""}" data-view="picks" data-team="${team.id}" role="tab" aria-selected="${activeView === "picks"}">Picks <span>${picks.length}</span></button>
@@ -1671,7 +1715,7 @@ function reviewTrade() {
       <div><span>TRADE APPROVAL CHECK</span><h2>${result.verdict}</h2></div>
     </section>
     <section class="approval-checks" aria-label="Trade rule checks">${checkRows}</section>
-    <p class="cba-estimate-note">Rule model uses estimated 2026–27 cap ${formatMoney(CBA_ESTIMATES.salaryCap)}, first apron ${formatMoney(CBA_ESTIMATES.firstApron)}, second apron ${formatMoney(CBA_ESTIMATES.secondApron)} and scaled salary-matching bands. This is a trade-planning estimate, not official NBA approval; protected picks need manual conveyance review.</p>
+    <p class="cba-estimate-note">Rule model uses 2026–27 thresholds: salary cap ${formatMoney(CBA_ESTIMATES.salaryCap)}, first apron ${formatMoney(CBA_ESTIMATES.firstApron)}, second apron ${formatMoney(CBA_ESTIMATES.secondApron)}, and minimum team salary ${formatMoney(CBA_ESTIMATES.minimumTeamSalary)}, with scaled salary-matching bands. This is a trade-planning estimate, not official NBA approval; protected picks need manual conveyance review.</p>
     <h2 class="review-assets-title">Trade assets by team</h2>
     <div class="review-team-grid">${state.teamIds.filter(Boolean).map(renderReviewTeam).join("")}</div>
   `;
