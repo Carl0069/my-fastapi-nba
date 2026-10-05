@@ -320,8 +320,6 @@ const PLAYER_CONTRACT_OVERRIDES = {
   "Brooklyn Nets": {
     "Moritz Wagner": {
       salary: 9_000_000,
-      note: "2-year, $18.45M contract: $9M in 2026–27; $9.45M in 2027–28 (mutual option).",
-      label: "2027–28 mutual option"
     }
   },
   "Dallas Mavericks": {
@@ -902,6 +900,57 @@ function getTeam(teamId) {
   return teams.find((team) => team.id === Number(teamId));
 }
 
+function getPickOwnerTeams(pick) {
+  const owner = String(pick?.original_owner || pick?.owner || "").trim();
+  if (!owner) return [];
+  const ownerTokens = owner.split(/[\/,&]+/).map((token) => token.trim().toLocaleLowerCase()).filter(Boolean);
+  return ownerTokens
+    .map((token) => teams.find((team) =>
+      getTeamAbbreviation(team).toLocaleLowerCase() === token
+      || team.name.toLocaleLowerCase() === token
+    ))
+    .filter((team, index, matches) => team && matches.findIndex((match) => match?.id === team.id) === index);
+}
+
+function renderPickOwnerBadge(pick) {
+  const rawOwner = String(pick?.original_owner || pick?.owner || "").trim();
+  const ownerTeams = getPickOwnerTeams(pick);
+  const ownerNames = ownerTeams.map((team) => team.name);
+  const ownerName = ownerNames.length
+    ? ownerNames.join(" / ")
+    : rawOwner || "Original team unavailable";
+  const fallbackAbbreviation = rawOwner.split(/[\/,&]+/)[0].trim().slice(0, 3).toLocaleUpperCase();
+  const logos = ownerTeams.length
+    ? ownerTeams.map((team) => {
+      const abbreviation = getTeamAbbreviation(team);
+      return `<span class="review-pick-owner__item">${team.logo
+        ? `<img class="review-pick-owner__logo" src="${escapeHtml(team.logo)}" alt="" aria-hidden="true" data-abbr="${escapeHtml(abbreviation)}"><span class="review-pick-owner__fallback" hidden>${escapeHtml(abbreviation)}</span>`
+        : `<span class="review-pick-owner__fallback">${escapeHtml(abbreviation)}</span>`}</span>`;
+    }).join("")
+    : `<span class="review-pick-owner__fallback">${escapeHtml(fallbackAbbreviation || "NBA")}</span>`;
+  return `<span class="review-pick-owner ${ownerTeams.length > 1 ? "review-pick-owner--multiple" : ""}" title="Original pick owner: ${escapeHtml(ownerName)}" aria-label="Original pick owner: ${escapeHtml(ownerName)}">
+    ${logos}
+  </span>`;
+}
+
+function renderReviewPlayerFace(player) {
+  return `<span class="review-player-face">
+    <img class="review-player-headshot" src="${escapeHtml(getPlayerHeadshotUrl(player.name))}" alt="" loading="lazy">
+    <span class="review-player-face__fallback" hidden>${escapeHtml(getPlayerInitials(player.name))}</span>
+  </span>`;
+}
+
+function renderReviewPlayerAsset(player, salary, direction, otherTeamName) {
+  return `<div class="review-asset review-asset--player">
+    <div class="review-player-asset">
+      ${renderReviewPlayerFace(player)}
+      <span class="review-player-asset__identity"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.pos || "Player")}</small></span>
+    </div>
+    <strong>${formatMoney(salary)}</strong>
+    <em>${direction} ${escapeHtml(otherTeamName || "team")}</em>
+  </div>`;
+}
+
 function getPlayerId(teamId, playerName) {
   return `${teamId}:${playerName}`;
 }
@@ -1191,7 +1240,7 @@ function renderTeamCard(teamId, slotIndex) {
     : `<div class="roster-table"><div class="roster-row roster-row--header"><span>Draft asset</span><span>Type</span><span>Trade destination</span></div>${picks.length ? pickRows : '<div class="team-empty">No draft picks returned by the API.</div>'}</div>`;
 
   return `
-    <section class="team-card">
+    <section class="team-card" data-team-theme="${getTeamAbbreviation(team)}">
       <div class="team-card__topline">
         <span>TEAM ${slotIndex + 1}</span>
         <div class="team-card__topline-actions">
@@ -1504,15 +1553,16 @@ function renderReviewTeam(teamId) {
     }))
     .filter((entry) => entry.targetPick?.teamId === Number(teamId) && entry.pick && entry.sender);
 
+  const pickLabel = (pick) => `<span class="review-pick-title">${renderPickOwnerBadge(pick)}<span>${escapeHtml(formatPick(pick))}</span></span>`;
   const outgoingRows = [
-    ...outgoingPlayers.map(({ player, destination }) => `<div class="review-asset"><span>${escapeHtml(player.name)} <small>${escapeHtml(player.pos || "")}</small></span><strong>${formatMoney(player.salary)}</strong><em>To ${escapeHtml(destination?.name || "team")}</em></div>`),
-    ...outgoingPicks.map(({ pick, destination }) => `<div class="review-asset review-asset--pick"><span>${escapeHtml(formatPick(pick))}</span><strong>Draft pick · ${escapeHtml(getPickTradeProtection(pick.assetId))}</strong><em>To ${escapeHtml(destination?.name || "team")}</em></div>`),
-    ...outgoingSwaps.map(({ pick, targetPick, destination }) => `<div class="review-asset review-asset--pick"><span>${escapeHtml(formatPick(pick))} swap right</span><strong>${escapeHtml(swapDirectionLabel(state.pickSwaps[pick.assetId]))} against ${escapeHtml(formatPick(targetPick))}</strong><em>With ${escapeHtml(destination.name)}</em></div>`)
+    ...outgoingPlayers.map(({ player, destination }) => renderReviewPlayerAsset(player, player.salary, "To", destination?.name)),
+    ...outgoingPicks.map(({ pick, destination }) => `<div class="review-asset review-asset--pick">${pickLabel(pick)}<strong>Draft pick · ${escapeHtml(getPickTradeProtection(pick.assetId))}</strong><em>To ${escapeHtml(destination?.name || "team")}</em></div>`),
+    ...outgoingSwaps.map(({ pick, targetPick, destination }) => `<div class="review-asset review-asset--pick">${pickLabel(pick)}<strong>${escapeHtml(swapDirectionLabel(state.pickSwaps[pick.assetId]))} against ${pickLabel(targetPick)}</strong><em>With ${escapeHtml(destination.name)}</em></div>`)
   ].join("");
   const incomingRows = [
-    ...incomingPlayers.map(({ player, sender }) => `<div class="review-asset"><span>${escapeHtml(player.name)} <small>${escapeHtml(player.pos || "")}</small></span><strong>${formatMoney(player.salary)}</strong><em>From ${escapeHtml(sender?.name || "team")}</em></div>`),
-    ...incomingPicks.map(({ pick, sender }) => `<div class="review-asset review-asset--pick"><span>${escapeHtml(formatPick(pick))}</span><strong>Draft pick · ${escapeHtml(getPickTradeProtection(pick.assetId))}</strong><em>From ${escapeHtml(sender?.name || "team")}</em></div>`),
-    ...incomingSwaps.map(({ pick, targetPick, sender }) => `<div class="review-asset review-asset--pick"><span>Swap right on ${escapeHtml(formatPick(pick))}</span><strong>${escapeHtml(swapDirectionLabel(state.pickSwaps[pick.assetId]))} against ${escapeHtml(formatPick(targetPick))}</strong><em>From ${escapeHtml(sender.name)}</em></div>`)
+    ...incomingPlayers.map(({ player, sender }) => renderReviewPlayerAsset(player, player.salary, "From", sender?.name)),
+    ...incomingPicks.map(({ pick, sender }) => `<div class="review-asset review-asset--pick">${pickLabel(pick)}<strong>Draft pick · ${escapeHtml(getPickTradeProtection(pick.assetId))}</strong><em>From ${escapeHtml(sender?.name || "team")}</em></div>`),
+    ...incomingSwaps.map(({ pick, targetPick, sender }) => `<div class="review-asset review-asset--pick">${pickLabel(pick)}<strong>${escapeHtml(swapDirectionLabel(state.pickSwaps[pick.assetId]))} against ${pickLabel(targetPick)}</strong><em>From ${escapeHtml(sender.name)}</em></div>`)
   ].join("");
 
   return `
@@ -1719,6 +1769,26 @@ function reviewTrade() {
     <h2 class="review-assets-title">Trade assets by team</h2>
     <div class="review-team-grid">${state.teamIds.filter(Boolean).map(renderReviewTeam).join("")}</div>
   `;
+  reviewContentEl.querySelectorAll(".review-player-headshot").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }, { once: true });
+    if (image.complete && image.naturalWidth === 0) {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }
+  });
+  reviewContentEl.querySelectorAll(".review-pick-owner__logo").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }, { once: true });
+    if (image.complete && image.naturalWidth === 0) {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }
+  });
   reviewDialog.showModal();
 }
 
@@ -1754,13 +1824,26 @@ function renderSavedTrades() {
     const dateLabel = Number.isNaN(date.getTime()) ? "Saved trade" : new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(date);
     const participants = (trade.teams || []).map((team) => team.name).join(" · ");
     const assetCount = (trade.players || []).length + (trade.picks || []).length;
+    const savedAssets = [
+      ...(Array.isArray(trade.players) ? trade.players.map((player) => ({
+        markup: `<span class="saved-trade-thumb saved-trade-thumb--player" title="${escapeHtml(player.name)}">${renderReviewPlayerFace(player)}</span>`
+      })) : []),
+      ...(Array.isArray(trade.picks) ? trade.picks.map((pick) => ({
+        markup: `<span class="saved-trade-thumb saved-trade-thumb--pick" title="${escapeHtml(`${pick.year} ${pick.round === 1 ? "1st" : "2nd"} · ${pick.owner || "Original owner unavailable"}`)}">${renderPickOwnerBadge(pick)}<small>${escapeHtml(pick.year)} ${pick.round === 1 ? "1st" : "2nd"}</small></span>`
+      })) : [])
+    ];
+    const visibleAssets = savedAssets.slice(0, 8);
+    const assetPreview = visibleAssets.length
+      ? `<div class="saved-trade-assets" aria-label="Players and picks in this saved trade">${visibleAssets.map((asset) => asset.markup).join("")}${savedAssets.length > visibleAssets.length ? `<span class="saved-trade-assets__more">+${savedAssets.length - visibleAssets.length}</span>` : ""}</div>`
+      : "";
     const verdictClass = trade.verdictStatus === "pass" ? "pass" : trade.verdictStatus === "fail" ? "fail" : "attention";
     return `
       <article class="saved-trade-row">
         <div class="saved-trade-main">
           <span class="saved-trade-verdict saved-trade-verdict--${verdictClass}">${escapeHtml(trade.verdict || "Saved")}</span>
           <strong>${escapeHtml(participants || "Trade proposal")}</strong>
-          <span>${dateLabel} · ${assetCount} assets</span>
+          <span class="saved-trade-date">${dateLabel} · ${assetCount} assets</span>
+          ${assetPreview}
         </div>
         <div class="saved-trade-actions">
           <button type="button" class="button button--ghost saved-trade-load" data-trade-id="${escapeHtml(trade.id)}">Open</button>
@@ -1769,6 +1852,26 @@ function renderSavedTrades() {
       </article>
     `;
   }).join("")}</div>`;
+  savedTradesContentEl.querySelectorAll(".review-player-headshot").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }, { once: true });
+    if (image.complete && image.naturalWidth === 0) {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }
+  });
+  savedTradesContentEl.querySelectorAll(".review-pick-owner__logo").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }, { once: true });
+    if (image.complete && image.naturalWidth === 0) {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }
+  });
 
   savedTradesContentEl.querySelectorAll(".saved-trade-load").forEach((button) => {
     button.addEventListener("click", () => loadSavedTrade(button.dataset.tradeId));
