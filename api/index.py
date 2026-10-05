@@ -4693,7 +4693,7 @@ teams = [
         "starters_2026_27": [
             {"name":"James Harden","pos":"PG","stats_season":"2025-26","gp":70,"pts":23.6,"reb":4.8,"ast":8,"stl":1.1,"blk":0.4,"tov":3.5,"fg":43.4,"fg3":37.5,"ft":88.4,"salary":30647619},
             {"name":"Donovan Mitchell","pos":"SG","stats_season":"2025-26","gp":70,"pts":27.9,"reb":4.5,"ast":5.7,"stl":1.5,"blk":0.3,"tov":2.8,"fg":48.3,"fg3":36.4,"ft":86.5,"salary":50100000},
-            {"name":"Peyton Watson","pos":"SF","stats_season":"2025-26","gp":54,"pts":14.6,"reb":4.9,"ast":2.1,"stl":0.9,"blk":1.1,"tov":1.7,"fg":49.1,"fg3":41.1,"ft":73,"salary":None},
+            {"name":"Peyton Watson","pos":"SF","stats_season":"2025-26","gp":54,"pts":14.6,"reb":4.9,"ast":2.1,"stl":0.9,"blk":1.1,"tov":1.7,"fg":49.1,"fg3":41.1,"ft":73,"salary":20465116},
             {"name":"Evan Mobley","pos":"PF","stats_season":"2025-26","gp":65,"pts":18.2,"reb":9,"ast":3.6,"stl":0.7,"blk":1.7,"tov":1.9,"fg":54.6,"fg3":29.7,"ft":60.6,"salary":50100000},
             {"name":"Jarrett Allen","pos":"C","stats_season":"2025-26","gp":56,"pts":15.4,"reb":8.5,"ast":1.8,"stl":1,"blk":0.8,"tov":1.3,"fg":63.8,"fg3":10,"ft":70.9,"salary":28000000},
         ],
@@ -4711,9 +4711,7 @@ teams = [
             {"name":"Tre Mann","pos":"SG","stats_season":"2025-26","gp":53,"pts":5.5,"reb":1.7,"ast":1.6,"stl":0.5,"blk":0.1,"tov":1,"fg":36,"fg3":32.3,"ft":85.2,"salary":8000000},
             {"name":"Nae'Qwan Tomlin","pos":"PF","stats_season":"2025-26","gp":64,"pts":5.8,"reb":2.9,"ast":0.8,"stl":0.6,"blk":0.5,"tov":0.5,"fg":47.8,"fg3":23.5,"ft":77,"salary":2400000},
             {"name":"Ernest Udeh, Jr.","pos":"C","stats_season":"2025-26","gp":None,"pts":None,"reb":None,"ast":None,"stl":None,"blk":None,"tov":None,"fg":None,"fg3":None,"ft":None,"salary":None},
-            {"name":"Max Strus","pos":"F","stats_season":"2025-26","gp":12,"pts":11.2,"reb":5.4,"ast":2,"stl":0.3,"blk":0,"tov":0.8,"fg":44.3,"fg3":40.2,"ft":77.8,"salary":16600000},
-        ],
-        "draft_picks": cleveland_draft_picks
+        ]
     },
     {
         "id": 8,
