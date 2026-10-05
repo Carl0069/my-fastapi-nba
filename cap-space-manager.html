@@ -70,8 +70,13 @@
 
       <section class="market-section" aria-labelledby="marketTitle">
         <div class="section-title market-heading">
-          <div><span class="overline" id="activeChallengeOverline">BUILD A $15 TEAM</span><h2 id="marketTitle">Who’s worth the pick?</h2><p id="activeChallengeDescription" class="active-challenge-description"></p></div>
-          <span class="market-note">2025–26 regular-season averages · randomized player board</span>
+          <div><span class="overline" id="activeChallengeOverline">BUILD A $15 TEAM</span><h2 id="marketTitle">Who’s worth the pick?</h2></div>
+          <span class="market-note">Regular-season averages · season shown per player · randomized player board</span>
+        </div>
+        <div class="active-challenge-brief" aria-live="polite">
+          <span class="active-challenge-brief__label">YOUR CHALLENGE RULE</span>
+          <strong id="activeChallengeRule">Choose any players</strong>
+          <p id="activeChallengeDescription">Draft five players and stay within the $15 budget.</p>
         </div>
         <div class="tier-board" id="tierBoard" aria-live="polite">
           <div class="loading-message">Loading the league. Warming up the randomizer…</div>
@@ -87,15 +92,20 @@
       </section>
 
       <section id="gradePanel" class="grade-card" aria-live="polite" hidden>
-        <div class="grade-card__stamp"><span>TEAM</span><strong id="gradeMark">A</strong></div>
-        <div class="grade-card__copy"><span class="overline">DRAFT COMPLETE</span><h2 id="gradeTitle">A complete five</h2><p id="gradeDescription"></p></div>
+        <div class="grade-card__stamp"><span>TEAM FIT</span><strong id="gradeMark">A</strong></div>
+        <div class="grade-card__copy">
+          <span class="overline">DRAFT COMPLETE</span>
+          <h2 id="gradeTitle">A complete five</h2>
+          <p id="gradeDescription"></p>
+          <div id="gradeBreakdown" class="grade-fit" aria-label="Team fit score breakdown"></div>
+        </div>
         <div class="grade-stats">
           <div><strong id="pointsTotal">0.0</strong><span>POINTS</span></div>
           <div><strong id="reboundsTotal">0.0</strong><span>BOARDS</span></div>
           <div><strong id="assistsTotal">0.0</strong><span>DIMES</span></div>
         </div>
       </section>
-      <footer class="page-footer">Player pool from the NBA roster API · stats are 2025–26 regular-season averages · Build another team with <button id="footerNewBoard" type="button">a fresh board</button>.</footer>
+      <footer class="page-footer">Player pool from the NBA roster API · regular-season stats show the season available for each player · Build another team with <button id="footerNewBoard" type="button">a fresh board</button>.</footer>
     </main>
     <dialog id="createChallengeDialog" class="create-dialog" aria-labelledby="createChallengeTitle">
       <form id="createChallengeForm">
@@ -103,7 +113,7 @@
           <div><span class="overline">COMMUNITY MADE</span><h2 id="createChallengeTitle">Create a challenge</h2></div>
           <button type="button" class="dialog-close" id="closeCreateChallenge" aria-label="Close">×</button>
         </header>
-        <p class="create-dialog__intro">Make a public player-pool challenge. It will be shared with everyone using Cap Space Manager.</p>
+        <p class="create-dialog__intro">Choose the exact players people can draft in this challenge. They will be the whole player pool—no random replacements.</p>
         <label class="form-field">Challenge name<input name="title" required minlength="3" maxlength="48" placeholder="e.g. Triple-double threat" /></label>
         <label class="form-field">Your display name<input name="creator" required minlength="2" maxlength="24" placeholder="Name shown on the challenge" /></label>
         <label class="form-field">Challenge category
@@ -118,6 +128,21 @@
             <option value="defenders">Defensive wall · 2+ steals + blocks</option>
           </select>
         </label>
+        <section class="challenge-player-picker" aria-labelledby="challengePlayerPickerTitle">
+          <div class="challenge-player-picker__header">
+            <div>
+              <strong id="challengePlayerPickerTitle">Choose challenge players</strong>
+              <p>Pick at least 5. Only players matching the category are shown.</p>
+            </div>
+            <span id="challengePlayerCount" class="challenge-player-count">0 selected</span>
+          </div>
+          <label class="sr-only" for="challengePlayerSearch">Search players or teams</label>
+          <input id="challengePlayerSearch" class="challenge-player-search" type="search" placeholder="Search player or team…" autocomplete="off" />
+          <div id="challengePlayerOptions" class="challenge-player-options" role="group" aria-label="Players to include in the challenge">
+            <p class="challenge-player-picker__empty">Load the player pool to choose players.</p>
+          </div>
+          <p id="challengePlayerFeedback" class="challenge-player-feedback" role="status">Choose 5 or more players to set the challenge pool.</p>
+        </section>
         <label class="form-field">Challenge note <span class="optional-label">OPTIONAL</span><textarea name="description" maxlength="220" rows="3" placeholder="Add a short description or house rule…"></textarea></label>
         <p class="create-dialog__privacy">Public display name only—don’t enter private or sensitive information.</p>
         <div class="create-dialog__actions">
@@ -128,6 +153,7 @@
     </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
     <script src="nba-player-ids.js"></script>
+    <script src="player-season-overrides.js"></script>
     <script src="cap-space-manager.js"></script>
   </body>
 </html>

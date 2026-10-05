@@ -117,7 +117,7 @@ const teamMetadata = {
     "Toronto Raptors": { logo: "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg", salary: 202743041, status: "Luxury Tax", rings: 1, years: [2019] },
     "Chicago Bulls": { logo: "https://cdn.nba.com/logos/nba/1610612741/primary/L/logo.svg", salary: 161545080, status: "Under Cap", rings: 6, years: [1991, 1992, 1993, 1996, 1997, 1998] },
     "Cleveland Cavaliers": { logo: "https://cdn.nba.com/logos/nba/1610612739/primary/L/logo.svg", salary: 222920753, status: "2nd Apron", rings: 1, years: [2016] },
-    "Detroit Pistons": { logo: "https://cdn.nba.com/logos/nba/1610612765/primary/L/logo.svg", salary: 153163826, status: "Under Cap", rings: 3, years: [1989, 1990, 2004] },
+    "Detroit Pistons": { logo: "https://cdn.nba.com/logos/nba/1610612765/primary/L/logo.svg", salary: 188382759, status: "Under Cap", rings: 3, years: [1989, 1990, 2004] },
     "Indiana Pacers": { logo: "https://cdn.nba.com/logos/nba/1610612754/primary/L/logo.svg", salary: 203715395, status: "Luxury Tax", rings: 0, years: [] },
     "Milwaukee Bucks": { logo: "https://cdn.nba.com/logos/nba/1610612749/primary/L/logo.svg", salary: 191358866, status: "Over Cap", rings: 2, years: [1971, 2021] },
     "Atlanta Hawks": { logo: "https://cdn.nba.com/logos/nba/1610612737/primary/L/logo.svg", salary: 221278253, status: "1st Apron", rings: 1, years: [1958] },
@@ -992,8 +992,16 @@ function formatSeasonStat(value, suffix = "") {
     return value == null || !Number.isFinite(number) ? "—" : `${number.toFixed(1)}${suffix}`;
 }
 
+function normalizePlayerName(name) {
+    return String(name || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+}
+
 function formatPlayerSeasonStat(player, field, suffix = "") {
-    return player.stats_season === "2025-26" ? formatSeasonStat(player[field], suffix) : "—";
+    return player.stats_season ? formatSeasonStat(player[field], suffix) : "—";
 }
 
 async function loadTeams() {
@@ -1011,6 +1019,7 @@ async function loadTeams() {
         });
         const data = await response.json();
         allTeams = data.teams || [];
+        window.applyPlayerSeasonStatsOverrides(allTeams);
         const seasonStatsByName = new Map(
             allTeams.flatMap(team => [
                 ...(team.starters_2026_27 || []),

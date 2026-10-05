@@ -2,6 +2,33 @@ const API_URL = "https://my-fastapi-nba.vercel.app";
 const API_KEY = "lebron2369";
 const MAX_TRADE_TEAMS = 5;
 const SAVED_TRADES_KEY = "nba-trade-desk.saved-trades.v1";
+const TRENDING_TRADE_PLAYERS = [
+  { name: "Jakob Poeltl", id: "1627751", team: "TOR", teamId: "1610612761" },
+  { name: "Immanuel Quickley", id: "1630193", team: "TOR", teamId: "1610612761" },
+  { name: "Myles Turner", id: "1626167", team: "MIL", teamId: "1610612749" },
+  { name: "Jimmy Butler", id: "202710", team: "GSW", teamId: "1610612744" },
+  { name: "Michael Porter Jr.", id: "1629008", team: "BKN", teamId: "1610612751" },
+  { name: "Kristaps Porziņģis", id: "204001", team: "GSW", teamId: "1610612744" },
+  { name: "Derrick Jones Jr.", id: "1627884", team: "LAC", teamId: "1610612746" },
+  { name: "Dalton Knecht", id: "1642261", team: "LAL", teamId: "1610612747" },
+  { name: "Fred VanVleet", id: "1627832", team: "HOU", teamId: "1610612745" },
+  { name: "Ty Jerome", id: "1629660", team: "MEM", teamId: "1610612763" },
+  { name: "Kyrie Irving", id: "202681", team: "DAL", teamId: "1610612742" },
+  { name: "RJ Barrett", id: "1629628", team: "TOR", teamId: "1610612761" },
+  { name: "Duncan Robinson", id: "1629130", team: "DET", teamId: "1610612765" },
+  { name: "Corey Kispert", id: "1630557", team: "ATL", teamId: "1610612737" },
+  { name: "De'Aaron Fox", id: "1628368", team: "SAS", teamId: "1610612759" },
+  { name: "Lauri Markkanen", id: "1628374", team: "UTA", teamId: "1610612762" },
+  { name: "Domantas Sabonis", id: "1627734", team: "SAC", teamId: "1610612758" },
+  { name: "Darius Garland", id: "1629636", team: "LAC", teamId: "1610612746" },
+  { name: "Trey Murphy III", id: "1630530", team: "NOP", teamId: "1610612740" },
+  { name: "Daniel Gafford", id: "1629655", team: "DAL", teamId: "1610612742" },
+  { name: "Terance Mann", id: "1629611", team: "BKN", teamId: "1610612751" },
+  { name: "Clint Capela", id: "203991", team: "HOU", teamId: "1610612745" },
+  { name: "Saddiq Bey", id: "1630180", team: "NOP", teamId: "1610612740" },
+  { name: "Trayce Jackson-Davis", id: "1631218", team: "TOR", teamId: "1610612761" },
+  { name: "Jalen Duren", id: "1631105", team: "DET", teamId: "1610612765" }
+];
 const ROSTER_MOVES = [
   { player: "Buddy Hield", from: "Atlanta Hawks", to: "Chicago Bulls", salary: 9_600_000, sourceSalary: 9_600_000 },
   { player: "Tre Mann", from: "Washington Wizards", to: "Cleveland Cavaliers", salary: 8_000_000, sourceSalary: 8_000_000 },
@@ -357,6 +384,7 @@ const state = {
 };
 
 const teamGridEl = document.getElementById("teamGrid");
+const trendingPlayersEl = document.getElementById("trendingPlayers");
 const teamCountLabelEl = document.getElementById("teamCountLabel");
 const apiStatusEl = document.getElementById("apiStatus");
 const addTeamBtn = document.getElementById("addTeamBtn");
@@ -373,6 +401,8 @@ const savedTradesBtn = document.getElementById("savedTradesBtn");
 const savedTradesDialog = document.getElementById("savedTradesDialog");
 const savedTradesContentEl = document.getElementById("savedTradesContent");
 const closeSavedTradesBtn = document.getElementById("closeSavedTradesBtn");
+const playerProfileDialog = document.getElementById("playerProfileDialog");
+const playerProfileContentEl = document.getElementById("playerProfileContent");
 const toastCloseBtn = document.getElementById("tradeToastClose");
 const tradeToastEl = document.getElementById("tradeToast");
 let tradeToastTimer = null;
@@ -680,7 +710,7 @@ function formatPlayerStats(player) {
     ["AST", player.ast]
   ].map(([label, value]) => {
     const stat = Number(value);
-    return `${label} ${player.stats_season === "2025-26" && value != null && Number.isFinite(stat) ? stat.toFixed(1) : "—"}`;
+    return `${label} ${player.stats_season && value != null && Number.isFinite(stat) ? stat.toFixed(1) : "—"}`;
   }).join(" · ");
 }
 
@@ -1144,7 +1174,14 @@ function renderTeamCard(teamId, slotIndex) {
           ${portrait}
           <div class="roster-player__details">
             <div class="roster-player__heading">
-              <span class="roster-player__name">${escapeHtml(player.name)}</span>
+              <button
+                type="button"
+                class="roster-player__name roster-player__profile"
+                data-player-name="${escapeHtml(player.name)}"
+                data-team-id="${team.id}"
+                aria-label="View ${escapeHtml(player.name)} player card"
+                title="Open ${escapeHtml(player.name)} player card"
+              >${escapeHtml(player.name)}</button>
               <span class="roster-player__position">${escapeHtml(player.pos || "-")}</span>
               ${player.contract_type === "Two-Way" ? '<span class="roster-player__contract-type">2-WAY</span>' : ""}
             </div>
@@ -1295,7 +1332,128 @@ function renderTeamCard(teamId, slotIndex) {
   `;
 }
 
+function renderTrendingPlayers() {
+  if (!trendingPlayersEl) return;
+
+  trendingPlayersEl.innerHTML = TRENDING_TRADE_PLAYERS.map(({ name, id, team, teamId }, index) => `
+    <button
+      type="button"
+      class="trending-player"
+      data-team-theme="${team}"
+      data-player-name="${escapeHtml(name)}"
+      aria-label="View ${escapeHtml(name)} player card"
+    >
+      <span class="trending-player__portrait">
+        <img
+          class="trending-player__headshot"
+          src="https://cdn.nba.com/headshots/nba/latest/260x190/${id}.png"
+          alt=""
+          loading="${index < 8 ? "eager" : "lazy"}"
+          onerror="this.hidden=true;this.nextElementSibling.hidden=false"
+        >
+        <span class="trending-player__fallback" hidden>${escapeHtml(getPlayerInitials(name))}</span>
+        <img
+          class="trending-player__team"
+          src="https://cdn.nba.com/logos/nba/${teamId}/primary/L/logo.svg"
+          alt="${team}"
+          loading="lazy"
+          onerror="this.hidden=true"
+        >
+        <span class="trending-player__rank">${index + 1}</span>
+      </span>
+      <span class="trending-player__name">${escapeHtml(name)}</span>
+      <span class="trending-player__team-name">${team}</span>
+    </button>
+  `).join("");
+
+  trendingPlayersEl.querySelectorAll(".trending-player").forEach((button) => {
+    button.addEventListener("click", () => openPlayerProfile(button.dataset.playerName));
+  });
+}
+
+function openPlayerProfile(playerName, teamId = null) {
+  const rosterEntry = teamId === null
+    ? teams.map((team) => ({ team, player: findRosterPlayer(team, playerName) })).find(({ player }) => player)
+    : (() => {
+      const team = getTeam(teamId);
+      return team ? { team, player: findRosterPlayer(team, playerName) } : null;
+    })();
+  if (!rosterEntry?.player) throw new Error(`Roster data unavailable for player: ${playerName}`);
+
+  const { team, player } = rosterEntry;
+  const statValue = (value, suffix = "") => {
+    const number = Number(value);
+    return player.stats_season && value != null && Number.isFinite(number)
+      ? `${number.toFixed(1)}${suffix}`
+      : "—";
+  };
+  const stats = [
+    ["PPG", statValue(player.pts)],
+    ["RPG", statValue(player.reb)],
+    ["APG", statValue(player.ast)],
+    ["SPG", statValue(player.stl)],
+    ["BPG", statValue(player.blk)],
+    ["FG%", statValue(player.fg, "%")],
+    ["3P%", statValue(player.fg3, "%")],
+    ["FT%", statValue(player.ft, "%")]
+  ];
+  const salary = hasSalary(player) ? formatMoney(player.salary) : "Unavailable";
+
+  playerProfileDialog.dataset.teamTheme = getTeamAbbreviation(team);
+  playerProfileContentEl.innerHTML = `
+    <article class="player-profile">
+      <header class="player-profile__header">
+        <div class="player-profile__team">
+          <img class="player-profile__team-logo" src="${escapeHtml(team.logo || "")}" alt="" onerror="this.hidden=true">
+          <div>
+            <span class="player-profile__eyebrow">PLAYER SCOUT / TRADE MARKET</span>
+            <span class="player-profile__team-name">${escapeHtml(team.name)}</span>
+          </div>
+        </div>
+        <button type="button" class="icon-button player-profile__close" aria-label="Close player card" title="Close">×</button>
+      </header>
+
+      <div class="player-profile__hero">
+        <div class="player-profile__portrait">
+          <img src="${escapeHtml(getPlayerHeadshotUrl(player.name))}" alt="${escapeHtml(player.name)}" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+          <span class="player-profile__fallback" hidden>${escapeHtml(getPlayerInitials(player.name))}</span>
+          <span class="player-profile__jersey">${escapeHtml(player.pos || "NBA")}</span>
+        </div>
+        <div class="player-profile__identity">
+          <span class="player-profile__eyebrow">${escapeHtml(player.stats_season || "REGULAR SEASON")} REGULAR SEASON</span>
+          <h2 id="playerProfileName">${escapeHtml(player.name)}</h2>
+          <p>${escapeHtml(player.pos || "Position unavailable")} <span>·</span> ${player.gp != null ? `${escapeHtml(player.gp)} games` : "Games played unavailable"}</p>
+          <div class="player-profile__salary">
+            <span>2026–27 SALARY</span>
+            <strong>${escapeHtml(salary)}</strong>
+            ${player.contract_label ? `<small>${escapeHtml(player.contract_label)}</small>` : ""}
+          </div>
+        </div>
+      </div>
+
+      <section class="player-profile__stats" aria-label="${escapeHtml(player.stats_season || "Regular-season")} statistics">
+        <div class="player-profile__stats-heading">
+          <span>SEASON PRODUCTION</span>
+          <span>PER GAME</span>
+        </div>
+        <div class="player-profile__stat-grid">
+          ${stats.map(([label, value]) => `
+            <div class="player-profile__stat">
+              <span>${label}</span>
+              <strong>${value}</strong>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+      ${player.contract_note ? `<p class="player-profile__contract-note">${escapeHtml(player.contract_note)}</p>` : ""}
+    </article>
+  `;
+  playerProfileContentEl.querySelector(".player-profile__close").addEventListener("click", () => playerProfileDialog.close());
+  playerProfileDialog.showModal();
+}
+
 function renderTradeBoard() {
+  renderTrendingPlayers();
   teamGridEl.innerHTML = state.teamIds.length
     ? state.teamIds.map((teamId, index) => renderTeamCard(teamId, index)).join("")
     : `
@@ -1379,6 +1537,10 @@ function renderTradeBoard() {
       }
       renderTradeBoard();
     });
+  });
+
+  teamGridEl.querySelectorAll(".roster-player__profile").forEach((button) => {
+    button.addEventListener("click", () => openPlayerProfile(button.dataset.playerName, Number(button.dataset.teamId)));
   });
 
   teamGridEl.querySelectorAll(".destination-select[data-player]").forEach((select) => {
@@ -1566,10 +1728,14 @@ function renderReviewTeam(teamId) {
   ].join("");
 
   return `
-    <article class="review-team">
+    <article class="review-team" data-team-theme="${getTeamAbbreviation(team)}">
       <header class="review-team__header">
-        <span class="review-team__badge">${getTeamAbbreviation(team)}</span>
-        <div><h3>${escapeHtml(team.name)}</h3><span>TEAM ${state.teamIds.indexOf(teamId) + 1}</span></div>
+        <span class="review-team__brand">
+          ${team.logo
+            ? `<img class="review-team__logo" src="${escapeHtml(team.logo)}" alt="" aria-hidden="true" data-abbr="${getTeamAbbreviation(team)}"><span class="review-team__badge" hidden>${getTeamAbbreviation(team)}</span>`
+            : `<span class="review-team__badge">${getTeamAbbreviation(team)}</span>`}
+        </span>
+        <div class="review-team__identity"><h3>${escapeHtml(team.name)}</h3><span>TEAM ${state.teamIds.indexOf(teamId) + 1}</span></div>
       </header>
       <div class="review-payroll">
         <div><span>Current payroll</span><strong>${formatMoney(originalPayroll)}</strong></div>
@@ -1769,6 +1935,16 @@ function reviewTrade() {
     <h2 class="review-assets-title">Trade assets by team</h2>
     <div class="review-team-grid">${state.teamIds.filter(Boolean).map(renderReviewTeam).join("")}</div>
   `;
+  reviewContentEl.querySelectorAll(".review-team__logo").forEach((image) => {
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }, { once: true });
+    if (image.complete && image.naturalWidth === 0) {
+      image.hidden = true;
+      image.nextElementSibling.hidden = false;
+    }
+  });
   reviewContentEl.querySelectorAll(".review-player-headshot").forEach((image) => {
     image.addEventListener("error", () => {
       image.hidden = true;
@@ -1926,6 +2102,7 @@ async function loadTeams() {
     if (teams.length === 0) throw new Error("The API returned no teams.");
 
     applyRosterCorrections();
+    window.applyPlayerSeasonStatsOverrides(teams);
     applyRaptorsPayroll();
     applyPhiladelphiaPayroll();
     applyNuggetsPayroll();
@@ -1996,6 +2173,9 @@ savedTradesBtn.addEventListener("click", () => {
 closeReviewBtn.addEventListener("click", () => reviewDialog.close());
 doneReviewBtn.addEventListener("click", () => reviewDialog.close());
 closeSavedTradesBtn.addEventListener("click", () => savedTradesDialog.close());
+playerProfileDialog.addEventListener("click", (event) => {
+  if (event.target === playerProfileDialog) playerProfileDialog.close();
+});
 reviewDialog.addEventListener("click", (event) => {
   if (event.target === reviewDialog) reviewDialog.close();
 });

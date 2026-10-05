@@ -6,14 +6,21 @@
     <title>NBA Trade Desk</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="trade-machine.css" />
   </head>
   <body>
     <div class="page-shell">
       <header class="topbar">
         <div class="topbar__brand">
-          <div class="brand-mark">NBA</div>
+          <div class="brand-mark" role="img" aria-label="NBA Trade Desk exchange logo">
+            <svg class="brand-mark__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+              <path class="brand-mark__route brand-mark__route--upper" d="M13 17h20l-5-5m5 5-5 5" />
+              <path class="brand-mark__route brand-mark__route--lower" d="M35 31H15l5 5m-5-5 5-5" />
+              <path class="brand-mark__center" d="M24 19v10" />
+              <circle class="brand-mark__node" cx="24" cy="24" r="2.2" />
+            </svg>
+          </div>
           <div>
             <p class="eyebrow">FRONT OFFICE / 2026–27</p>
             <h1>NBA Trade Desk</h1>
@@ -39,10 +46,25 @@
           </div>
         </section>
 
+        <section class="trade-trending" aria-labelledby="trendingTitle">
+          <div class="trade-trending__heading">
+            <div>
+              <p class="trade-trending__eyebrow"><span aria-hidden="true"></span> LEAGUE PULSE / TRADE MARKET</p>
+              <h2 id="trendingTitle">Trending players <span>being traded</span></h2>
+            </div>
+          </div>
+          <div id="trendingPlayers" class="trade-trending__rail" aria-label="Players trending in trade scenarios"></div>
+          <p class="trade-trending__note">Trade-market watchlist · Select any player for stats, salary, and team details</p>
+        </section>
+
         <div id="teamGrid" class="team-grid" aria-live="polite"></div>
       </main>
 
       <div id="tradeToast" class="trade-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+
+      <dialog id="playerProfileDialog" class="player-profile-dialog" aria-labelledby="playerProfileName">
+        <div id="playerProfileContent"></div>
+      </dialog>
 
       <dialog id="tradeReviewDialog" class="trade-review-dialog" aria-labelledby="reviewTitle">
         <div class="review-header">
@@ -75,6 +97,7 @@
 
     <script src="nba-player-ids.js"></script>
     <script src="player-headshots.js"></script>
+    <script src="player-season-overrides.js"></script>
     <script src="trade-machine.js"></script>
   </body>
 </html>
