@@ -4721,7 +4721,7 @@ teams = [
         "featured_star": "Cade Cunningham",
         "headline_stat": "23.4 PPG, 7.8 APG",
         "last_season_record": "60-22",
-        "total_salary": 153163826,
+        "total_salary": 188382759,
         "tax_status": "Under Cap",
         "championships": 3,
         "championship_years": [1989, 1990, 2004],
