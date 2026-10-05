@@ -4741,7 +4741,6 @@ teams = [
             {"name":"Ronald Holland II","pos":"SF","stats_season":"2025-26","gp":None,"pts":None,"reb":None,"ast":None,"stl":None,"blk":None,"tov":None,"fg":None,"fg3":None,"ft":None,"salary":9000000},
             {"name":"Paul Reed","pos":"PF","stats_season":"2025-26","gp":65,"pts":7.8,"reb":4.5,"ast":1.2,"stl":0.9,"blk":0.9,"tov":0.9,"fg":61.7,"fg3":32.5,"ft":66.4,"salary":5600000},
             {"name":"Isaiah Joe","pos":"SG","stats_season":"2025-26","gp":71,"pts":11.1,"reb":2.5,"ast":1.3,"stl":0.7,"blk":0.2,"tov":0.6,"fg":45.5,"fg3":42.3,"ft":89.4,"salary":11300000},
-            {"name":"Gary Harris","pos":"SG","stats_season":"2025-26","gp":48,"pts":2.7,"reb":1.3,"ast":1.1,"stl":0.6,"blk":0.2,"tov":0.4,"fg":44.2,"fg3":41.2,"ft":88.9,"salary":3800000},
             {"name":"Taurean Prince","pos":"SF","stats_season":"2025-26","gp":26,"pts":9.2,"reb":3.1,"ast":1.8,"stl":0.6,"blk":0.2,"tov":1.2,"fg":45,"fg3":43.6,"ft":100,"salary":3800000},
             {"name":"Wendell Moore Jr.","pos":"SG","stats_season":"2025-26","gp":6,"pts":1.7,"reb":1,"ast":0.7,"stl":0.3,"blk":0.3,"tov":0.2,"fg":57.1,"fg3":0,"ft":100,"salary":None},
             {"name":"Elijah Harkless","pos":"SG","stats_season":"2025-26","gp":26,"pts":6.8,"reb":2,"ast":2.9,"stl":1.2,"blk":0.2,"tov":1,"fg":33.5,"fg3":23.9,"ft":76.6,"salary":0},
