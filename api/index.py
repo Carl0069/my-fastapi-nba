@@ -1,9 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import logging
 import os
+import re
+import time
+import unicodedata
+from threading import Lock
 from typing import List, Optional, Literal
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from fastapi import FastAPI, HTTPException, Header, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -4899,7 +4904,6 @@ teams = [
             {"name":"Keshon Gilbert","pos":"PG","stats_season":"2025-26","gp":4,"pts":4.3,"reb":1.3,"ast":3,"stl":0.8,"blk":1,"tov":2,"fg":41.7,"fg3":0,"ft":100,"salary":0},
             {"name":"RayJ Dennis","pos":"PG","stats_season":"2025-26","gp":17,"pts":4.4,"reb":1.5,"ast":1.9,"stl":0.2,"blk":0.2,"tov":1,"fg":31.3,"fg3":31.1,"ft":88.9,"salary":0},
             {"name":"Kingston Flemings","pos":"PG","stats_season":"2025-26","gp":None,"pts":None,"reb":None,"ast":None,"stl":None,"blk":None,"tov":None,"fg":None,"fg3":None,"ft":None,"salary":7300000},
-            {"name":"Luguentz Dort","pos":"SG","stats_season":"2025-26","gp":69,"pts":8.3,"reb":3.6,"ast":1.2,"stl":0.9,"blk":0.4,"tov":0.8,"fg":38.5,"fg3":34.4,"ft":75.9,"salary":None},
             {"name":"Dorian Finney-Smith","pos":"SF","stats_season":"2025-26","gp":37,"pts":3.3,"reb":2.5,"ast":1,"stl":0.4,"blk":0.2,"tov":0.6,"fg":33.3,"fg3":27,"ft":88.9,"salary":13335000},
             {"name":"Ryan Nembhard","pos":"PG","stats_season":"2025-26","gp":60,"pts":6.6,"reb":2.2,"ast":5.3,"stl":0.4,"blk":0,"tov":1.4,"fg":41.5,"fg3":35.6,"ft":80.6,"salary":None},
             {"name":"Henri Veesaar","pos":"C","stats_season":"2025-26","gp":None,"pts":None,"reb":None,"ast":None,"stl":None,"blk":None,"tov":None,"fg":None,"fg3":None,"ft":None,"salary":None},
@@ -4911,6 +4915,7 @@ teams = [
             {"name":"Corey Kispert","pos":"SF","stats_season":"2025-26","gp":58,"pts":9.2,"reb":2.3,"ast":1.6,"stl":0.3,"blk":0.2,"tov":0.8,"fg":46.7,"fg3":36.7,"ft":79.4,"salary":13900000},
             {"name":"Jock Landale","pos":"C","stats_season":"2025-26","gp":68,"pts":10.6,"reb":5.7,"ast":1.7,"stl":0.5,"blk":0.5,"tov":0.9,"fg":51.5,"fg3":38.3,"ft":63.5,"salary":14100000},
             {"name":"Jonathan Kuminga","pos":"F","stats_season":"2025-26","gp":36,"pts":12.2,"reb":5.6,"ast":2.3,"stl":0.6,"blk":0.3,"tov":1.9,"fg":46.3,"fg3":33.3,"ft":72.4,"salary":0},
+            {"name":"Luguentz Dort","pos":"SG","stats_season":"2025-26","gp":69,"pts":8.3,"reb":3.6,"ast":1.2,"stl":0.9,"blk":0.4,"tov":0.8,"fg":38.5,"fg3":34.4,"ft":75.9,"salary":18222222},
         ]
     },
     {
@@ -5638,6 +5643,9 @@ validated_teams = [Team(**team).model_dump() for team in teams]
 teams = validated_teams
 
 payroll_contract_notes = {
+    ("Oklahoma City Thunder", "Luguentz Dort"): (
+        "2026-27 salary: $18,222,222 (Basketball-Reference)."
+    ),
     ("Brooklyn Nets", "Moritz Wagner"): (
         "2-year, $18.45M contract: $9M in 2026-27; $9.45M in 2027-28 (mutual option)."
     ),
@@ -5700,6 +5708,1290 @@ def supabase_rest_request(path: str, method: str = "GET", payload: Optional[dict
         logger.error("Supabase returned invalid JSON for community challenge request.")
         raise HTTPException(status_code=502, detail="Community challenge storage returned an invalid response.") from error
 
+NBA_STATS_CACHE_TTL_SECONDS = 900
+NBA_STATS_CACHE: dict = {}
+NBA_STATS_LOCK = Lock()
+NBA_ROSTER_CACHE_TTL_SECONDS = 21600
+NBA_ROSTER_CACHE: dict = {}
+NBA_ROSTER_LOCK = Lock()
+NBA_ROSTER_TEAM_OVERRIDES = {"luguentz dort": 12}
+NBA_SCHEDULE_CACHE_TTL_SECONDS = 86400
+NBA_SCHEDULE_CACHE: dict = {}
+NBA_SCHEDULE_LOCK = Lock()
+NBA_SCOREBOARD_CACHE_TTL_SECONDS = 45
+NBA_SCOREBOARD_CACHE: dict = {}
+NBA_SCOREBOARD_LOCK = Lock()
+NBA_TRANSACTIONS_CACHE_TTL_SECONDS = 3600
+NBA_TRANSACTIONS_CACHE: dict = {}
+NBA_TRANSACTIONS_LOCK = Lock()
+NBA_BOX_SCORE_CACHE_TTL_SECONDS = 30
+NBA_BOX_SCORE_CACHE: dict = {}
+NBA_BOX_SCORE_LOCK = Lock()
+
+
+def current_nba_season(now: Optional[datetime] = None) -> str:
+    current = now or datetime.now(timezone.utc)
+    season_start = current.year if current.month >= 7 else current.year - 1
+    return f"{season_start}-{str(season_start + 1)[-2:]}"
+
+
+def normalize_player_name(name: str) -> str:
+    return "".join(
+        character
+        for character in unicodedata.normalize("NFKD", name).casefold()
+        if character.isalnum()
+    )
+
+
+def fetch_current_nba_player_stats() -> dict:
+    with NBA_STATS_LOCK:
+        return _fetch_current_nba_player_stats()
+
+
+def fetch_current_nba_rosters() -> dict:
+    with NBA_ROSTER_LOCK:
+        return _fetch_current_nba_rosters()
+
+
+def _request_nba_json(url: str) -> dict:
+    headers = {
+        "Accept": "application/json, text/plain, */*",
+        "User-Agent": "Mozilla/5.0 (compatible; NBAStatsRefresh/1.0)",
+    }
+    if "nba.com" in url:
+        headers.update({
+            "Origin": "https://www.nba.com",
+            "Referer": "https://www.nba.com/",
+        })
+    request = Request(
+        url,
+        headers=headers,
+    )
+    with urlopen(request, timeout=12) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("NBA returned an unexpected JSON response.")
+    return payload
+
+
+def _value_by_key(data: dict, *names: str):
+    if not isinstance(data, dict):
+        return None
+    normalized = {str(key).casefold(): value for key, value in data.items()}
+    for name in names:
+        if name.casefold() in normalized:
+            return normalized[name.casefold()]
+    return None
+
+
+def _as_schedule_date(value: object) -> str:
+    text = str(value or "").strip()
+    if not text:
+        raise ValueError("NBA schedule game is missing its date.")
+    if "T" in text:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date().isoformat()
+    for date_format in ("%m/%d/%Y %H:%M:%S", "%m/%d/%Y", "%Y-%m-%d", "%a, %b %d, %Y"):
+        try:
+            return datetime.strptime(text, date_format).date().isoformat()
+        except ValueError:
+            continue
+    raise ValueError(f"NBA schedule returned an unsupported game date: {text}.")
+
+
+def _display_game_time(game: dict) -> str:
+    for field in ("gameEt", "gameTimeEst", "gameTimeUTC"):
+        value = _value_by_key(game, field)
+        if not value:
+            continue
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if field == "gameTimeUTC":
+            parsed = parsed.astimezone(timezone.utc)
+            time_label = f"{parsed.strftime('%I').lstrip('0')}:{parsed.strftime('%M %p')} UTC"
+            return time_label
+        return f"{parsed.strftime('%I').lstrip('0')}:{parsed.strftime('%M %p')} ET"
+    return "Time TBD"
+
+
+def _normalize_nba_schedule(payload: dict) -> list:
+    league_schedule = payload.get("leagueSchedule") or payload.get("LeagueSchedule")
+    if not isinstance(league_schedule, dict):
+        raise ValueError("NBA schedule response is missing leagueSchedule.")
+    game_dates = _value_by_key(league_schedule, "gameDates")
+    if not isinstance(game_dates, list):
+        raise ValueError("NBA schedule response is missing gameDates.")
+
+    nba_team_names = {}
+    nba_team_logos = {}
+    for team in teams:
+        logo_parts = team.get("logo", "").split("/")
+        try:
+            nba_team_id = int(logo_parts[logo_parts.index("nba") + 1])
+        except (ValueError, IndexError):
+            continue
+        nba_team_names[nba_team_id] = team["name"]
+        nba_team_logos[nba_team_id] = team["logo"]
+
+    games = []
+    for game_date in game_dates:
+        if not isinstance(game_date, dict):
+            continue
+        date_label = _as_schedule_date(_value_by_key(game_date, "gameDate"))
+        date_games = _value_by_key(game_date, "games")
+        if not isinstance(date_games, list):
+            continue
+        for game in date_games:
+            if not isinstance(game, dict):
+                continue
+            home = _value_by_key(game, "homeTeam")
+            away = _value_by_key(game, "awayTeam")
+            if not isinstance(home, dict) or not isinstance(away, dict):
+                continue
+            home_id = _value_by_key(home, "teamId")
+            away_id = _value_by_key(away, "teamId")
+            try:
+                home_id, away_id = int(home_id), int(away_id)
+            except (TypeError, ValueError):
+                continue
+            game_id = str(_value_by_key(game, "gameId") or "").strip()
+            if not game_id:
+                continue
+
+            game_label = str(_value_by_key(game, "gameLabel", "gameSubtype") or "").strip()
+            game_id_prefix = game_id[:3]
+            if not game_label:
+                game_label = "Preseason" if game_id_prefix == "001" else "Regular Season"
+            venue = str(_value_by_key(game, "arenaName") or "Venue TBD").strip()
+            city = str(_value_by_key(game, "arenaCity") or "").strip()
+            if city and city.casefold() not in venue.casefold():
+                venue = f"{venue} · {city}"
+
+            status_code = _value_by_key(game, "gameStatus")
+            status_text = str(_value_by_key(game, "gameStatusText") or "").strip()
+            try:
+                status_code_number = int(status_code) if status_code is not None else None
+            except (TypeError, ValueError):
+                status_code_number = None
+            if status_code_number == 1:
+                status_text = "Scheduled"
+            if not status_text:
+                status_text = "Final" if status_code_number == 3 else "In Progress"
+            games.append({
+                "id": game_id,
+                "date": _as_schedule_date(
+                    _value_by_key(game, "gameDateEst", "gameDate") or date_label
+                ),
+                "time": _display_game_time(game),
+                "stage": game_label,
+                "venue": venue,
+                "status": status_text,
+                "status_code": status_code,
+                "period": _value_by_key(game, "period"),
+                "clock": _value_by_key(game, "gameClock"),
+                "home": nba_team_names.get(home_id, str(_value_by_key(home, "teamName") or "NBA team")),
+                "home_tricode": str(_value_by_key(home, "teamTricode") or ""),
+                "home_logo": nba_team_logos.get(home_id, ""),
+                "home_score": _value_by_key(home, "score"),
+                "away": nba_team_names.get(away_id, str(_value_by_key(away, "teamName") or "NBA team")),
+                "away_tricode": str(_value_by_key(away, "teamTricode") or ""),
+                "away_logo": nba_team_logos.get(away_id, ""),
+                "away_score": _value_by_key(away, "score"),
+            })
+
+    unique_games = {game["id"]: game for game in games}
+    normalized_games = sorted(unique_games.values(), key=lambda game: (game["date"], game["time"], game["id"]))
+    if len(normalized_games) < 1230:
+        raise ValueError(f"NBA schedule was incomplete ({len(normalized_games)} games returned).")
+    return normalized_games
+
+
+def _fetch_nba_schedule() -> dict:
+    now = time.monotonic()
+    season = current_nba_season()
+    cached = NBA_SCHEDULE_CACHE.get(season)
+    if cached and cached["expires_at"] > now:
+        return cached["snapshot"]
+
+    try:
+        parameters = urlencode({"LeagueID": "00", "Season": season})
+        payload = _request_nba_json(f"https://stats.nba.com/stats/scheduleleaguev2?{parameters}")
+        games = _normalize_nba_schedule(payload)
+        snapshot = {
+            "status": "fresh",
+            "source": "NBA Stats",
+            "season": season,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "message": "",
+            "games": games,
+        }
+        NBA_SCHEDULE_CACHE[season] = {
+            "expires_at": now + NBA_SCHEDULE_CACHE_TTL_SECONDS,
+            "snapshot": snapshot,
+        }
+        return snapshot
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+        logger.warning("NBA schedule refresh failed for %s: %s", season, error)
+        previous = cached["snapshot"] if cached else None
+        if previous and previous.get("games"):
+            snapshot = {
+                **previous,
+                "status": "stale",
+                "message": "NBA Stats schedule refresh failed; showing the last complete schedule.",
+            }
+        else:
+            snapshot = {
+                "status": "unavailable",
+                "source": "NBA Stats",
+                "season": season,
+                "last_updated": None,
+                "message": "The full NBA schedule could not be loaded. Try again later.",
+                "games": [],
+            }
+        NBA_SCHEDULE_CACHE[season] = {
+            "expires_at": now + 900,
+            "snapshot": snapshot,
+        }
+        return snapshot
+
+
+def _fetch_nba_scoreboard() -> dict:
+    now = time.monotonic()
+    cached = NBA_SCOREBOARD_CACHE.get("today")
+    if cached and cached["expires_at"] > now:
+        return cached["snapshot"]
+
+    nba_error = None
+    try:
+        payload = _request_nba_json(
+            "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
+        )
+        scoreboard = payload.get("scoreboard")
+        games = _value_by_key(scoreboard, "games") if isinstance(scoreboard, dict) else None
+        if not isinstance(games, list):
+            raise ValueError("NBA daily scoreboard response is missing games.")
+        snapshot = {
+            "status": "fresh",
+            "source": "NBA.com live scoreboard",
+            "last_updated": _value_by_key(payload.get("meta", {}), "time")
+            or datetime.now(timezone.utc).isoformat(),
+            "games": games,
+        }
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+        nba_error = error
+        try:
+            payload = _request_nba_json(
+                "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+            )
+            events = payload.get("events")
+            if not isinstance(events, list):
+                raise ValueError("ESPN scoreboard response is missing events.")
+            games = []
+            for event in events:
+                if not isinstance(event, dict):
+                    continue
+                competitions = event.get("competitions")
+                if not isinstance(competitions, list) or not competitions:
+                    continue
+                competitors = competitions[0].get("competitors", [])
+                if not isinstance(competitors, list):
+                    continue
+                home = next((team for team in competitors if team.get("homeAway") == "home"), None)
+                away = next((team for team in competitors if team.get("homeAway") == "away"), None)
+                if not home or not away:
+                    continue
+                status = event.get("status", {}).get("type", {})
+                state = str(status.get("state") or "").casefold()
+                status_code = 2 if state == "in" else 3 if state == "post" else 1
+                games.append({
+                    "gameId": str(event.get("id") or ""),
+                    "date": str(event.get("date") or "")[:10],
+                    "gameStatus": status_code,
+                    "gameStatusText": str(status.get("shortDetail") or status.get("description") or "Scheduled"),
+                    "period": _value_by_key(event.get("status", {}), "period"),
+                    "gameClock": _value_by_key(event.get("status", {}), "displayClock"),
+                    "homeTeam": {
+                        "teamId": _value_by_key(home.get("team", {}), "id"),
+                        "teamTricode": _value_by_key(home.get("team", {}), "abbreviation"),
+                        "score": home.get("score"),
+                    },
+                    "awayTeam": {
+                        "teamId": _value_by_key(away.get("team", {}), "id"),
+                        "teamTricode": _value_by_key(away.get("team", {}), "abbreviation"),
+                        "score": away.get("score"),
+                    },
+                })
+            snapshot = {
+                "status": "fresh",
+                "source": "ESPN scoreboard fallback",
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "message": "NBA’s live scoreboard was unavailable; scores are supplied by ESPN.",
+                "games": games,
+            }
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as fallback_error:
+            logger.warning("NBA scoreboard failed (%s); ESPN fallback failed (%s).", nba_error, fallback_error)
+            snapshot = {
+                "status": "unavailable",
+                "source": "NBA.com / ESPN scoreboards",
+                "last_updated": None,
+                "message": "Live scores are unavailable; the full schedule remains available.",
+                "games": [],
+            }
+    NBA_SCOREBOARD_CACHE["today"] = {
+        "expires_at": now + NBA_SCOREBOARD_CACHE_TTL_SECONDS,
+        "snapshot": snapshot,
+    }
+    return snapshot
+
+
+def fetch_current_nba_schedule() -> dict:
+    with NBA_SCHEDULE_LOCK:
+        schedule = _fetch_nba_schedule()
+    with NBA_SCOREBOARD_LOCK:
+        scoreboard = _fetch_nba_scoreboard()
+
+    live_games = {}
+    for game in scoreboard["games"]:
+        if not isinstance(game, dict):
+            continue
+        game_id = str(_value_by_key(game, "gameId") or "").strip()
+        if game_id:
+            live_games[game_id] = game
+    live_games_by_matchup = {}
+    for game in scoreboard["games"]:
+        if not isinstance(game, dict):
+            continue
+        home = _value_by_key(game, "homeTeam")
+        away = _value_by_key(game, "awayTeam")
+        home_tricode = str(_value_by_key(home, "teamTricode") or "").casefold()
+        away_tricode = str(_value_by_key(away, "teamTricode") or "").casefold()
+        if home_tricode and away_tricode:
+            live_games_by_matchup.setdefault(f"{home_tricode}:{away_tricode}", []).append(game)
+    games = []
+    for scheduled_game in schedule["games"]:
+        game = dict(scheduled_game)
+        matchup = (
+            f"{str(game.get('home_tricode') or '').casefold()}:"
+            f"{str(game.get('away_tricode') or '').casefold()}"
+        )
+        candidates = live_games_by_matchup.get(matchup, [])
+        live = live_games.get(game["id"])
+        if not live and candidates:
+            dated_candidates = []
+            for candidate in candidates:
+                candidate_date = str(_value_by_key(candidate, "date") or "")[:10]
+                if not candidate_date:
+                    continue
+                try:
+                    distance = abs(
+                        (datetime.fromisoformat(game["date"]) - datetime.fromisoformat(candidate_date)).days
+                    )
+                except (TypeError, ValueError):
+                    continue
+                if distance <= 1:
+                    dated_candidates.append((distance, candidate))
+            if dated_candidates:
+                live = min(dated_candidates, key=lambda item: item[0])[1]
+            elif len(candidates) == 1 and not _value_by_key(candidates[0], "date"):
+                live = candidates[0]
+        if live:
+            game_status = _value_by_key(live, "gameStatus")
+            status_text = _value_by_key(live, "gameStatusText")
+            home = _value_by_key(live, "homeTeam")
+            away = _value_by_key(live, "awayTeam")
+            if game_status is not None:
+                try:
+                    game["status_code"] = int(game_status)
+                except (TypeError, ValueError):
+                    game["status_code"] = game_status
+            if game.get("status_code") == 1:
+                game["status"] = "Scheduled"
+            elif status_text:
+                game["status"] = str(status_text)
+            if home:
+                game["home_score"] = _value_by_key(home, "score")
+            if away:
+                game["away_score"] = _value_by_key(away, "score")
+            game["period"] = _value_by_key(live, "period")
+            game["clock"] = _value_by_key(live, "gameClock")
+        games.append(game)
+
+    return {
+        "status": schedule["status"],
+        "source": schedule["source"],
+        "season": schedule["season"],
+        "last_updated": schedule["last_updated"],
+        "message": schedule["message"],
+        "count": len(games),
+        "games": games,
+        "scores": {
+            "status": scoreboard["status"],
+            "source": scoreboard["source"],
+            "last_updated": scoreboard["last_updated"],
+            "message": scoreboard.get("message", ""),
+        },
+    }
+
+
+def fetch_current_nba_scores() -> dict:
+    with NBA_SCOREBOARD_LOCK:
+        scoreboard = _fetch_nba_scoreboard()
+    normalized_games = []
+    for game in scoreboard["games"]:
+        if not isinstance(game, dict):
+            continue
+        home = _value_by_key(game, "homeTeam")
+        away = _value_by_key(game, "awayTeam")
+        if not isinstance(home, dict) or not isinstance(away, dict):
+            continue
+        status_code = _value_by_key(game, "gameStatus")
+        try:
+            status_code_number = int(status_code) if status_code is not None else None
+        except (TypeError, ValueError):
+            status_code_number = None
+        status = str(_value_by_key(game, "gameStatusText") or "")
+        if status_code_number == 1:
+            status = "Scheduled"
+        elif not status:
+            status = "Final" if status_code_number == 3 else "In Progress"
+        normalized_games.append({
+            "id": str(_value_by_key(game, "gameId") or ""),
+            "date": str(_value_by_key(game, "date") or "")[:10],
+            "status": status,
+            "status_code": status_code_number,
+            "period": _value_by_key(game, "period"),
+            "clock": _value_by_key(game, "gameClock"),
+            "home_score": _value_by_key(home, "score"),
+            "away_score": _value_by_key(away, "score"),
+            "home_tricode": str(_value_by_key(home, "teamTricode") or ""),
+            "away_tricode": str(_value_by_key(away, "teamTricode") or ""),
+        })
+    return {
+        "status": scoreboard["status"],
+        "source": scoreboard["source"],
+        "last_updated": scoreboard["last_updated"],
+        "message": scoreboard.get("message", ""),
+        "games": normalized_games,
+    }
+
+
+def _normalize_box_score_team(team_data: dict, nba_team_names: dict, nba_team_logos: dict) -> dict:
+    team_id = _value_by_key(team_data, "teamId")
+    try:
+        team_id = int(team_id)
+    except (TypeError, ValueError):
+        team_id = None
+    players = _value_by_key(team_data, "players")
+    if not isinstance(players, list):
+        raise ValueError("NBA box score is missing a team player list.")
+    normalized_players = []
+    for player in players:
+        if not isinstance(player, dict):
+            continue
+        stats = _value_by_key(player, "statistics")
+        if not isinstance(stats, dict):
+            stats = {}
+        name = (
+            _value_by_key(player, "name")
+            or _value_by_key(player, "nameI")
+            or "Unknown player"
+        )
+        normalized_players.append({
+            "id": _value_by_key(player, "personId", "playerId"),
+            "name": str(name),
+            "position": str(_value_by_key(player, "position") or ""),
+            "starter": bool(_value_by_key(player, "starter")),
+            "played": bool(_value_by_key(player, "played")),
+            "statistics": {
+                "minutes": _value_by_key(stats, "minutes"),
+                "points": _value_by_key(stats, "points"),
+                "rebounds": _value_by_key(stats, "reboundsTotal", "rebounds"),
+                "assists": _value_by_key(stats, "assists"),
+                "steals": _value_by_key(stats, "steals"),
+                "blocks": _value_by_key(stats, "blocks"),
+                "turnovers": _value_by_key(stats, "turnovers"),
+                "field_goals": _value_by_key(stats, "fieldGoalsMade"),
+                "field_goals_attempted": _value_by_key(stats, "fieldGoalsAttempted"),
+                "three_pointers": _value_by_key(stats, "threePointersMade"),
+                "three_pointers_attempted": _value_by_key(stats, "threePointersAttempted"),
+                "free_throws": _value_by_key(stats, "freeThrowsMade"),
+                "free_throws_attempted": _value_by_key(stats, "freeThrowsAttempted"),
+                "plus_minus": _value_by_key(stats, "plusMinusPoints", "plusMinus"),
+                "fouls": _value_by_key(stats, "foulsPersonal", "fouls"),
+            },
+        })
+    return {
+        "id": team_id,
+        "name": nba_team_names.get(
+            team_id,
+            str(_value_by_key(team_data, "teamCity") or "") + " "
+            + str(_value_by_key(team_data, "teamName") or "NBA team"),
+        ).strip(),
+        "abbreviation": str(_value_by_key(team_data, "teamTricode") or ""),
+        "logo": nba_team_logos.get(team_id, ""),
+        "score": _value_by_key(team_data, "score"),
+        "players": normalized_players,
+    }
+
+
+def _resolve_espn_event_id(game_id: str) -> str:
+    with NBA_SCHEDULE_LOCK:
+        schedule = _fetch_nba_schedule()
+    scheduled_game = next(
+        (game for game in schedule["games"] if game["id"] == game_id),
+        None,
+    )
+    if scheduled_game is None:
+        raise ValueError("Game is not present in the current NBA schedule.")
+
+    game_date = str(scheduled_game["date"]).replace("-", "")
+    payload = _request_nba_json(
+        f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={game_date}"
+    )
+    events = payload.get("events")
+    if not isinstance(events, list):
+        raise ValueError("ESPN scoreboard response is missing events.")
+    expected_teams = {
+        str(scheduled_game.get("home_tricode") or "").casefold(),
+        str(scheduled_game.get("away_tricode") or "").casefold(),
+    }
+    for event in events:
+        competitions = event.get("competitions") if isinstance(event, dict) else None
+        if not isinstance(competitions, list) or not competitions:
+            continue
+        competitors = competitions[0].get("competitors", [])
+        event_teams = {
+            str((competitor.get("team") or {}).get("abbreviation") or "").casefold()
+            for competitor in competitors
+            if isinstance(competitor, dict)
+        }
+        event_id = str(event.get("id") or "")
+        if expected_teams == event_teams and event_id:
+            return event_id
+    raise ValueError("ESPN could not match this NBA game to a box-score event.")
+
+
+def _normalize_espn_box_score(payload: dict, game_id: str) -> dict:
+    boxscore = payload.get("boxscore")
+    teams_data = _value_by_key(boxscore, "players")
+    if not isinstance(teams_data, list):
+        raise ValueError("ESPN box-score response is missing player data.")
+
+    def stat_key(name: object) -> str:
+        normalized = re.sub(r"[^a-z0-9]", "", str(name or "").casefold())
+        aliases = {
+            "min": "minutes",
+            "pts": "points",
+            "reb": "reboundsTotal",
+            "totreb": "reboundsTotal",
+            "ast": "assists",
+            "stl": "steals",
+            "blk": "blocks",
+            "to": "turnovers",
+            "fgm": "fieldGoalsMade",
+            "fga": "fieldGoalsAttempted",
+            "3pm": "threePointersMade",
+            "3pa": "threePointersAttempted",
+            "ftm": "freeThrowsMade",
+            "fta": "freeThrowsAttempted",
+            "plusminus": "plusMinusPoints",
+            "pf": "foulsPersonal",
+        }
+        return aliases.get(normalized, {
+            "minute": "minutes",
+            "minutes": "minutes",
+            "points": "points",
+            "rebounds": "reboundsTotal",
+            "totalrebounds": "reboundsTotal",
+            "assists": "assists",
+            "steals": "steals",
+            "blocks": "blocks",
+            "turnovers": "turnovers",
+            "fieldgoalsmade": "fieldGoalsMade",
+            "fieldgoalsattempted": "fieldGoalsAttempted",
+            "threepointfieldgoalsmade": "threePointersMade",
+            "threepointfieldgoalsattempted": "threePointersAttempted",
+            "freethrowsmade": "freeThrowsMade",
+            "freethrowsattempted": "freeThrowsAttempted",
+            "plusminuspoints": "plusMinusPoints",
+            "foulspersonal": "foulsPersonal",
+        }.get(normalized, str(name or "")))
+
+    def map_stats(keys: list, values: object) -> dict:
+        if isinstance(values, dict):
+            pairs = values.items()
+        elif isinstance(values, list):
+            pairs = zip(keys, values)
+        else:
+            return {}
+        mapped = {}
+        for name, value in pairs:
+            name_text = str(name or "")
+            combined = re.fullmatch(
+                r"(fieldGoalsMade|threePointFieldGoalsMade|freeThrowsMade)"
+                r"-(fieldGoalsAttempted|threePointFieldGoalsAttempted|freeThrowsAttempted)",
+                name_text,
+                re.IGNORECASE,
+            )
+            combined_aliases = {
+                "fg": ("fieldGoalsMade", "fieldGoalsAttempted"),
+                "3pt": ("threePointFieldGoalsMade", "threePointFieldGoalsAttempted"),
+                "ft": ("freeThrowsMade", "freeThrowsAttempted"),
+            }
+            alias_pair = combined_aliases.get(re.sub(r"[^a-z0-9]", "", name_text.casefold()))
+            if combined is None and alias_pair:
+                made_key, attempted_key = alias_pair
+            elif combined:
+                made_key, attempted_key = combined.group(1), combined.group(2)
+            else:
+                made_key = attempted_key = None
+            if made_key and attempted_key and isinstance(value, str) and "-" in value:
+                made, attempted = value.split("-", 1)
+                mapped[stat_key(made_key)] = made
+                mapped[stat_key(attempted_key)] = attempted
+                continue
+            normalized = stat_key(name_text)
+            if normalized:
+                mapped[normalized] = value
+        return mapped
+
+    competitors = _value_by_key(payload.get("header", {}), "competitions")
+    competition = competitors[0] if isinstance(competitors, list) and competitors else {}
+    header_competitors = competition.get("competitors", [])
+    if not isinstance(header_competitors, list):
+        header_competitors = []
+    scores = {
+        str((competitor.get("team") or {}).get("abbreviation") or "").casefold(): competitor.get("score")
+        for competitor in header_competitors
+        if isinstance(competitor, dict)
+    }
+
+    teams_by_abbreviation = {
+        str(team.get("abbreviation") or "").casefold(): team
+        for team in teams
+    }
+    normalized_teams = []
+    for team_group in teams_data:
+        if not isinstance(team_group, dict):
+            continue
+        team_data = team_group.get("team") or {}
+        abbreviation = str(team_data.get("abbreviation") or "")
+        name = str(team_data.get("displayName") or team_data.get("name") or "NBA team")
+        nba_team = teams_by_abbreviation.get(abbreviation.casefold(), {})
+        players_by_id = {}
+
+        def add_player(entry: dict, keys: list, values: object) -> None:
+            athlete = entry.get("athlete") if isinstance(entry.get("athlete"), dict) else entry
+            athlete_id = str(athlete.get("id") or athlete.get("displayName") or len(players_by_id))
+            row = players_by_id.setdefault(athlete_id, {
+                "personId": athlete.get("id"),
+                "name": athlete.get("displayName") or athlete.get("fullName") or "Unknown player",
+                "position": (athlete.get("position") or {}).get("abbreviation", "")
+                if isinstance(athlete.get("position"), dict) else "",
+                "starter": bool(entry.get("starter")),
+                "played": not bool(entry.get("didNotPlay")),
+                "statistics": {},
+            })
+            row["statistics"].update(map_stats(keys, values))
+            row["played"] = row["played"] and bool(values)
+
+        statistics = team_group.get("statistics", [])
+        if isinstance(statistics, list):
+            for stat_group in statistics:
+                if not isinstance(stat_group, dict):
+                    continue
+                keys = stat_group.get("keys") or []
+                if not isinstance(keys, list):
+                    keys = []
+                if not keys and stat_group.get("name"):
+                    keys = [stat_group["name"]]
+                stat_athletes = stat_group.get("athletes")
+                if isinstance(stat_athletes, list):
+                    for entry in stat_athletes:
+                        if isinstance(entry, dict):
+                            add_player(entry, keys, entry.get("stats"))
+
+        direct_athletes = team_group.get("athletes")
+        if isinstance(direct_athletes, list):
+            direct_keys = [
+                str(stat.get("name") or stat.get("key") or "")
+                for stat in statistics
+                if isinstance(stat, dict)
+            ]
+            for entry in direct_athletes:
+                if isinstance(entry, dict):
+                    add_player(entry, direct_keys, entry.get("stats"))
+
+        normalized_teams.append({
+            "teamId": nba_team.get("id"),
+            "teamCity": name.rsplit(" ", 1)[0] if " " in name else "",
+            "teamName": name.rsplit(" ", 1)[-1],
+            "teamTricode": abbreviation,
+            "score": scores.get(abbreviation.casefold()),
+            "players": list(players_by_id.values()),
+        })
+
+    if len(normalized_teams) != 2:
+        raise ValueError("ESPN box-score response did not contain exactly two teams.")
+    teams_by_abbreviation = {
+        str(team.get("teamTricode") or "").casefold(): team
+        for team in normalized_teams
+    }
+    by_home_away = {
+        competitor.get("homeAway"): teams_by_abbreviation.get(
+            str((competitor.get("team") or {}).get("abbreviation") or "").casefold()
+        )
+        for competitor in header_competitors
+        if isinstance(competitor, dict)
+    }
+    status = competition.get("status", {}).get("type", {})
+    state = str(status.get("state") or "").casefold()
+    return {
+        "gameId": game_id,
+        "gameStatus": 2 if state == "in" else 3 if state == "post" else 1,
+        "gameStatusText": str(status.get("shortDetail") or status.get("description") or "Status unavailable"),
+        "period": competition.get("status", {}).get("period"),
+        "gameClock": competition.get("status", {}).get("displayClock"),
+        "homeTeam": by_home_away.get("home") or normalized_teams[0],
+        "awayTeam": by_home_away.get("away") or normalized_teams[1],
+    }
+
+
+def fetch_nba_box_score(game_id: str) -> dict:
+    if not re.fullmatch(r"\d{10}", game_id):
+        raise HTTPException(status_code=422, detail="Game ID must be a 10-digit NBA game ID.")
+
+    with NBA_BOX_SCORE_LOCK:
+        now = time.monotonic()
+        cached = NBA_BOX_SCORE_CACHE.get(game_id)
+        if cached and cached["expires_at"] > now:
+            return cached["snapshot"]
+
+        nba_error = None
+        try:
+            payload = _request_nba_json(
+                f"https://cdn.nba.com/static/json/liveData/boxscore/boxscore_{game_id}.json"
+            )
+            game = payload.get("game") or payload.get("boxScore")
+            if not isinstance(game, dict):
+                raise ValueError("NBA box-score response is missing game data.")
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+            nba_error = error
+            try:
+                espn_event_id = _resolve_espn_event_id(game_id)
+                payload = _request_nba_json(
+                    f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event={espn_event_id}"
+                )
+                game = _normalize_espn_box_score(payload, game_id)
+            except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as fallback_error:
+                logger.warning(
+                    "NBA box-score request failed (%s); ESPN fallback failed (%s).",
+                    error,
+                    fallback_error,
+                )
+                nba_error = fallback_error
+                game = None
+                payload = {}
+
+        try:
+            if not isinstance(game, dict):
+                raise ValueError("Neither NBA.com nor ESPN could provide this game's box score.")
+            nba_team_names = {}
+            nba_team_logos = {}
+            for team in teams:
+                logo_parts = team.get("logo", "").split("/")
+                try:
+                    nba_team_id = int(logo_parts[logo_parts.index("nba") + 1])
+                except (ValueError, IndexError):
+                    continue
+                nba_team_names[nba_team_id] = team["name"]
+                nba_team_logos[nba_team_id] = team["logo"]
+            home = _value_by_key(game, "homeTeam")
+            away = _value_by_key(game, "awayTeam")
+            if not isinstance(home, dict) or not isinstance(away, dict):
+                raise ValueError("NBA box-score response is missing a home or away team.")
+            snapshot = {
+                "status": "fresh",
+                "source": "NBA.com live box score" if nba_error is None else "ESPN box score fallback",
+                "last_updated": _value_by_key(payload.get("meta", {}), "time")
+                or datetime.now(timezone.utc).isoformat(),
+                "game_id": game_id,
+                "game_status": str(_value_by_key(game, "gameStatusText") or "Status unavailable"),
+                "status_code": _value_by_key(game, "gameStatus"),
+                "period": _value_by_key(game, "period"),
+                "clock": _value_by_key(game, "gameClock"),
+                "home": _normalize_box_score_team(home, nba_team_names, nba_team_logos),
+                "away": _normalize_box_score_team(away, nba_team_names, nba_team_logos),
+            }
+            NBA_BOX_SCORE_CACHE[game_id] = {
+                "expires_at": now + NBA_BOX_SCORE_CACHE_TTL_SECONDS,
+                "snapshot": snapshot,
+            }
+            return snapshot
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+            logger.warning("NBA box-score refresh failed for game %s: %s", game_id, error)
+            previous = cached["snapshot"] if cached else None
+            if previous:
+                snapshot = {
+                    **previous,
+                    "status": "stale",
+                    "message": "Live box-score refresh failed; showing the last successful update.",
+                }
+            else:
+                snapshot = {
+                    "status": "unavailable",
+                    "source": "NBA.com live box score",
+                    "last_updated": None,
+                    "game_id": game_id,
+                    "message": "This box score is not available yet, or the live score feed is unreachable.",
+                    "home": None,
+                    "away": None,
+                }
+            NBA_BOX_SCORE_CACHE[game_id] = {
+                "expires_at": now + 15,
+                "snapshot": snapshot,
+            }
+            return snapshot
+
+
+def _normalize_transaction_type(value: object, description: str) -> str:
+    if isinstance(value, dict):
+        value = value.get("name") or value.get("abbreviation") or value.get("description")
+    transaction_type = str(value or "").casefold()
+    text = f"{transaction_type} {description}".casefold()
+    if "trade" in text:
+        return "TRADE"
+    if "waiv" in text or "release" in text:
+        return "WAIVED"
+    if "draft" in text or "select" in text:
+        return "DRAFT"
+    if "extend" in text:
+        return "EXTENSION"
+    if "sign" in text or "contract" in text or "free agent" in text:
+        return "SIGNING"
+    return "OTHER"
+
+
+def _format_transaction_date(value: object) -> tuple[str, str]:
+    if isinstance(value, (int, float)):
+        parsed = datetime.fromtimestamp(value / 1000 if value > 10_000_000_000 else value, timezone.utc)
+    else:
+        text = str(value or "").strip()
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+        except ValueError as error:
+            raise ValueError(f"ESPN transaction has an invalid date: {text}.") from error
+    return parsed.date().isoformat(), parsed.strftime("%A, %B %d, %Y")
+
+
+def _parse_espn_transactions(payload: dict) -> list:
+    raw_items = payload.get("transactions")
+    if raw_items is None:
+        raw_items = payload.get("items")
+    if not isinstance(raw_items, list):
+        raise ValueError("ESPN transaction response has no transaction list.")
+
+    parsed_items = []
+    for index, raw_item in enumerate(raw_items):
+        if not isinstance(raw_item, dict):
+            continue
+        description = str(raw_item.get("description") or raw_item.get("text") or "").strip()
+        if not description:
+            continue
+        date_key, date_label = _format_transaction_date(raw_item.get("date"))
+        team_value = raw_item.get("team")
+        if isinstance(team_value, dict):
+            team_name = str(team_value.get("displayName") or team_value.get("name") or "").strip()
+        else:
+            team_name = str(team_value or "").strip()
+        parsed_items.append({
+            "id": str(raw_item.get("id") or f"{date_key}:{index}:{description[:48]}"),
+            "date": date_label,
+            "date_key": date_key,
+            "team": team_name or "NBA",
+            "type": _normalize_transaction_type(raw_item.get("type"), description),
+            "text": description,
+        })
+    return parsed_items
+
+
+def fetch_current_nba_transactions() -> dict:
+    with NBA_TRANSACTIONS_LOCK:
+        now = time.monotonic()
+        cached = NBA_TRANSACTIONS_CACHE.get("latest")
+        if cached and cached["expires_at"] > now:
+            return cached["snapshot"]
+
+        try:
+            transactions_by_id = {}
+            for season_year in (2026, 2027):
+                parameters = urlencode({"season": season_year, "limit": 500})
+                payload = _request_nba_json(
+                    f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/transactions?{parameters}"
+                )
+                for transaction in _parse_espn_transactions(payload):
+                    transactions_by_id[transaction["id"]] = transaction
+
+            transactions = sorted(
+                transactions_by_id.values(),
+                key=lambda item: (item["date_key"], item["id"]),
+                reverse=True,
+            )
+            grouped = {}
+            for transaction in transactions:
+                grouped.setdefault(transaction["date_key"], {
+                    "date": transaction["date"],
+                    "items": [],
+                })["items"].append({
+                    "team": transaction["team"],
+                    "type": transaction["type"],
+                    "text": transaction["text"],
+                })
+            snapshot = {
+                "status": "fresh",
+                "source": "ESPN reported transaction feed",
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "message": (
+                    "Reported transaction feed; it may not include every move, particularly contract extensions."
+                ),
+                "count": len(transactions),
+                "transactions": list(grouped.values()),
+            }
+            NBA_TRANSACTIONS_CACHE["latest"] = {
+                "expires_at": now + NBA_TRANSACTIONS_CACHE_TTL_SECONDS,
+                "snapshot": snapshot,
+            }
+            return snapshot
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+            logger.warning("NBA transaction refresh failed: %s", error)
+            previous = cached["snapshot"] if cached else None
+            if previous and previous.get("transactions"):
+                snapshot = {
+                    **previous,
+                    "status": "stale",
+                    "message": "Transaction feed refresh failed; showing the last successful reported feed.",
+                }
+            else:
+                snapshot = {
+                    "status": "unavailable",
+                    "source": "ESPN reported transaction feed",
+                    "last_updated": None,
+                    "message": (
+                        "The transaction feed is unavailable. No unverified transaction list is being shown."
+                    ),
+                    "count": 0,
+                    "transactions": [],
+                }
+            NBA_TRANSACTIONS_CACHE["latest"] = {
+                "expires_at": now + 900,
+                "snapshot": snapshot,
+            }
+            return snapshot
+
+
+def _fetch_current_nba_rosters() -> dict:
+    now = time.monotonic()
+    season = current_nba_season()
+    cached = NBA_ROSTER_CACHE.get(season)
+    if cached and cached["expires_at"] > now:
+        return cached["snapshot"]
+
+    try:
+        nba_team_ids = {}
+        for team in teams:
+            match = re.search(r"/logos/nba/(\d+)/", team.get("logo", ""))
+            if not match:
+                raise ValueError(f"NBA team ID is missing from the logo URL for {team['name']}.")
+            nba_team_ids[int(match.group(1))] = team["id"]
+        if len(nba_team_ids) != 30 or len(set(nba_team_ids.values())) != 30:
+            raise ValueError("The configured NBA team IDs are incomplete or duplicated.")
+
+        parameters = urlencode({
+            "IsOnlyCurrentSeason": 1,
+            "LeagueID": "00",
+            "Season": season,
+        })
+        request = Request(
+            f"https://stats.nba.com/stats/commonallplayers?{parameters}",
+            headers={
+                "Accept": "application/json, text/plain, */*",
+                "Origin": "https://www.nba.com",
+                "Referer": "https://www.nba.com/",
+                "User-Agent": "Mozilla/5.0 (compatible; NBAStatsRefresh/1.0)",
+            },
+        )
+        with urlopen(request, timeout=8) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+
+        result_sets = payload.get("resultSets")
+        if not isinstance(result_sets, list) or not result_sets:
+            raise ValueError("NBA active-roster response did not contain resultSets.")
+        headers = result_sets[0].get("headers")
+        rows = result_sets[0].get("rowSet")
+        if not isinstance(headers, list) or not isinstance(rows, list):
+            raise ValueError("NBA active-roster response did not contain player rows.")
+        indexes = {name: index for index, name in enumerate(headers)}
+        required = {"DISPLAY_FIRST_LAST", "ROSTERSTATUS", "TEAM_ID"}
+        if not required.issubset(indexes):
+            raise ValueError("NBA active-roster response is missing required player columns.")
+
+        roster_by_team = {team["id"]: [] for team in teams}
+        for row in rows:
+            try:
+                roster_status = int(row[indexes["ROSTERSTATUS"]])
+                nba_team_id = int(row[indexes["TEAM_ID"]])
+            except (TypeError, ValueError):
+                continue
+            team_id = nba_team_ids.get(nba_team_id)
+            name = str(row[indexes["DISPLAY_FIRST_LAST"]] or "").strip()
+            if roster_status != 1 or team_id is None or not name:
+                continue
+            roster_by_team[team_id].append(name)
+
+        for player_name, team_id in NBA_ROSTER_TEAM_OVERRIDES.items():
+            for roster in roster_by_team.values():
+                roster[:] = [
+                    name for name in roster
+                    if normalize_player_name(name) != normalize_player_name(player_name)
+                ]
+            roster_by_team[team_id].append(player_name.title())
+
+        if any(len(roster) < 5 for roster in roster_by_team.values()):
+            raise ValueError("NBA active-roster response did not include at least five players for every team.")
+
+        base_players_by_name = {}
+        base_players_by_team_and_name = {}
+        for team in teams:
+            for player in team["starters_2026_27"] + team["bench_2026_27"]:
+                player_key = normalize_player_name(player["name"])
+                base_players_by_name.setdefault(player_key, player)
+                base_players_by_team_and_name[(team["id"], player_key)] = player
+
+        response_teams = json.loads(json.dumps(teams))
+        for team in response_teams:
+            roster_players = []
+            for name in roster_by_team[team["id"]]:
+                player_key = normalize_player_name(name)
+                base_player = (
+                    base_players_by_team_and_name.get((team["id"], player_key))
+                    or base_players_by_name.get(player_key)
+                )
+                if base_player:
+                    player = {**base_player, "name": name}
+                else:
+                    player = {
+                        "name": name,
+                        "pos": "—",
+                        "contract_type": None,
+                        "stats_season": f"{int(season[:4]) - 1}-{season[2:4]}",
+                        "gp": None,
+                        "pts": None,
+                        "reb": None,
+                        "ast": None,
+                        "stl": None,
+                        "blk": None,
+                        "tov": None,
+                        "fg": None,
+                        "fg3": None,
+                        "ft": None,
+                        "salary": None,
+                    }
+                roster_players.append(player)
+
+            current_names = {normalize_player_name(player["name"]) for player in roster_players}
+            starters = [
+                player for player in team["starters_2026_27"]
+                if normalize_player_name(player["name"]) in current_names
+            ]
+            starter_names = {normalize_player_name(player["name"]) for player in starters}
+            team["starters_2026_27"] = starters
+            team["bench_2026_27"] = [
+                player for player in roster_players
+                if normalize_player_name(player["name"]) not in starter_names
+            ]
+
+        snapshot = {
+            "status": "fresh",
+            "source": "NBA.com Stats",
+            "season": season,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "message": (
+                "Roster membership refreshed from NBA.com Stats. Its active-player feed does not identify "
+                "two-way contract status; unmatched players have no verified position or salary. "
+                "User-configured team assignments are retained."
+            ),
+            "teams": response_teams,
+        }
+        NBA_ROSTER_CACHE[season] = {
+            "expires_at": now + NBA_ROSTER_CACHE_TTL_SECONDS,
+            "snapshot": snapshot,
+        }
+        return snapshot
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+        logger.warning("NBA roster refresh failed for %s: %s", season, error)
+        previous = cached["snapshot"] if cached else None
+        if previous and previous.get("teams"):
+            snapshot = {
+                **previous,
+                "status": "stale",
+                "message": f"NBA.com Stats rosters are unavailable; showing the last complete {season} roster refresh.",
+            }
+        else:
+            snapshot = {
+                "status": "stale",
+                "source": "API snapshot",
+                "season": season,
+                "last_updated": None,
+                "message": "NBA.com Stats rosters are unavailable; showing the saved API roster snapshot, which may be outdated.",
+                "teams": None,
+            }
+        NBA_ROSTER_CACHE[season] = {
+            "expires_at": now + 900,
+            "snapshot": snapshot,
+        }
+        return snapshot
+
+
+def _fetch_current_nba_player_stats() -> dict:
+    now = time.monotonic()
+    season = current_nba_season()
+    cached = NBA_STATS_CACHE.get(season)
+    if cached and cached["expires_at"] > now:
+        return cached["snapshot"]
+
+    parameters = {
+        "College": "",
+        "Conference": "",
+        "Country": "",
+        "DateFrom": "",
+        "DateTo": "",
+        "Division": "",
+        "DraftPick": "",
+        "DraftYear": "",
+        "GameScope": "",
+        "GameSegment": "",
+        "Height": "",
+        "LastNGames": 0,
+        "LeagueID": "00",
+        "Location": "",
+        "MeasureType": "Base",
+        "Month": 0,
+        "OpponentTeamID": 0,
+        "Outcome": "",
+        "PORound": 0,
+        "PaceAdjust": "N",
+        "PerMode": "PerGame",
+        "Period": 0,
+        "PlayerExperience": "",
+        "PlayerPosition": "",
+        "PlusMinus": "N",
+        "Rank": "N",
+        "Season": season,
+        "SeasonSegment": "",
+        "SeasonType": "Regular Season",
+        "ShotClockRange": "",
+        "TeamID": 0,
+        "VsConference": "",
+        "VsDivision": "",
+    }
+    request = Request(
+        "https://stats.nba.com/stats/leaguedashplayerstats?" + urlencode(parameters),
+        headers={
+            "Accept": "application/json, text/plain, */*",
+            "Origin": "https://www.nba.com",
+            "Referer": "https://www.nba.com/",
+            "User-Agent": "Mozilla/5.0 (compatible; NBAStatsRefresh/1.0)",
+        },
+    )
+
+    try:
+        with urlopen(request, timeout=8) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        result_sets = payload.get("resultSets")
+        if not isinstance(result_sets, list) or not result_sets:
+            raise ValueError("NBA stats response did not contain resultSets.")
+        headers = result_sets[0].get("headers")
+        rows = result_sets[0].get("rowSet")
+        if not isinstance(headers, list) or not isinstance(rows, list):
+            raise ValueError("NBA stats response did not contain player rows.")
+        indexes = {name: index for index, name in enumerate(headers)}
+        required = {"PLAYER_NAME", "GP", "PTS", "REB", "AST", "STL", "BLK", "TOV", "FG_PCT", "FG3_PCT", "FT_PCT"}
+        if not required.issubset(indexes):
+            raise ValueError("NBA stats response is missing required player-stat columns.")
+
+        def value(row: list, column: str):
+            raw = row[indexes[column]]
+            if raw is None or raw == "":
+                return None
+            return float(raw)
+
+        def percentage(row: list, column: str):
+            raw = value(row, column)
+            return round(raw * 100, 1) if raw is not None else None
+
+        players = {}
+        for row in rows:
+            name = str(row[indexes["PLAYER_NAME"]]).strip()
+            if not name:
+                continue
+            gp = value(row, "GP")
+            players[normalize_player_name(name)] = {
+                "stats_season": season,
+                "gp": int(gp) if gp is not None else None,
+                "pts": value(row, "PTS"),
+                "reb": value(row, "REB"),
+                "ast": value(row, "AST"),
+                "stl": value(row, "STL"),
+                "blk": value(row, "BLK"),
+                "tov": value(row, "TOV"),
+                "fg": percentage(row, "FG_PCT"),
+                "fg3": percentage(row, "FG3_PCT"),
+                "ft": percentage(row, "FT_PCT"),
+            }
+
+        updated_at = datetime.now(timezone.utc).isoformat()
+        status = "fresh" if players else "pending"
+        snapshot = {
+            "status": status,
+            "source": "NBA.com Stats",
+            "season": season,
+            "last_updated": updated_at,
+            "message": "" if players else f"No {season} regular-season player stats have been published yet.",
+            "players": players,
+        }
+        NBA_STATS_CACHE[season] = {
+            "expires_at": now + NBA_STATS_CACHE_TTL_SECONDS,
+            "snapshot": snapshot,
+        }
+        return snapshot
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+        logger.warning("NBA stats refresh failed for %s: %s", season, error)
+        previous = cached["snapshot"] if cached else None
+        if previous and previous.get("players"):
+            snapshot = {
+                **previous,
+                "status": "stale",
+                "message": f"NBA.com Stats is unavailable; showing the last successful {season} update.",
+            }
+        else:
+            snapshot = {
+                "status": "unavailable",
+                "source": "NBA.com Stats",
+                "season": season,
+                "last_updated": None,
+                "message": "NBA.com Stats is unavailable; showing the season stats already provided by this API.",
+                "players": {},
+            }
+        NBA_STATS_CACHE[season] = {
+            "expires_at": now + 60,
+            "snapshot": snapshot,
+        }
+        return snapshot
+
+
 # ==============================================================================
 # ROUTE ENDPOINTS
 # ==============================================================================
@@ -5712,11 +7004,31 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
+def build_teams_response() -> dict:
+    stats_snapshot = fetch_current_nba_player_stats()
+    roster_snapshot = fetch_current_nba_rosters()
+    response_teams = json.loads(json.dumps(roster_snapshot["teams"] or teams))
+    if stats_snapshot["players"]:
+        for team in response_teams:
+            for player in team.get("starters_2026_27", []) + team.get("bench_2026_27", []):
+                live_stats = stats_snapshot["players"].get(normalize_player_name(player["name"]))
+                if live_stats:
+                    player.update(live_stats)
+
+    return {
+        "count": len(response_teams),
+        "teams": response_teams,
+        "stats": {key: value for key, value in stats_snapshot.items() if key != "players"},
+        "roster": {key: value for key, value in roster_snapshot.items() if key != "teams"},
+    }
+
+
 @app.get("/api/v1/teams/search", dependencies=[Depends(verify_api_key)])
 def search_teams(q: str = Query(..., min_length=1)):
     query = q.lower()
     results = []
-    for team in teams:
+    team_data = build_teams_response()
+    for team in team_data["teams"]:
         starter_names = " ".join([p["name"] for p in team.get("starters_2026_27", [])])
         bench_names = " ".join([p["name"] for p in team.get("bench_2026_27", [])])
         searchable_text = (
@@ -5730,20 +7042,38 @@ def search_teams(q: str = Query(..., min_length=1)):
     return {
         "query": q,
         "count": len(results),
-        "results": results
+        "results": results,
+        "stats": team_data["stats"],
+        "roster": team_data["roster"],
     }
 
 @app.get("/api/v1/teams", dependencies=[Depends(verify_api_key)])
 def get_teams():
-    return {
-        "count": len(teams),
-        "teams": teams
-    }
+    return build_teams_response()
+
+@app.get("/api/v1/schedule", dependencies=[Depends(verify_api_key)])
+def get_schedule():
+    return fetch_current_nba_schedule()
+
+@app.get("/api/v1/schedule/scores", dependencies=[Depends(verify_api_key)])
+def get_schedule_scores():
+    return fetch_current_nba_scores()
+
+@app.get("/api/v1/games/{game_id}/boxscore", dependencies=[Depends(verify_api_key)])
+def get_game_box_score(game_id: str):
+    return fetch_nba_box_score(game_id)
+
+@app.get("/api/v1/transactions", dependencies=[Depends(verify_api_key)])
+def get_transactions():
+    return fetch_current_nba_transactions()
 
 @app.get("/api/v1/teams/{team_id}", dependencies=[Depends(verify_api_key)])
 def get_team(team_id: int):
-    for team in teams:
+    response = build_teams_response()
+    for team in response["teams"]:
         if team["id"] == team_id:
+            team["stats_update"] = response["stats"]
+            team["roster_update"] = response["roster"]
             return team
     raise HTTPException(status_code=404, detail="Team not found.")
 
@@ -5779,7 +7109,8 @@ def create_community_challenge(challenge: CommunityChallengeCreate):
 
 @app.get("/teams")
 def get_teams_legacy():
-    return {"teams": teams}
+    response = build_teams_response()
+    return {"teams": response["teams"], "stats": response["stats"], "roster": response["roster"]}
 
 @app.get("/api/v1/health")
 def health_check_v1():
