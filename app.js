@@ -12,6 +12,8 @@ let lastScheduleRefreshAt = 0;
 let lastScoreRefreshAt = 0;
 let lastTransactionsRefreshAt = 0;
 let lastTeamsRefreshAt = 0;
+let scheduleLoadMessage = "";
+let scheduleRouteMissing = false;
 let activeTeamId = null;
 let isRefreshingTeams = false;
 let isRefreshingSchedule = false;
@@ -291,16 +293,20 @@ function updateScheduleStatus(payload = {}) {
     const scoreUpdatedAt = payload.scores?.last_updated
         ? new Date(payload.scores.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
         : "";
-    const schedulePart = payload.status === "fresh"
-        ? `${Number(payload.count || scheduleGames.length).toLocaleString()} games · schedule checked ${scheduleUpdatedAt}`
-        : payload.status === "stale"
-            ? "Showing the last saved full schedule"
-            : payload.message || "The full season schedule is unavailable.";
+    const schedulePart = scheduleRouteMissing
+        ? "The deployed API is missing the schedule route. Publish the latest api/index.py to Vercel."
+        : scheduleLoadMessage
+            ? scheduleLoadMessage
+            : payload.status === "fresh"
+                ? `${Number(payload.count || scheduleGames.length).toLocaleString()} games · schedule checked ${scheduleUpdatedAt}`
+                : payload.status === "stale"
+                    ? "Showing the last saved full schedule"
+                    : payload.message || "The full season schedule is unavailable.";
     const scorePart = payload.scores?.status === "fresh"
         ? `Scores refreshed ${scoreUpdatedAt}`
         : payload.scores?.message || "Live scores unavailable";
     statusElement.textContent = `${schedulePart} · ${scorePart} · live scores auto-refresh every minute`;
-    statusElement.title = [payload.message, payload.scores?.message].filter(Boolean).join(" ");
+    statusElement.title = [scheduleLoadMessage, payload.message, payload.scores?.message].filter(Boolean).join(" ");
     statusElement.classList.toggle("is-warning", payload.status !== "fresh" || payload.scores?.status !== "fresh");
 }
 
@@ -308,16 +314,19 @@ async function loadSchedule() {
     if (isRefreshingSchedule) return;
     isRefreshingSchedule = true;
     const statusElement = document.getElementById("scheduleUpdateStatus");
+    let schedulePayload = null;
     try {
         const response = await fetch(`${API_URL}/api/v1/schedule`, {
             headers: { "x-api-key": API_KEY }
         });
         if (!response.ok) throw new Error(`Schedule request failed (${response.status}).`);
-        const payload = await response.json();
-        if (!Array.isArray(payload.games) || payload.games.length < 1230) {
-            throw new Error("The API did not return the full 2026–27 schedule.");
+        schedulePayload = await response.json();
+        if (!Array.isArray(schedulePayload.games) || schedulePayload.games.length < 1230) {
+            throw new Error(schedulePayload.message || "The API did not return the full 2026–27 schedule.");
         }
-        scheduleGames = payload.games;
+        scheduleLoadMessage = "";
+        scheduleRouteMissing = false;
+        scheduleGames = schedulePayload.games;
         lastScheduleRefreshAt = Date.now();
         const datePicker = document.getElementById("scheduleDatePicker");
         const dates = scheduleGames.map(game => game.date).filter(Boolean).sort();
@@ -329,15 +338,22 @@ async function loadSchedule() {
                 ? today
                 : dates.find(date => date >= today) || dates[0] || today;
         }
-        updateScheduleStatus(payload);
+        updateScheduleStatus(schedulePayload);
         renderSchedule();
         loadLiveScores({ background: true });
     } catch (error) {
         console.error("Full season schedule load failed:", error);
-        if (statusElement) {
-            statusElement.textContent = scheduleGames.length
+        const message = error instanceof Error ? error.message : String(error);
+        scheduleRouteMissing = message.includes("(404)");
+        scheduleLoadMessage = scheduleRouteMissing
+            ? "The deployed API is missing the schedule route. Publish the latest api/index.py to Vercel."
+            : schedulePayload?.status === "unavailable" || schedulePayload?.status === "stale"
+                ? message
+                : scheduleGames.length
                 ? "Schedule refresh failed. Showing the last loaded full season schedule."
                 : "Could not load the full season schedule. Check the API connection and try again.";
+        if (statusElement) {
+            statusElement.textContent = scheduleLoadMessage;
             statusElement.classList.add("is-warning");
         }
         renderSchedule();
@@ -434,7 +450,7 @@ function renderSchedule() {
     if (!scheduleGames.length) {
         const empty = document.createElement("p");
         empty.className = "schedule-empty";
-        empty.textContent = "Loading the full NBA schedule…";
+        empty.textContent = scheduleLoadMessage || "Loading the full NBA schedule…";
         grid.appendChild(empty);
         return;
     }
@@ -503,7 +519,12 @@ async function loadTransactions() {
         const response = await fetch(`${API_URL}/api/v1/transactions`, {
             headers: { "x-api-key": API_KEY }
         });
-        if (!response.ok) throw new Error(`Transaction request failed (${response.status}).`);
+        if (!response.ok) {
+            const detail = response.status === 404
+                ? "The deployed API is missing the transactions route. Publish the latest api/index.py to Vercel."
+                : `Transaction request failed (${response.status}).`;
+            throw new Error(detail);
+        }
         const payload = await response.json();
         rawTimelineTransactions = Array.isArray(payload.transactions) ? payload.transactions : [];
         transactionsFeedStatus = payload;
@@ -516,7 +537,9 @@ async function loadTransactions() {
             status: rawTimelineTransactions.length ? "stale" : "unavailable",
             message: rawTimelineTransactions.length
                 ? "Transaction refresh failed. Showing the last loaded reported feed."
-                : "The transaction feed is unavailable; no unverified transaction list is shown."
+                : error instanceof Error
+                    ? error.message
+                    : "The transaction feed is unavailable; no unverified transaction list is shown."
         };
         filterTransactions();
     } finally {
