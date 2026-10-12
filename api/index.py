@@ -5,6 +5,7 @@ import os
 import re
 import time
 import unicodedata
+from pathlib import Path
 from threading import Lock
 from typing import List, Optional, Literal
 from urllib.error import HTTPError, URLError
@@ -18,7 +19,7 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 API_KEY = "lebron2369"
-API_VERSION = "1.1"
+API_VERSION = "1.3"
 
 app = FastAPI(
     title="NBA Hub API",
@@ -5757,12 +5758,17 @@ def fetch_current_nba_rosters() -> dict:
 def _request_nba_json(url: str) -> dict:
     headers = {
         "Accept": "application/json, text/plain, */*",
-        "User-Agent": "Mozilla/5.0 (compatible; NBAStatsRefresh/1.0)",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
     }
     if "nba.com" in url:
         headers.update({
             "Origin": "https://www.nba.com",
-            "Referer": "https://www.nba.com/",
+            "Referer": "https://www.nba.com/schedule",
         })
     if "stats.nba.com" in url:
         headers.update({
@@ -5952,22 +5958,53 @@ def _fetch_nba_schedule() -> dict:
                 **previous,
                 "status": "stale",
                 "message": (
-                    f"NBA Stats schedule refresh failed ({type(error).__name__}: {error}); "
+                    f"NBA.com schedule refresh failed ({type(error).__name__}: {error}); "
                     "showing the last complete schedule."
                 ),
             }
         else:
-            snapshot = {
-                "status": "unavailable",
-                "source": "NBA.com season schedule",
-                "season": season,
-                "last_updated": None,
-                "message": (
-                    f"The full NBA schedule could not be loaded from NBA Stats "
-                    f"({type(error).__name__}: {error})."
-                ),
-                "games": [],
-            }
+            fallback_path = (
+                Path(__file__).resolve().parent
+                / "data"
+                / f"nba_schedule_{season}.json"
+            )
+            try:
+                fallback = json.loads(fallback_path.read_text(encoding="utf-8"))
+                fallback_games = fallback.get("games")
+                if fallback.get("season") != season or not isinstance(fallback_games, list):
+                    raise ValueError("Bundled NBA schedule has an invalid season or game list.")
+                if len(fallback_games) < 1230:
+                    raise ValueError(
+                        f"Bundled NBA schedule is incomplete ({len(fallback_games)} games)."
+                    )
+                snapshot = {
+                    "status": "stale",
+                    "source": "NBA.com season schedule (bundled fallback)",
+                    "season": season,
+                    "last_updated": datetime.fromtimestamp(
+                        fallback_path.stat().st_mtime,
+                        timezone.utc,
+                    ).isoformat(),
+                    "message": (
+                        "NBA.com blocked the live schedule refresh; showing the bundled "
+                        f"full-season schedule instead ({type(error).__name__}: {error})."
+                    ),
+                    "games": fallback_games,
+                }
+            except (OSError, ValueError, json.JSONDecodeError) as fallback_error:
+                logger.error("Bundled NBA schedule could not be loaded: %s", fallback_error)
+                snapshot = {
+                    "status": "unavailable",
+                    "source": "NBA.com season schedule",
+                    "season": season,
+                    "last_updated": None,
+                    "message": (
+                        f"The full NBA schedule could not be loaded from NBA.com "
+                        f"({type(error).__name__}: {error}), and the bundled fallback "
+                        f"is unavailable ({type(fallback_error).__name__}: {fallback_error})."
+                    ),
+                    "games": [],
+                }
         NBA_SCHEDULE_CACHE[season] = {
             "expires_at": now + 900,
             "snapshot": snapshot,
