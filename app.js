@@ -526,6 +526,9 @@ async function loadTransactions() {
             throw new Error(detail);
         }
         const payload = await response.json();
+        if (payload.source !== "NBA.com transactions") {
+            throw new Error("The deployed API is outdated and is still using the old transaction feed. Redeploy the updated api/index.py to load NBA transactions.");
+        }
         rawTimelineTransactions = Array.isArray(payload.transactions) ? payload.transactions : [];
         transactionsFeedStatus = payload;
         lastTransactionsRefreshAt = Date.now();
@@ -861,9 +864,9 @@ function updateTransactionsStatus() {
         ? new Date(transactionsFeedStatus.last_updated).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
         : "";
     if (status === "fresh") {
-        statusElement.textContent = `${transactionsFeedStatus.count || 0} reported transactions · feed checked ${refreshedAt}. Coverage may be incomplete, especially for extensions.`;
+        statusElement.textContent = `${transactionsFeedStatus.count || 0} NBA transactions · checked ${refreshedAt}.`;
     } else if (status === "stale") {
-        statusElement.textContent = `Showing the last successful reported transaction feed${refreshedAt ? ` from ${refreshedAt}` : ""}. Coverage may be incomplete.`;
+        statusElement.textContent = `Showing the last successful NBA transaction update${refreshedAt ? ` from ${refreshedAt}` : ""}.`;
     } else {
         statusElement.textContent = transactionsFeedStatus?.message || "The transaction feed is unavailable; no unverified transaction list is shown.";
     }
