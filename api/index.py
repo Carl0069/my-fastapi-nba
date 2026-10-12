@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 API_KEY = "lebron2369"
-API_VERSION = "1.0"
+API_VERSION = "1.1"
 
 app = FastAPI(
     title="NBA Hub API",
@@ -5643,7 +5643,7 @@ validated_teams = [Team(**team).model_dump() for team in teams]
 teams = validated_teams
 
 payroll_contract_notes = {
-    ("Oklahoma City Thunder", "Luguentz Dort"): (
+    ("Atlanta Hawks", "Luguentz Dort"): (
         "2026-27 salary: $18,222,222 (Basketball-Reference)."
     ),
     ("Brooklyn Nets", "Moritz Wagner"): (
@@ -5715,6 +5715,7 @@ NBA_ROSTER_CACHE_TTL_SECONDS = 21600
 NBA_ROSTER_CACHE: dict = {}
 NBA_ROSTER_LOCK = Lock()
 NBA_ROSTER_TEAM_OVERRIDES = {"luguentz dort": 12}
+NBA_ROSTER_SALARY_OVERRIDES = {"luguentz dort": 18_222_222}
 NBA_SCHEDULE_CACHE_TTL_SECONDS = 86400
 NBA_SCHEDULE_CACHE: dict = {}
 NBA_SCHEDULE_LOCK = Lock()
@@ -5762,6 +5763,11 @@ def _request_nba_json(url: str) -> dict:
         headers.update({
             "Origin": "https://www.nba.com",
             "Referer": "https://www.nba.com/",
+        })
+    if "stats.nba.com" in url:
+        headers.update({
+            "x-nba-stats-origin": "stats",
+            "x-nba-stats-token": "true",
         })
     request = Request(
         url,
@@ -5938,7 +5944,10 @@ def _fetch_nba_schedule() -> dict:
             snapshot = {
                 **previous,
                 "status": "stale",
-                "message": "NBA Stats schedule refresh failed; showing the last complete schedule.",
+                "message": (
+                    f"NBA Stats schedule refresh failed ({type(error).__name__}: {error}); "
+                    "showing the last complete schedule."
+                ),
             }
         else:
             snapshot = {
@@ -5946,7 +5955,10 @@ def _fetch_nba_schedule() -> dict:
                 "source": "NBA Stats",
                 "season": season,
                 "last_updated": None,
-                "message": "The full NBA schedule could not be loaded. Try again later.",
+                "message": (
+                    f"The full NBA schedule could not be loaded from NBA Stats "
+                    f"({type(error).__name__}: {error})."
+                ),
                 "games": [],
             }
         NBA_SCHEDULE_CACHE[season] = {
@@ -6672,7 +6684,10 @@ def fetch_current_nba_transactions() -> dict:
                 snapshot = {
                     **previous,
                     "status": "stale",
-                    "message": "Transaction feed refresh failed; showing the last successful reported feed.",
+                    "message": (
+                        f"Transaction feed refresh failed ({type(error).__name__}: {error}); "
+                        "showing the last successful reported feed."
+                    ),
                 }
             else:
                 snapshot = {
@@ -6680,7 +6695,8 @@ def fetch_current_nba_transactions() -> dict:
                     "source": "ESPN reported transaction feed",
                     "last_updated": None,
                     "message": (
-                        "The transaction feed is unavailable. No unverified transaction list is being shown."
+                        f"The ESPN transaction feed is unavailable "
+                        f"({type(error).__name__}: {error}). No unverified transaction list is being shown."
                     ),
                     "count": 0,
                     "transactions": [],
@@ -6720,6 +6736,8 @@ def _fetch_current_nba_rosters() -> dict:
                 "Accept": "application/json, text/plain, */*",
                 "Origin": "https://www.nba.com",
                 "Referer": "https://www.nba.com/",
+                "x-nba-stats-origin": "stats",
+                "x-nba-stats-token": "true",
                 "User-Agent": "Mozilla/5.0 (compatible; NBAStatsRefresh/1.0)",
             },
         )
@@ -6799,6 +6817,9 @@ def _fetch_current_nba_rosters() -> dict:
                         "ft": None,
                         "salary": None,
                     }
+                salary_override = NBA_ROSTER_SALARY_OVERRIDES.get(player_key)
+                if salary_override is not None:
+                    player["salary"] = salary_override
                 roster_players.append(player)
 
             current_names = {normalize_player_name(player["name"]) for player in roster_players}
