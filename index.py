@@ -5,6 +5,7 @@ import os
 import re
 import time
 import unicodedata
+from pathlib import Path
 from threading import Lock
 from typing import List, Optional, Literal
 from urllib.error import HTTPError, URLError
@@ -18,7 +19,7 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 API_KEY = "lebron2369"
-API_VERSION = "1.1"
+API_VERSION = "1.3"
 
 app = FastAPI(
     title="NBA Hub API",
@@ -5716,13 +5717,13 @@ NBA_ROSTER_CACHE: dict = {}
 NBA_ROSTER_LOCK = Lock()
 NBA_ROSTER_TEAM_OVERRIDES = {"luguentz dort": 12}
 NBA_ROSTER_SALARY_OVERRIDES = {"luguentz dort": 18_222_222}
-NBA_SCHEDULE_CACHE_TTL_SECONDS = 86400
+NBA_SCHEDULE_CACHE_TTL_SECONDS = 21600
 NBA_SCHEDULE_CACHE: dict = {}
 NBA_SCHEDULE_LOCK = Lock()
 NBA_SCOREBOARD_CACHE_TTL_SECONDS = 45
 NBA_SCOREBOARD_CACHE: dict = {}
 NBA_SCOREBOARD_LOCK = Lock()
-NBA_TRANSACTIONS_CACHE_TTL_SECONDS = 3600
+NBA_TRANSACTIONS_CACHE_TTL_SECONDS = 300
 NBA_TRANSACTIONS_CACHE: dict = {}
 NBA_TRANSACTIONS_LOCK = Lock()
 NBA_BOX_SCORE_CACHE_TTL_SECONDS = 30
@@ -5757,12 +5758,17 @@ def fetch_current_nba_rosters() -> dict:
 def _request_nba_json(url: str) -> dict:
     headers = {
         "Accept": "application/json, text/plain, */*",
-        "User-Agent": "Mozilla/5.0 (compatible; NBAStatsRefresh/1.0)",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
     }
     if "nba.com" in url:
         headers.update({
             "Origin": "https://www.nba.com",
-            "Referer": "https://www.nba.com/",
+            "Referer": "https://www.nba.com/schedule",
         })
     if "stats.nba.com" in url:
         headers.update({
@@ -5821,10 +5827,15 @@ def _display_game_time(game: dict) -> str:
     return "Time TBD"
 
 
-def _normalize_nba_schedule(payload: dict) -> list:
+def _normalize_nba_schedule(payload: dict, season: str) -> list:
     league_schedule = payload.get("leagueSchedule") or payload.get("LeagueSchedule")
     if not isinstance(league_schedule, dict):
         raise ValueError("NBA schedule response is missing leagueSchedule.")
+    response_season = str(_value_by_key(league_schedule, "seasonYear") or "")
+    if response_season and response_season != season:
+        raise ValueError(
+            f"NBA schedule returned season {response_season}; expected {season}."
+        )
     game_dates = _value_by_key(league_schedule, "gameDates")
     if not isinstance(game_dates, list):
         raise ValueError("NBA schedule response is missing gameDates.")
@@ -5921,12 +5932,14 @@ def _fetch_nba_schedule() -> dict:
         return cached["snapshot"]
 
     try:
-        parameters = urlencode({"LeagueID": "00", "Season": season})
-        payload = _request_nba_json(f"https://stats.nba.com/stats/scheduleleaguev2?{parameters}")
-        games = _normalize_nba_schedule(payload)
+        season_file_version = int(season[:4]) % 100
+        payload = _request_nba_json(
+            f"https://cdn.nba.com/static/json/staticData/scheduleLeagueV2_{season_file_version}.json"
+        )
+        games = _normalize_nba_schedule(payload, season)
         snapshot = {
             "status": "fresh",
-            "source": "NBA Stats",
+            "source": "NBA.com season schedule",
             "season": season,
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "message": "",
@@ -5945,22 +5958,53 @@ def _fetch_nba_schedule() -> dict:
                 **previous,
                 "status": "stale",
                 "message": (
-                    f"NBA Stats schedule refresh failed ({type(error).__name__}: {error}); "
+                    f"NBA.com schedule refresh failed ({type(error).__name__}: {error}); "
                     "showing the last complete schedule."
                 ),
             }
         else:
-            snapshot = {
-                "status": "unavailable",
-                "source": "NBA Stats",
-                "season": season,
-                "last_updated": None,
-                "message": (
-                    f"The full NBA schedule could not be loaded from NBA Stats "
-                    f"({type(error).__name__}: {error})."
-                ),
-                "games": [],
-            }
+            fallback_path = (
+                Path(__file__).resolve().parent
+                / "data"
+                / f"nba_schedule_{season}.json"
+            )
+            try:
+                fallback = json.loads(fallback_path.read_text(encoding="utf-8"))
+                fallback_games = fallback.get("games")
+                if fallback.get("season") != season or not isinstance(fallback_games, list):
+                    raise ValueError("Bundled NBA schedule has an invalid season or game list.")
+                if len(fallback_games) < 1230:
+                    raise ValueError(
+                        f"Bundled NBA schedule is incomplete ({len(fallback_games)} games)."
+                    )
+                snapshot = {
+                    "status": "stale",
+                    "source": "NBA.com season schedule (bundled fallback)",
+                    "season": season,
+                    "last_updated": datetime.fromtimestamp(
+                        fallback_path.stat().st_mtime,
+                        timezone.utc,
+                    ).isoformat(),
+                    "message": (
+                        "NBA.com blocked the live schedule refresh; showing the bundled "
+                        f"full-season schedule instead ({type(error).__name__}: {error})."
+                    ),
+                    "games": fallback_games,
+                }
+            except (OSError, ValueError, json.JSONDecodeError) as fallback_error:
+                logger.error("Bundled NBA schedule could not be loaded: %s", fallback_error)
+                snapshot = {
+                    "status": "unavailable",
+                    "source": "NBA.com season schedule",
+                    "season": season,
+                    "last_updated": None,
+                    "message": (
+                        f"The full NBA schedule could not be loaded from NBA.com "
+                        f"({type(error).__name__}: {error}), and the bundled fallback "
+                        f"is unavailable ({type(fallback_error).__name__}: {fallback_error})."
+                    ),
+                    "games": [],
+                }
         NBA_SCHEDULE_CACHE[season] = {
             "expires_at": now + 900,
             "snapshot": snapshot,
@@ -5974,7 +6018,6 @@ def _fetch_nba_scoreboard() -> dict:
     if cached and cached["expires_at"] > now:
         return cached["snapshot"]
 
-    nba_error = None
     try:
         payload = _request_nba_json(
             "https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json"
@@ -5991,63 +6034,26 @@ def _fetch_nba_scoreboard() -> dict:
             "games": games,
         }
     except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
-        nba_error = error
-        try:
-            payload = _request_nba_json(
-                "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
-            )
-            events = payload.get("events")
-            if not isinstance(events, list):
-                raise ValueError("ESPN scoreboard response is missing events.")
-            games = []
-            for event in events:
-                if not isinstance(event, dict):
-                    continue
-                competitions = event.get("competitions")
-                if not isinstance(competitions, list) or not competitions:
-                    continue
-                competitors = competitions[0].get("competitors", [])
-                if not isinstance(competitors, list):
-                    continue
-                home = next((team for team in competitors if team.get("homeAway") == "home"), None)
-                away = next((team for team in competitors if team.get("homeAway") == "away"), None)
-                if not home or not away:
-                    continue
-                status = event.get("status", {}).get("type", {})
-                state = str(status.get("state") or "").casefold()
-                status_code = 2 if state == "in" else 3 if state == "post" else 1
-                games.append({
-                    "gameId": str(event.get("id") or ""),
-                    "date": str(event.get("date") or "")[:10],
-                    "gameStatus": status_code,
-                    "gameStatusText": str(status.get("shortDetail") or status.get("description") or "Scheduled"),
-                    "period": _value_by_key(event.get("status", {}), "period"),
-                    "gameClock": _value_by_key(event.get("status", {}), "displayClock"),
-                    "homeTeam": {
-                        "teamId": _value_by_key(home.get("team", {}), "id"),
-                        "teamTricode": _value_by_key(home.get("team", {}), "abbreviation"),
-                        "score": home.get("score"),
-                    },
-                    "awayTeam": {
-                        "teamId": _value_by_key(away.get("team", {}), "id"),
-                        "teamTricode": _value_by_key(away.get("team", {}), "abbreviation"),
-                        "score": away.get("score"),
-                    },
-                })
+        logger.warning("NBA scoreboard refresh failed: %s", error)
+        previous = cached["snapshot"] if cached else None
+        if previous and previous.get("games"):
             snapshot = {
-                "status": "fresh",
-                "source": "ESPN scoreboard fallback",
-                "last_updated": datetime.now(timezone.utc).isoformat(),
-                "message": "NBA’s live scoreboard was unavailable; scores are supplied by ESPN.",
-                "games": games,
+                **previous,
+                "status": "stale",
+                "message": (
+                    f"NBA live scoreboard refresh failed ({type(error).__name__}: {error}); "
+                    "showing the last successful score update."
+                ),
             }
-        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as fallback_error:
-            logger.warning("NBA scoreboard failed (%s); ESPN fallback failed (%s).", nba_error, fallback_error)
+        else:
             snapshot = {
                 "status": "unavailable",
-                "source": "NBA.com / ESPN scoreboards",
+                "source": "NBA.com live scoreboard",
                 "last_updated": None,
-                "message": "Live scores are unavailable; the full schedule remains available.",
+                "message": (
+                    f"NBA live scoreboard is unavailable "
+                    f"({type(error).__name__}: {error}); the full schedule remains available."
+                ),
                 "games": [],
             }
     NBA_SCOREBOARD_CACHE["today"] = {
@@ -6595,36 +6601,43 @@ def _format_transaction_date(value: object) -> tuple[str, str]:
             if parsed.tzinfo is None:
                 parsed = parsed.replace(tzinfo=timezone.utc)
         except ValueError as error:
-            raise ValueError(f"ESPN transaction has an invalid date: {text}.") from error
+            raise ValueError(f"NBA transaction has an invalid date: {text}.") from error
     return parsed.date().isoformat(), parsed.strftime("%A, %B %d, %Y")
 
 
-def _parse_espn_transactions(payload: dict) -> list:
-    raw_items = payload.get("transactions")
-    if raw_items is None:
-        raw_items = payload.get("items")
+def _parse_nba_transactions(payload: dict) -> list:
+    movement_data = payload.get("NBA_Player_Movement")
+    if not isinstance(movement_data, dict):
+        raise ValueError("NBA transactions page data is missing NBA_Player_Movement.")
+    raw_items = movement_data.get("rows")
     if not isinstance(raw_items, list):
-        raise ValueError("ESPN transaction response has no transaction list.")
+        raise ValueError("NBA transactions page data has no movement rows.")
 
+    nba_team_names = {}
+    for team in teams:
+        match = re.search(r"/logos/nba/(\d+)/", team.get("logo", ""))
+        if match:
+            nba_team_names[int(match.group(1))] = team["name"]
     parsed_items = []
     for index, raw_item in enumerate(raw_items):
         if not isinstance(raw_item, dict):
             continue
-        description = str(raw_item.get("description") or raw_item.get("text") or "").strip()
+        description = str(raw_item.get("TRANSACTION_DESCRIPTION") or "").strip()
         if not description:
             continue
-        date_key, date_label = _format_transaction_date(raw_item.get("date"))
-        team_value = raw_item.get("team")
-        if isinstance(team_value, dict):
-            team_name = str(team_value.get("displayName") or team_value.get("name") or "").strip()
-        else:
-            team_name = str(team_value or "").strip()
+        date_key, date_label = _format_transaction_date(raw_item.get("TRANSACTION_DATE"))
+        try:
+            team_id = int(float(raw_item.get("TEAM_ID")))
+        except (TypeError, ValueError):
+            team_id = None
+        team_name = nba_team_names.get(team_id, "NBA")
+        transaction_type = str(raw_item.get("Transaction_Type") or "")
         parsed_items.append({
-            "id": str(raw_item.get("id") or f"{date_key}:{index}:{description[:48]}"),
+            "id": f"{date_key}:{index}:{description[:48]}",
             "date": date_label,
             "date_key": date_key,
-            "team": team_name or "NBA",
-            "type": _normalize_transaction_type(raw_item.get("type"), description),
+            "team": team_name,
+            "type": _normalize_transaction_type(transaction_type, description),
             "text": description,
         })
     return parsed_items
@@ -6638,17 +6651,18 @@ def fetch_current_nba_transactions() -> dict:
             return cached["snapshot"]
 
         try:
-            transactions_by_id = {}
-            for season_year in (2026, 2027):
-                parameters = urlencode({"season": season_year, "limit": 500})
-                payload = _request_nba_json(
-                    f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/transactions?{parameters}"
-                )
-                for transaction in _parse_espn_transactions(payload):
-                    transactions_by_id[transaction["id"]] = transaction
-
-            transactions = sorted(
-                transactions_by_id.values(),
+            payload = _request_nba_json(
+                "https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json"
+            )
+            season_start_year = int(current_nba_season()[:4])
+            season_start = f"{season_start_year}-06-01"
+            season_end = f"{season_start_year + 1}-06-30"
+            transactions = [
+                transaction
+                for transaction in _parse_nba_transactions(payload)
+                if season_start <= transaction["date_key"] <= season_end
+            ]
+            transactions.sort(
                 key=lambda item: (item["date_key"], item["id"]),
                 reverse=True,
             )
@@ -6664,10 +6678,10 @@ def fetch_current_nba_transactions() -> dict:
                 })
             snapshot = {
                 "status": "fresh",
-                "source": "ESPN reported transaction feed",
+                "source": "NBA.com transactions",
                 "last_updated": datetime.now(timezone.utc).isoformat(),
                 "message": (
-                    "Reported transaction feed; it may not include every move, particularly contract extensions."
+                    "Transactions are loaded from the official NBA player-movement records shown on NBA.com."
                 ),
                 "count": len(transactions),
                 "transactions": list(grouped.values()),
@@ -6685,17 +6699,17 @@ def fetch_current_nba_transactions() -> dict:
                     **previous,
                     "status": "stale",
                     "message": (
-                        f"Transaction feed refresh failed ({type(error).__name__}: {error}); "
+                        f"NBA transactions page refresh failed ({type(error).__name__}: {error}); "
                         "showing the last successful reported feed."
                     ),
                 }
             else:
                 snapshot = {
                     "status": "unavailable",
-                    "source": "ESPN reported transaction feed",
+                    "source": "NBA.com transactions",
                     "last_updated": None,
                     "message": (
-                        f"The ESPN transaction feed is unavailable "
+                        f"NBA.com transactions are unavailable "
                         f"({type(error).__name__}: {error}). No unverified transaction list is being shown."
                     ),
                     "count": 0,
