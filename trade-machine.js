@@ -2,360 +2,6 @@ const API_URL = "https://my-fastapi-nba.vercel.app";
 const API_KEY = "lebron2369";
 const MAX_TRADE_TEAMS = 5;
 const SAVED_TRADES_KEY = "nba-trade-desk.saved-trades.v1";
-const TRENDING_TRADE_PLAYERS = [
-  { name: "Jakob Poeltl", id: "1627751", team: "TOR", teamId: "1610612761" },
-  { name: "Immanuel Quickley", id: "1630193", team: "TOR", teamId: "1610612761" },
-  { name: "Myles Turner", id: "1626167", team: "MIL", teamId: "1610612749" },
-  { name: "Jimmy Butler", id: "202710", team: "GSW", teamId: "1610612744" },
-  { name: "Michael Porter Jr.", id: "1629008", team: "BKN", teamId: "1610612751" },
-  { name: "Kristaps Porziņģis", id: "204001", team: "GSW", teamId: "1610612744" },
-  { name: "Derrick Jones Jr.", id: "1627884", team: "LAC", teamId: "1610612746" },
-  { name: "Dalton Knecht", id: "1642261", team: "LAL", teamId: "1610612747" },
-  { name: "Fred VanVleet", id: "1627832", team: "HOU", teamId: "1610612745" },
-  { name: "Ty Jerome", id: "1629660", team: "MEM", teamId: "1610612763" },
-  { name: "Kyrie Irving", id: "202681", team: "DAL", teamId: "1610612742" },
-  { name: "RJ Barrett", id: "1629628", team: "TOR", teamId: "1610612761" },
-  { name: "Duncan Robinson", id: "1629130", team: "DET", teamId: "1610612765" },
-  { name: "Corey Kispert", id: "1630557", team: "ATL", teamId: "1610612737" },
-  { name: "De'Aaron Fox", id: "1628368", team: "SAS", teamId: "1610612759" },
-  { name: "Lauri Markkanen", id: "1628374", team: "UTA", teamId: "1610612762" },
-  { name: "Domantas Sabonis", id: "1627734", team: "SAC", teamId: "1610612758" },
-  { name: "Darius Garland", id: "1629636", team: "LAC", teamId: "1610612746" },
-  { name: "Trey Murphy III", id: "1630530", team: "NOP", teamId: "1610612740" },
-  { name: "Daniel Gafford", id: "1629655", team: "DAL", teamId: "1610612742" },
-  { name: "Terance Mann", id: "1629611", team: "BKN", teamId: "1610612751" },
-  { name: "Clint Capela", id: "203991", team: "HOU", teamId: "1610612745" },
-  { name: "Saddiq Bey", id: "1630180", team: "NOP", teamId: "1610612740" },
-  { name: "Trayce Jackson-Davis", id: "1631218", team: "TOR", teamId: "1610612761" },
-  { name: "Jalen Duren", id: "1631105", team: "DET", teamId: "1610612765" }
-];
-const ROSTER_MOVES = [
-  { player: "Buddy Hield", from: "Atlanta Hawks", to: "Chicago Bulls", salary: 9_600_000, sourceSalary: 9_600_000 },
-  { player: "Tre Mann", from: "Washington Wizards", to: "Cleveland Cavaliers", salary: 8_000_000, sourceSalary: 8_000_000 },
-  { player: "Dorian Finney-Smith", from: "Charlotte Hornets", to: "Atlanta Hawks", salary: 13_335_000, sourceSalary: 13_300_000 },
-  { player: "Dennis Schröder", from: "Cleveland Cavaliers", to: "Charlotte Hornets", salary: 14_800_000, sourceSalary: 14_800_000 },
-  { player: "Tony Bradley", from: "Atlanta Hawks", to: "New York Knicks", salary: 3_506_659, sourceSalary: 10_215_000 },
-  { player: "AJ Johnson", from: "Memphis Grizzlies", to: "New Orleans Pelicans", salary: 3_237_120, sourceSalary: 3_200_000 }
-];
-const WAIVED_PLAYERS = [{ player: "Rob Dillingham", salary: 6_800_000 }];
-const ROSTER_REMOVALS = [
-  { team: "Atlanta Hawks", player: "Gabe Vincent", salary: 12_785_000 },
-  { team: "Atlanta Hawks", player: "Devin Carter", salary: 5_100_000 },
-  { team: "Atlanta Hawks", player: "Keaton Wallace", salary: 7_440_000 },
-  { team: "Denver Nuggets", player: "Bruce Brown", salary: 0 },
-  { team: "Boston Celtics", player: "Max Shulga", salary: 10_300_000 },
-  { team: "Portland Trail Blazers", player: "Blake Wesley", salary: 0 },
-  { team: "Utah Jazz", player: "John Konchar", salary: 6_100_000 },
-  { team: "Memphis Grizzlies", player: "Kentavious Caldwell-Pope", salary: 21_600_000 },
-  { team: "Memphis Grizzlies", player: "Taj Gibson", salary: 3_800_000 },
-  { team: "Memphis Grizzlies", player: "D'Angelo Russell", salary: 5_900_000 },
-  { team: "LA Clippers", player: "TyTy Washington Jr.", salary: 0 }
-];
-const PLAYER_SALARY_CORRECTIONS = [
-  { team: "San Antonio Spurs", player: "Jordan McLaughlin", salary: 2_449_421 },
-  { team: "San Antonio Spurs", player: "Taelon Peter", salary: 2_185_116 },
-  { team: "Toronto Raptors", player: "Trey Jemison III", salary: null }
-];
-const RAPTORS_PAYROLL = {
-  "Kawhi Leonard": 50_300_000,
-  "Scottie Barnes": 41_754_690,
-  "Immanuel Quickley": 32_500_000,
-  "RJ Barrett": 29_616_071,
-  "Jakob Poeltl": 19_500_000,
-  "Collin Murray-Boyles": 6_649_560,
-  "Allen Graves": 4_065_720,
-  "Ja'Kobe Walter": 3_811_800,
-  "Andre Jackson Jr.": 2_537_526,
-  "Kyle Anderson": 2_449_421,
-  "Trayce Jackson-Davis": 2_406_205,
-  "Jamison Battle": 2_296_271,
-  "Jamal Shead": 2_296_271,
-  "Alijah Martin": 2_185_116,
-  "Jaden Bradley": 1_357_763,
-  "Nate Bittle": 1_357_763
-};
-const NUGGETS_PAYROLL = {
-  "Nikola Jokić": 59_033_114,
-  "Jamal Murray": 50_105_628,
-  "Aaron Gordon": 33_658_037,
-  "Cameron Johnson": 23_062_500,
-  "Christian Braun": 21_551_726,
-  "Spencer Jones": 6_000_000,
-  "Julian Strawther": 4_826_931,
-  "DaRon Holmes II": 3_372_120,
-  "Lonnie Walker IV": 3_286_399,
-  "Zeke Nnaji": 7_466_667,
-  "DeMar DeRozan": 2_449_421,
-  "Tyus Jones": 2_449_421,
-  "Marvin Bagley III": 2_449_421,
-  "Trevon Brazile": 1_357_763
-};
-const LAKERS_PAYROLL = {
-  "Luka Dončić": 49_800_000,
-  "Austin Reaves": 41_240_250,
-  "Walker Kessler": 30_232_558,
-  "Quentin Grimes": 13_953_489,
-  "Sandro Mamukelashvili": 13_000_000,
-  "Jarred Vanderbilt": 12_428_571,
-  "Collin Sexton": 9_366_000,
-  "Jake LaRavia": 6_000_000,
-  "Jaden Hardy": 6_000_000,
-  "Dalton Knecht": 4_201_080,
-  "Cameron Carr": 3_315_360,
-  "Ziaire Williams": 2_449_421,
-  "Kevon Looney": 2_449_421,
-  "Matisse Thybulle": 2_449_421,
-  "Bronny James": 2_296_271,
-  "Adou Thiero": 2_150_917
-};
-const ROCKETS_PAYROLL = {
-  "Kevin Durant": 43_902_439,
-  "Alperen Şengün": 35_642_202,
-  "Fred VanVleet": 25_000_000,
-  "Jabari Smith Jr.": 23_643_411,
-  "Tari Eason": 14_051_724,
-  "Steven Adams": 13_000_000,
-  "Amen Thompson": 12_258_609,
-  "Reed Sheppard": 11_108_880,
-  "Clint Capela": 7_035_000,
-  "Marcus Smart": 6_064_000,
-  "Julian Phillips": 2_537_526,
-  "Oscar Tshiebwe": 2_537_526,
-  "Isaiah Crawford": 2_449_421,
-  "Bogdan Bogdanović": 2_449_421,
-  "Jae'Sean Tate": 2_449_421,
-  "Bruce Thornton": 1_357_763
-};
-const TIMBERWOLVES_PAYROLL = {
-  "Anthony Edwards": 48_924_624,
-  "LaMelo Ball": 40_770_520,
-  "Rudy Gobert": 36_500_000,
-  "Jaden McDaniels": 26_200_001,
-  "Ayo Dosunmu": 19_310_345,
-  "Donte DiVincenzo": 12_535_000,
-  "Jonathan Kuminga": 6_064_000,
-  "Cody Williams": 6_015_600,
-  "Joan Beringer": 4_411_200,
-  "Jaylen Clark": 3_086_420,
-  "Bones Hyland": 2_845_883,
-  "Terrence Shannon Jr.": 2_801_640,
-  "Trey Lyles": 2_449_421,
-  "Isaiah Evans": 1_357_763,
-  "John Konchar": 2_055_000
-};
-const SCREENSHOT_PAYROLLS = {
-  "Washington Wizards": {
-    total: 183_462_525,
-    salaries: {
-      "Anthony Davis": 58_456_566,
-      "Trae Young": 49_488_300,
-      "AJ Dybantsa": 14_748_000,
-      "Alex Sarr": 12_370_680,
-      "Bilal Coulibaly": 9_240_012,
-      "Tre Johnson": 8_649_600,
-      "Deandre Ayton": 8_104_000,
-      "Khris Middleton": 5_591_122,
-      "Bub Carrington": 4_900_560,
-      "Will Riley": 3_688_320,
-      "Kyshawn George": 3_108_000,
-      "Justin Champagnie": 2_667_944,
-      "Anthony Gill": 2_449_421
-    }
-  },
-  "Dallas Mavericks": {
-    total: 177_194_561,
-    salaries: {
-      "Kyrie Irving": 39_491_282,
-      "P.J. Washington": 19_813_044,
-      "Daniel Gafford": 17_263_584,
-      "Santi Aldama": 17_007_043,
-      "Cooper Flagg": 14_517_480,
-      "Zaccharie Risacher": 13_826_040,
-      "Caleb Martin": 10_001_493,
-      "Naji Marshall": 9_428_571,
-      "Max Christie": 8_285_714,
-      "Dereck Lively II": 7_239_131,
-      "Morez Johnson Jr.": 6_754_800,
-      "Marcus Sasser": 5_198_983,
-      "Sergio de Larrea": 3_182_280,
-      "Tarik Biberovic": 3_000_000,
-      "Moussa Cisse": 2_185_116
-    }
-  },
-  "Milwaukee Bucks": {
-    // Team payroll includes partial-salary rows for Lillard and Micic, outside the active roster.
-    total: 193_808_287,
-    salaries: {
-      "Tyler Herro": 33_000_000,
-      "Myles Turner": 26_584_164,
-      "Kyle Kuzma": 20_345_152,
-      "Gary Trent Jr.": 15_200_000,
-      "Caris LeVert": 14_809_200,
-      "AJ Green": 10_044_644,
-      "Brayden Burries": 6_417_360,
-      "Jaime Jaquez Jr.": 5_939_141,
-      "Ousmane Dieng": 5_750_000,
-      "Nate Ament": 5_502_000,
-      "Kevin Porter Jr.": 5_390_700,
-      "Kel'el Ware": 4_654_920,
-      "Ryan Rollins": 4_000_000,
-      "Kasparas Jakučionis": 3_841_680,
-      "Jericho Sims": 2_801_346,
-      "Pete Nance": 2_537_526,
-      "John Butler Jr.": 2_449_421,
-      "Bogoljub Markovic": 1_357_763
-    }
-  },
-  "Orlando Magic": {
-    total: 223_288_224,
-    salaries: {
-      "Franz Wagner": 41_754_690,
-      "Paolo Banchero": 41_500_000,
-      "Desmond Bane": 39_446_090,
-      "Jalen Suggs": 32_400_000,
-      "Wendell Carter Jr.": 18_102_000,
-      "Jonathan Isaac": 10_449_421,
-      "Anthony Black": 10_106_316,
-      "Goga Bitadze": 7_608_696,
-      "Tristan da Silva": 3_991_200,
-      "Jase Richardson": 3_132_360,
-      "JD Davison": 2_625_627,
-      "Jamal Cain": 2_584_539,
-      "Malaki Branham": 2_537_526,
-      "Jevon Carter": 2_449_421,
-      "Nikola Vučević": 2_449_421,
-      "Noah Penda": 2_150_917
-    }
-  },
-  "Memphis Grizzlies": {
-    total: 133_200_098,
-    salaries: {
-      "Jerami Grant": 34_206_898,
-      "Isaiah Stewart": 15_000_000,
-      "Cameron Boozer": 11_849_760,
-      "Ty Jerome": 9_220_050,
-      "Quinten Post": 8_285_714,
-      "Taylor Hendricks": 7_805_900,
-      "Jordan Hawkins": 7_021_895,
-      "Zach Edey": 6_332_760,
-      "Cedric Coward": 6_001_080,
-      "Kris Murray": 5_315_004,
-      "Walter Clayton Jr.": 4_190_520,
-      "Karim Lopez": 3_746_760,
-      "Olivier-Maxence Prosper": 2_497_812,
-      "Scotty Pippen Jr.": 2_461_462,
-      "Cam Spencer": 2_411_090,
-      "GG Jackson": 2_406_205,
-      "Jaylen Wells": 2_296_271,
-      "Micah Peavy": 2_150_917
-    }
-  },
-  "Sacramento Kings": {
-    total: 191_795_907,
-    salaries: {
-      "Zach LaVine": 48_967_380,
-      "Domantas Sabonis": 45_472_000,
-      "De'Andre Hunter": 24_910_714,
-      "Keegan Murray": 24_137_936,
-      "Malik Monk": 20_190_035,
-      "Darius Acuff Jr.": 8_021_640,
-      "Precious Achiuwa": 5_477_000,
-      "Nique Clifford": 3_263_400,
-      "Alex Karaban": 2_948_280,
-      "Daeqwon Plowden": 2_449_421,
-      "Ben Simmons": 2_449_421,
-      "Maxime Raynaud": 2_150_917,
-      "Emanuel Sharp": 1_357_763
-    }
-  },
-  "Phoenix Suns": {
-    total: 193_028_455,
-    salaries: {
-      "Devin Booker": 57_078_728,
-      "Jalen Green": 36_251_166,
-      "Miles Bridges": 22_826_087,
-      "Dillon Brooks": 19_992_727,
-      "Mark Williams": 11_728_395,
-      "Collin Gillespie": 10_714_286,
-      "Khaman Maluach": 6_316_680,
-      "Luke Kennard": 6_064_000,
-      "Jordan Goodwin": 5_864_198,
-      "Haywood Highsmith": 3_449_421,
-      "Koa Peat": 2_926_800,
-      "Ryan Dunn": 2_784_240,
-      "Jamaree Bouyea": 2_584_539,
-      "Oso Ighodaro": 2_296_271,
-      "Rasheer Fleming": 2_150_917
-    }
-  },
-  "New Orleans Pelicans": {
-    total: 204_110_200,
-    salaries: {
-      "Zion Williamson": 42_166_510,
-      "Jordan Poole": 34_044_642,
-      "Dejounte Murray": 32_785_071,
-      "Trey Murphy III": 27_000_000,
-      "Herb Jones": 14_898_786,
-      "Jeremiah Fears": 7_896_240,
-      "Bennedict Mathurin": 7_804_878,
-      "Saddiq Bey": 6_440_678,
-      "Derik Queen": 5_416_080,
-      "DeAndre Jordan": 3_876_529,
-      "Yves Missi": 3_512_760,
-      "AJ Johnson": 3_237_120,
-      "Christian Koloko": 2_625_627,
-      "Caleb Houstan": 2_625_627,
-      "Bryce McGowens": 2_584_539,
-      "Trendon Watford": 2_449_421,
-      "Kobe Bufkin": 2_449_421,
-      "Karlo Matković": 2_296_271
-    }
-  },
-  "Golden State Warriors": {
-    total: 223_306_506,
-    salaries: {
-      "Stephen Curry": 62_587_158,
-      "Jimmy Butler": 56_832_773,
-      "Draymond Green": 27_678_571,
-      "Kristaps Porziņģis": 19_512_195,
-      "Moses Moody": 12_500_000,
-      "Al Horford": 6_822_000,
-      "Yaxel Lendeborg": 6_096_240,
-      "Brandin Podziemski": 5_679_459,
-      "De'Anthony Melton": 5_477_000,
-      "Gui Santos": 4_629_630,
-      "Charles Bassey": 2_449_421,
-      "Georges Niang": 2_449_421,
-      "Gary Payton II": 2_449_421,
-      "Brandon Williams": 2_449_421,
-      "Alex Toohey": 2_185_116,
-      "Will Richard": 2_150_917,
-      "Dalen Terry": 1_357_763
-    }
-  }
-};
-const TWO_WAY_CONTRACTS = {
-  "Philadelphia 76ers": ["Caleb Love"]
-};
-const PLAYER_CONTRACT_OVERRIDES = {
-  "Cleveland Cavaliers": {
-    "Mario Hezonja": { salary: 2_845_883 }
-  },
-  "Charlotte Hornets": {
-    "Dennis Schröder": { salary: 14_800_000 }
-  },
-  "Brooklyn Nets": {
-    "Moritz Wagner": {
-      salary: 9_000_000,
-    }
-  },
-  "Dallas Mavericks": {
-    "Zaccharie Risacher": { salary: 13_800_000 }
-  },
-  "New York Knicks": {
-    "Tony Bradley": { salary: 3_506_659 }
-  }
-};
 const CBA_ESTIMATES = {
   season: "2026–27 estimate",
   salaryCap: 164_961_000,
@@ -371,6 +17,8 @@ const CBA_ESTIMATES = {
 };
 
 let teams = [];
+let lastTeamsRefreshAt = 0;
+let isLoadingTeams = false;
 const state = {
   teamIds: [],
   transfers: {},
@@ -449,258 +97,6 @@ function getTeamPlayers(team) {
 
 function findRosterPlayer(team, playerName) {
   return getTeamPlayers(team).find((player) => player.name.toLocaleLowerCase() === playerName.toLocaleLowerCase());
-}
-
-function removeRosterPlayer(team, playerName) {
-  const matchesPlayer = (player) => player.name.toLocaleLowerCase() === playerName.toLocaleLowerCase();
-  const removed = [...(team.starters_2026_27 || []), ...(team.bench_2026_27 || [])].filter(matchesPlayer);
-  team.starters_2026_27 = (team.starters_2026_27 || []).filter((player) => !matchesPlayer(player));
-  team.bench_2026_27 = (team.bench_2026_27 || []).filter((player) => !matchesPlayer(player));
-  return removed;
-}
-
-function adjustTeamPayroll(team, delta) {
-  team.total_salary = Math.max(0, Number(team.total_salary || 0) + delta);
-}
-
-function applyRosterCorrections() {
-  ROSTER_MOVES.forEach((move) => {
-    const sourceTeam = teams.find((team) => team.name === move.from);
-    const destinationTeam = teams.find((team) => team.name === move.to);
-    const destinationPlayer = destinationTeam && findRosterPlayer(destinationTeam, move.player);
-    let playerRecord = destinationPlayer || (sourceTeam && findRosterPlayer(sourceTeam, move.player));
-
-    teams.forEach((team) => {
-      if (team === destinationTeam) return;
-      const removed = removeRosterPlayer(team, move.player);
-      if (removed.length > 0) {
-        playerRecord ||= removed[0];
-        adjustTeamPayroll(team, -(team === sourceTeam ? move.sourceSalary : move.salary));
-      }
-    });
-
-    if (!destinationTeam) throw new Error(`Roster correction team not found: ${move.to}`);
-    if (!playerRecord) throw new Error(`Roster data missing for ${move.player}.`);
-
-    if (destinationPlayer) {
-      const previousSalary = Number(destinationPlayer.salary) || 0;
-      destinationPlayer.salary = move.salary;
-      adjustTeamPayroll(destinationTeam, move.salary - previousSalary);
-    } else {
-      destinationTeam.bench_2026_27 = destinationTeam.bench_2026_27 || [];
-      destinationTeam.bench_2026_27.push({ ...playerRecord, salary: move.salary });
-      adjustTeamPayroll(destinationTeam, move.salary);
-    }
-  });
-
-  const misspelledRisacherEntry = teams.find((team) => team.name === "Atlanta Hawks");
-  if (misspelledRisacherEntry) {
-    const removed = removeRosterPlayer(misspelledRisacherEntry, "Zacharie Risacher");
-    if (removed.length > 0) adjustTeamPayroll(misspelledRisacherEntry, -13_800_000 * removed.length);
-  }
-
-  WAIVED_PLAYERS.forEach(({ player, salary }) => {
-    teams.forEach((team) => {
-      const removed = removeRosterPlayer(team, player);
-      if (removed.length > 0) adjustTeamPayroll(team, -salary * removed.length);
-    });
-  });
-
-  const correctedTaxStatuses = {
-    "Atlanta Hawks": "Luxury Tax",
-    "Charlotte Hornets": "Under Cap",
-    "Chicago Bulls": "Under Cap",
-    "Cleveland Cavaliers": "Luxury Tax",
-    "New York Knicks": "Luxury Tax",
-    "Washington Wizards": "Over Cap"
-  };
-  teams.forEach((team) => {
-    const status = correctedTaxStatuses[team.name];
-    if (status) team.tax_status = status;
-  });
-
-  ROSTER_REMOVALS.forEach(({ team: teamName, player, salary }) => {
-    const team = teams.find((item) => item.name === teamName);
-    if (!team) throw new Error(`Roster correction team not found: ${teamName}`);
-    const removed = removeRosterPlayer(team, player);
-    if (removed.length > 0) adjustTeamPayroll(team, -salary * removed.length);
-  });
-}
-
-function applyRaptorsPayroll() {
-  const raptors = teams.find((team) => team.name === "Toronto Raptors");
-  if (!raptors) throw new Error("Roster correction team not found: Toronto Raptors");
-
-  ["Brandon Ingram", "Gradey Dick"].forEach((playerName) => removeRosterPlayer(raptors, playerName));
-  Object.entries(RAPTORS_PAYROLL).forEach(([playerName, salary]) => {
-    const player = findRosterPlayer(raptors, playerName);
-    if (!player) throw new Error(`Raptors payroll player missing: ${playerName}`);
-    player.salary = salary;
-  });
-  raptors.total_salary = 205_084_177;
-  raptors.tax_status = "Luxury Tax";
-}
-
-function applyPhiladelphiaPayroll() {
-  const sixers = teams.find((team) => team.name === "Philadelphia 76ers");
-  if (!sixers) throw new Error("Roster correction team not found: Philadelphia 76ers");
-
-  const labaronPhilon = findRosterPlayer(sixers, "Labaron Philon");
-  const labaronPhilonJr = findRosterPlayer(sixers, "Labaron Philon Jr.");
-  if (labaronPhilon && !labaronPhilonJr) labaronPhilon.name = "Labaron Philon Jr.";
-  else if (labaronPhilon) removeRosterPlayer(sixers, "Labaron Philon");
-
-  ["Caleb Love", "Duke Miles", "MarJon Beauchamp", "Rayan Rupert", "Tyrese Martin"].forEach((playerName) => {
-    const player = findRosterPlayer(sixers, playerName);
-    if (player) player.salary = null;
-  });
-  sixers.total_salary = 213_165_808;
-}
-
-function applyNuggetsPayroll() {
-  const nuggets = teams.find((team) => team.name === "Denver Nuggets");
-  if (!nuggets) throw new Error("Roster correction team not found: Denver Nuggets");
-
-  removeRosterPlayer(nuggets, "Bruce Brown");
-  getTeamPlayers(nuggets).forEach((player) => {
-    if (!Object.hasOwn(NUGGETS_PAYROLL, player.name)) player.salary = null;
-  });
-  Object.entries(NUGGETS_PAYROLL).forEach(([playerName, salary]) => {
-    const player = findRosterPlayer(nuggets, playerName);
-    if (!player) throw new Error(`Nuggets payroll player missing: ${playerName}`);
-    player.salary = salary;
-  });
-  nuggets.total_salary = 221_069_148;
-  nuggets.tax_status = "Luxury Tax";
-}
-
-function applyLakersPayroll() {
-  const lakers = teams.find((team) => team.name === "Los Angeles Lakers");
-  if (!lakers) throw new Error("Roster correction team not found: Los Angeles Lakers");
-
-  Object.entries(LAKERS_PAYROLL).forEach(([playerName, salary]) => {
-    const player = findRosterPlayer(lakers, playerName);
-    if (!player) throw new Error(`Lakers payroll player missing: ${playerName}`);
-    player.salary = salary;
-  });
-  lakers.total_salary = 201_332_759;
-}
-
-function applyRocketsPayroll() {
-  const rockets = teams.find((team) => team.name === "Houston Rockets");
-  if (!rockets) throw new Error("Roster correction team not found: Houston Rockets");
-
-  const unaccentedBogdan = findRosterPlayer(rockets, "Bogdan Bogdanovic");
-  const accentedBogdan = findRosterPlayer(rockets, "Bogdan Bogdanović");
-  if (unaccentedBogdan && accentedBogdan) removeRosterPlayer(rockets, "Bogdan Bogdanovic");
-  else if (unaccentedBogdan) unaccentedBogdan.name = "Bogdan Bogdanović";
-
-  getTeamPlayers(rockets).forEach((player) => {
-    if (!Object.hasOwn(ROCKETS_PAYROLL, player.name)) player.salary = null;
-  });
-  Object.entries(ROCKETS_PAYROLL).forEach(([playerName, salary]) => {
-    const player = findRosterPlayer(rockets, playerName);
-    if (!player) throw new Error(`Rockets payroll player missing: ${playerName}`);
-    player.salary = salary;
-  });
-  rockets.total_salary = 205_487_343;
-}
-
-function applyTimberwolvesPayroll() {
-  const timberwolves = teams.find((team) => team.name === "Minnesota Timberwolves");
-  if (!timberwolves) throw new Error("Roster correction team not found: Minnesota Timberwolves");
-
-  getTeamPlayers(timberwolves).forEach((player) => {
-    if (!Object.hasOwn(TIMBERWOLVES_PAYROLL, player.name)) player.salary = null;
-  });
-  Object.entries(TIMBERWOLVES_PAYROLL).forEach(([playerName, salary]) => {
-    let player = findRosterPlayer(timberwolves, playerName);
-    if (!player && playerName === "John Konchar") {
-      player = {
-        name: playerName,
-        pos: "SG",
-        pts: 0,
-        reb: 0,
-        ast: 0,
-        stl: 0,
-        blk: 0,
-        tov: 0,
-        fg: 0,
-        fg3: 0,
-        ft: 0
-      };
-      timberwolves.bench_2026_27 = timberwolves.bench_2026_27 || [];
-      timberwolves.bench_2026_27.push(player);
-    }
-    if (!player) throw new Error(`Timberwolves payroll player missing: ${playerName}`);
-    player.salary = salary;
-  });
-  timberwolves.total_salary = 215_327_417;
-}
-
-function applyScreenshotPayroll(teamName, payroll, total) {
-  const team = teams.find((item) => item.name === teamName);
-  if (!team) throw new Error(`Roster correction team not found: ${teamName}`);
-
-  getTeamPlayers(team).forEach((player) => {
-    if (!Object.hasOwn(payroll, player.name)) player.salary = null;
-  });
-  Object.entries(payroll).forEach(([playerName, salary]) => {
-    const player = findRosterPlayer(team, playerName);
-    if (!player) throw new Error(`${teamName} payroll player missing: ${playerName}`);
-    player.salary = salary;
-  });
-  team.total_salary = total;
-}
-
-function applyScreenshotPayrollCorrections() {
-  const dallas = teams.find((team) => team.name === "Dallas Mavericks");
-  if (!dallas) throw new Error("Roster correction team not found: Dallas Mavericks");
-  const morezJohnson = findRosterPlayer(dallas, "Morez Johnson");
-  if (morezJohnson) morezJohnson.name = "Morez Johnson Jr.";
-
-  const bucks = teams.find((team) => team.name === "Milwaukee Bucks");
-  if (!bucks) throw new Error("Roster correction team not found: Milwaukee Bucks");
-  const accentedBogoljub = findRosterPlayer(bucks, "Bogoljub Marković");
-  if (accentedBogoljub) accentedBogoljub.name = "Bogoljub Markovic";
-
-  const kings = teams.find((team) => team.name === "Sacramento Kings");
-  if (!kings) throw new Error("Roster correction team not found: Sacramento Kings");
-  let foundAcuff = false;
-  ["starters_2026_27", "bench_2026_27"].forEach((rosterKey) => {
-    kings[rosterKey] = (kings[rosterKey] || []).filter((player) => {
-      if (player.name !== "Darius Acuff Jr.") return true;
-      if (foundAcuff) return false;
-      foundAcuff = true;
-      return true;
-    });
-  });
-
-  Object.entries(SCREENSHOT_PAYROLLS).forEach(([teamName, payroll]) => {
-    applyScreenshotPayroll(teamName, payroll.salaries, payroll.total);
-  });
-  PLAYER_SALARY_CORRECTIONS.forEach(({ team: teamName, player: playerName, salary }) => {
-    const team = teams.find((item) => item.name === teamName);
-    if (!team) throw new Error(`Roster correction team not found: ${teamName}`);
-    const player = findRosterPlayer(team, playerName);
-    if (!player) throw new Error(`${teamName} payroll player missing: ${playerName}`);
-    const previousSalary = Number(player.salary) || 0;
-    player.salary = salary;
-    adjustTeamPayroll(team, (salary ?? 0) - previousSalary);
-  });
-}
-
-function applyTwoWayLabels() {
-  Object.entries(TWO_WAY_CONTRACTS).forEach(([teamName, playerNames]) => {
-    const team = teams.find((item) => item.name === teamName);
-    if (!team) throw new Error(`Two-way contract team not found: ${teamName}`);
-
-    playerNames.forEach((playerName) => {
-      const player = findRosterPlayer(team, playerName);
-      if (!player) throw new Error(`Two-way contract player missing: ${playerName}`);
-      player.contract_type = "Two-Way";
-    });
-  });
 }
 
 function formatPlayerStats(player) {
@@ -1335,39 +731,49 @@ function renderTeamCard(teamId, slotIndex) {
 function renderTrendingPlayers() {
   if (!trendingPlayersEl) return;
 
-  trendingPlayersEl.innerHTML = TRENDING_TRADE_PLAYERS.map(({ name, id, team, teamId }, index) => `
+  const scoringLeaders = teams.flatMap((team) =>
+    getTeamPlayers(team)
+      .filter((player) => Number(player.gp) > 0 && Number.isFinite(Number(player.pts)))
+      .map((player) => ({ player, team }))
+  )
+    .sort((left, right) => Number(right.player.pts) - Number(left.player.pts))
+    .slice(0, 12);
+
+  trendingPlayersEl.innerHTML = scoringLeaders.map(({ player, team }, index) => `
     <button
       type="button"
       class="trending-player"
-      data-team-theme="${team}"
-      data-player-name="${escapeHtml(name)}"
-      aria-label="View ${escapeHtml(name)} player card"
+      data-team-theme="${getTeamAbbreviation(team)}"
+      data-player-name="${escapeHtml(player.name)}"
+      data-team-id="${team.id}"
+      aria-label="View ${escapeHtml(player.name)} player card"
     >
       <span class="trending-player__portrait">
         <img
           class="trending-player__headshot"
-          src="https://cdn.nba.com/headshots/nba/latest/260x190/${id}.png"
+          src="${escapeHtml(getPlayerHeadshotUrl(player.name))}"
           alt=""
           loading="${index < 8 ? "eager" : "lazy"}"
           onerror="this.hidden=true;this.nextElementSibling.hidden=false"
         >
-        <span class="trending-player__fallback" hidden>${escapeHtml(getPlayerInitials(name))}</span>
+        <span class="trending-player__fallback" hidden>${escapeHtml(getPlayerInitials(player.name))}</span>
         <img
           class="trending-player__team"
-          src="https://cdn.nba.com/logos/nba/${teamId}/primary/L/logo.svg"
-          alt="${team}"
+          src="${escapeHtml(team.logo || "")}"
+          alt="${escapeHtml(getTeamAbbreviation(team))}"
           loading="lazy"
           onerror="this.hidden=true"
         >
         <span class="trending-player__rank">${index + 1}</span>
       </span>
-      <span class="trending-player__name">${escapeHtml(name)}</span>
-      <span class="trending-player__team-name">${team}</span>
+      <span class="trending-player__name">${escapeHtml(player.name)}</span>
+      <span class="trending-player__team-name">${escapeHtml(team.name)}</span>
+      <span class="trending-player__stats">${Number(player.pts).toFixed(1)} PPG</span>
     </button>
   `).join("");
 
   trendingPlayersEl.querySelectorAll(".trending-player").forEach((button) => {
-    button.addEventListener("click", () => openPlayerProfile(button.dataset.playerName));
+    button.addEventListener("click", () => openPlayerProfile(button.dataset.playerName, Number(button.dataset.teamId)));
   });
 }
 
@@ -2087,9 +1493,13 @@ function loadSavedTrade(tradeId) {
   reviewTrade();
 }
 
-async function loadTeams() {
-  apiStatusEl.textContent = "Connecting to API…";
-  teamGridEl.innerHTML = '<div class="loading-state">Loading team data…</div>';
+async function loadTeams({ background = false } = {}) {
+  if (isLoadingTeams) return;
+  isLoadingTeams = true;
+  if (!background) {
+    apiStatusEl.textContent = "Connecting to API…";
+    teamGridEl.innerHTML = '<div class="loading-state">Loading team data…</div>';
+  }
 
   try {
     const response = await fetch(`${API_URL}/api/v1/teams`, {
@@ -2100,41 +1510,40 @@ async function loadTeams() {
     const data = await response.json();
     teams = data.teams || [];
     if (teams.length === 0) throw new Error("The API returned no teams.");
-
-    applyRosterCorrections();
-    window.applyPlayerSeasonStatsOverrides(teams);
-    applyRaptorsPayroll();
-    applyPhiladelphiaPayroll();
-    applyNuggetsPayroll();
-    applyLakersPayroll();
-    applyRocketsPayroll();
-    applyTimberwolvesPayroll();
-    applyScreenshotPayrollCorrections();
-    applyTwoWayLabels();
-
-    teams.forEach((team) => {
-      const overrides = PLAYER_CONTRACT_OVERRIDES[team.name] || {};
-      getTeamPlayers(team).forEach((player) => {
-        const override = overrides[player.name];
-        if (override) Object.assign(player, {
-          salary: override.salary,
-          contract_note: override.note,
-          contract_label: override.label
-        });
-      });
-    });
+    lastTeamsRefreshAt = Date.now();
 
     const missingSalaries = teams.reduce((count, team) => count + getTeamPlayers(team).filter((player) => !hasSalary(player)).length, 0);
-    apiStatusEl.textContent = missingSalaries === 0
-      ? "API connected · player salaries received"
-      : `API connected · ${missingSalaries} salaries unavailable`;
-    apiStatusEl.classList.toggle("pill--warning", missingSalaries > 0);
+    const stats = data.stats || {};
+    const updatedAt = stats.last_updated
+      ? new Date(stats.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+      : "";
+    const salaryStatus = missingSalaries === 0
+      ? "API salaries received"
+      : `${missingSalaries} salaries unavailable`;
+    const roster = data.roster || {};
+    const rosterStatus = roster.status === "fresh" ? "Rosters current" : "Rosters may be outdated";
+    const statsStatus = stats.status === "fresh"
+      ? `${stats.season} stats ${updatedAt}`
+      : stats.status === "pending"
+        ? `${stats.season || "Current-season"} stats pending`
+        : "Live stats unavailable";
+    apiStatusEl.textContent = `${rosterStatus} · ${salaryStatus} · ${statsStatus}`;
+    apiStatusEl.title = [roster.message, stats.message].filter(Boolean).join(" ");
+    apiStatusEl.classList.toggle("pill--warning", roster.status !== "fresh" || missingSalaries > 0 || stats.status !== "fresh");
 
     renderTradeBoard();
   } catch (error) {
     console.error("Trade machine API load failed:", error);
-    apiStatusEl.textContent = "API connection failed";
-    teamGridEl.innerHTML = '<div class="loading-state">Could not load teams. Check the API URL, network, and API key.</div>';
+    if (teams.length) {
+      apiStatusEl.textContent = "Stats refresh failed. Showing the last API response; automatic retry in 15 minutes.";
+      apiStatusEl.classList.add("pill--warning");
+      renderTradeBoard();
+    } else {
+      apiStatusEl.textContent = "API connection failed";
+      teamGridEl.innerHTML = '<div class="loading-state">Could not load teams. Check the API URL, network, and API key.</div>';
+    }
+  } finally {
+    isLoadingTeams = false;
   }
 }
 
@@ -2197,3 +1606,9 @@ document.addEventListener("keydown", (event) => {
 });
 renderTradeBoard();
 loadTeams();
+window.setInterval(() => loadTeams({ background: true }), 15 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() - lastTeamsRefreshAt >= 15 * 60 * 1000) {
+    loadTeams({ background: true });
+  }
+});

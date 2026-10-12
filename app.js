@@ -7,7 +7,19 @@ let headlineAutoTimer = null;
 let selectedDivision = "";
 let selectedConference = "ALL";
 let selectedTxFilter = "ALL";
-let selectedScheduleStage = "OPENING_WEEK";
+let selectedScheduleDate = "";
+let lastScheduleRefreshAt = 0;
+let lastScoreRefreshAt = 0;
+let lastTransactionsRefreshAt = 0;
+let lastTeamsRefreshAt = 0;
+let activeTeamId = null;
+let isRefreshingTeams = false;
+let isRefreshingSchedule = false;
+let isRefreshingScores = false;
+let isRefreshingTransactions = false;
+let transactionsFeedStatus = null;
+let boxScoreRefreshInterval = null;
+let activeBoxScoreGameId = "";
 
 const DIVISION_CONF_MAP = {
     "Atlantic": "Eastern",
@@ -16,130 +28,6 @@ const DIVISION_CONF_MAP = {
     "Northwest": "Western",
     "Pacific": "Western",
     "Southwest": "Western"
-};
-
-// Official RealGM Jersey Numbers, Physical Measurements & Bios
-const realGmPlayerData = {
-    // Cleveland Cavaliers
-    "James Harden": { number: 1, pos: "GUARD", height: "6'5\"", weight: "220 lbs", age: 37, exp: 17, country: "USA" },
-    "Thomas Bryant": { number: 3, pos: "CENTER-FORWARD", height: "6'10\"", weight: "248 lbs", age: 29, exp: 8, country: "USA" },
-    "Evan Mobley": { number: 4, pos: "CENTER", height: "6'11\"", weight: "215 lbs", age: 25, exp: 5, country: "USA" },
-    "Sam Merrill": { number: 5, pos: "GUARD", height: "6'4\"", weight: "204 lbs", age: 30, exp: 6, country: "USA" },
-    "Peyton Watson": { number: 8, pos: "GUARD", height: "6'8\"", weight: "200 lbs", age: 24, exp: 4, country: "USA" },
-    "Craig Porter Jr.": { number: 9, pos: "GUARD", height: "6'2\"", weight: "185 lbs", age: 26, exp: 3, country: "USA" },
-    "Riley Minix": { number: 12, pos: "FORWARD", height: "6'7\"", weight: "230 lbs", age: 26, exp: 2, country: "USA" },
-    "Meleek Thomas": { number: 15, pos: "GUARD", height: "6'4\"", weight: "185 lbs", age: 20, exp: "R", country: "USA" },
-    "Khalifa Diop": { number: 18, pos: "CENTER", height: "6'11\"", weight: "231 lbs", age: 24, exp: "R", country: "Senegal" },
-    "Jaylon Tyson": { number: 20, pos: "GUARD-FORWARD", height: "6'6\"", weight: "214 lbs", age: 23, exp: 2, country: "USA" },
-    "Tristan Enaruna": { number: 21, pos: "FORWARD", height: "6'7\"", weight: "220 lbs", age: 25, exp: 1, country: "Netherlands" },
-    "Tyrese Proctor": { number: 24, pos: "GUARD", height: "6'5\"", weight: "183 lbs", age: 22, exp: 1, country: "Australia" },
-    "Jarrett Allen": { number: 31, pos: "CENTER", height: "6'9\"", weight: "243 lbs", age: 28, exp: 9, country: "USA" },
-    "Mario Hezonja": { number: 33, pos: "FORWARD-GUARD", height: "6'8\"", weight: "220 lbs", age: 31, exp: 6, country: "Croatia" },
-    "Nae'Qwan Tomlin": { number: 35, pos: "FORWARD", height: "6'8\"", weight: "210 lbs", age: 25, exp: 2, country: "USA" },
-    "Ernest Udeh, Jr.": { number: 39, pos: "CENTER", height: "6'11\"", weight: "260 lbs", age: 22, exp: "R", country: "USA" },
-    "Donovan Mitchell": { number: 45, pos: "GUARD", height: "6'3\"", weight: "215 lbs", age: 30, exp: 9, country: "USA" },
-
-    // Philadelphia 76ers
-    "Tyrese Maxey": { number: 0, pos: "GUARD", height: "6'2\"", weight: "200 lbs", age: 25, exp: 6, country: "USA" },
-    "Jaylen Brown": { number: 7, pos: "GUARD-FORWARD", height: "6'6\"", weight: "223 lbs", age: 29, exp: 10, country: "USA" },
-    "VJ Edgecombe": { number: 77, pos: "GUARD", height: "6'5\"", weight: "190 lbs", age: 21, exp: "R", country: "Bahamas" },
-    "LeBron James": { number: 23, pos: "FORWARD", height: "6'9\"", weight: "250 lbs", age: 41, exp: 23, country: "USA" },
-    "Joel Embiid": { number: 21, pos: "CENTER", height: "7'0\"", weight: "280 lbs", age: 32, exp: 10, country: "Cameroon" },
-    "Anfernee Simons": { number: 1, pos: "GUARD", height: "6'3\"", weight: "181 lbs", age: 27, exp: 8, country: "USA" },
-    "Kentavious Caldwell-Pope": { number: 5, pos: "GUARD", height: "6'5\"", weight: "204 lbs", age: 33, exp: 13, country: "USA" },
-    "Dean Wade": { number: 32, pos: "FORWARD-CENTER", height: "6'9\"", weight: "228 lbs", age: 29, exp: 7, country: "USA" },
-    "Rayan Rupert": { number: 72, pos: "GUARD-FORWARD", height: "6'6\"", weight: "205 lbs", age: 22, exp: 3, country: "France" },
-    "Caleb Love": { number: 12, pos: "GUARD", height: "6'4\"", weight: "195 lbs", age: 24, exp: "R", country: "USA" },
-    "Labaron Philon": { number: 14, pos: "GUARD", height: "6'4\"", weight: "180 lbs", age: 20, exp: "R", country: "USA" },
-    "Tacko Fall": { number: 99, pos: "CENTER", height: "7'6\"", weight: "311 lbs", age: 30, exp: 4, country: "Senegal" },
-    "MarJon Beauchamp": { number: 3, pos: "FORWARD", height: "6'7\"", weight: "200 lbs", age: 26, exp: 4, country: "USA" },
-    "Justin Edwards": { number: 17, pos: "FORWARD", height: "6'8\"", weight: "205 lbs", age: 22, exp: 2, country: "USA" },
-    "Dillon Jones": { number: 13, pos: "FORWARD", height: "6'6\"", weight: "235 lbs", age: 24, exp: 2, country: "USA" },
-    "Adem Bona": { number: 25, pos: "FORWARD-CENTER", height: "6'10\"", weight: "245 lbs", age: 23, exp: 2, country: "Nigeria" },
-    "Jabari Walker": { number: 34, pos: "FORWARD", height: "6'9\"", weight: "215 lbs", age: 24, exp: 4, country: "USA" },
-    "Dominick Barlow": { number: 26, pos: "FORWARD", height: "6'9\"", weight: "215 lbs", age: 23, exp: 4, country: "USA" },
-    "Ariel Hukporti": { number: 55, pos: "CENTER", height: "7'0\"", weight: "250 lbs", age: 24, exp: 2, country: "Germany" },
-    "Tyrese Martin": { number: 18, pos: "FORWARD", height: "6'6\"", weight: "215 lbs", age: 27, exp: 4, country: "USA" },
-
-    // Boston Celtics
-    "Derrick White": { number: 9, pos: "GUARD", height: "6'4\"", weight: "190 lbs", age: 32, exp: 9, country: "USA" },
-    "Baylor Scheierman": { number: 30, pos: "GUARD", height: "6'6\"", weight: "205 lbs", age: 26, exp: 2, country: "USA" },
-    "Paul George": { number: 8, pos: "FORWARD", height: "6'8\"", weight: "220 lbs", age: 36, exp: 16, country: "USA" },
-    "Jayson Tatum": { number: 0, pos: "FORWARD", height: "6'8\"", weight: "210 lbs", age: 28, exp: 9, country: "USA" },
-    "Mitchell Robinson": { number: 4, pos: "CENTER", height: "7'0\"", weight: "240 lbs", age: 28, exp: 8, country: "USA" },
-    "Payton Pritchard": { number: 11, pos: "GUARD", height: "6'1\"", weight: "195 lbs", age: 28, exp: 6, country: "USA" },
-    "Sam Hauser": { number: 30, pos: "FORWARD", height: "6'8\"", weight: "217 lbs", age: 28, exp: 5, country: "USA" },
-    "Mike Conley": { number: 45, pos: "GUARD", height: "6'0\"", weight: "175 lbs", age: 38, exp: 19, country: "USA" },
-    "Neemias Queta": { number: 88, pos: "CENTER", height: "7'0\"", weight: "248 lbs", age: 27, exp: 5, country: "Portugal" },
-
-    // Los Angeles Lakers
-    "Luka Dončić": { number: 77, pos: "GUARD", height: "6'7\"", weight: "230 lbs", age: 27, exp: 8, country: "Slovenia" },
-    "Austin Reaves": { number: 15, pos: "GUARD", height: "6'5\"", weight: "197 lbs", age: 28, exp: 5, country: "USA" },
-    "Quentin Grimes": { number: 5, pos: "FORWARD", height: "6'5\"", weight: "210 lbs", age: 26, exp: 5, country: "USA" },
-    "Sandro Mamukelashvili": { number: 54, pos: "FORWARD", height: "6'10\"", weight: "240 lbs", age: 27, exp: 5, country: "Georgia" },
-    "Fred VanVleet": { number: 5, pos: "GUARD", height: "6'1\"", weight: "197 lbs", age: 31, exp: 10, country: "USA" },
-    "Amen Thompson": { number: 1, pos: "GUARD", height: "6'7\"", weight: "220 lbs", age: 22, exp: 2, country: "USA" },
-    "Kevin Durant": { number: 35, pos: "FORWARD", height: "6'10\"", weight: "240 lbs", age: 37, exp: 18, country: "USA" },
-    "Jabari Smith Jr.": { number: 10, pos: "FORWARD", height: "6'10\"", weight: "220 lbs", age: 22, exp: 4, country: "USA" },
-    "Alperen Şengün": { number: 28, pos: "CENTER", height: "6'10\"", weight: "243 lbs", age: 22, exp: 4, country: "Turkey" },
-    "Walker Kessler": { number: 14, pos: "CENTER", height: "7'0\"", weight: "245 lbs", age: 25, exp: 4, country: "USA" },
-    "Matisse Thybulle": { number: 26, pos: "GUARD", height: "6'5\"", weight: "200 lbs", age: 29, exp: 7, country: "Australia" },
-    "Collin Sexton": { number: 10, pos: "GUARD", height: "6'3\"", weight: "190 lbs", age: 27, exp: 8, country: "USA" },
-
-    // Golden State Warriors
-    "Stephen Curry": { number: 30, pos: "GUARD", height: "6'2\"", weight: "185 lbs", age: 38, exp: 17, country: "USA" },
-    "Brandin Podziemski": { number: 2, pos: "GUARD", height: "6'5\"", weight: "205 lbs", age: 23, exp: 3, country: "USA" },
-    "Jimmy Butler": { number: 10, pos: "FORWARD", height: "6'7\"", weight: "230 lbs", age: 37, exp: 15, country: "USA" },
-    "Draymond Green": { number: 23, pos: "FORWARD", height: "6'6\"", weight: "230 lbs", age: 36, exp: 14, country: "USA" },
-    "Kristaps Porziņģis": { number: 7, pos: "CENTER", height: "7'2\"", weight: "240 lbs", age: 31, exp: 11, country: "Latvia" },
-
-    // Miami Heat
-    "Davion Mitchell": { number: 45, pos: "GUARD", height: "6'0\"", weight: "202 lbs", age: 28, exp: 5, country: "USA" },
-    "Tim Hardaway Jr.": { number: 10, pos: "GUARD", height: "6'5\"", weight: "205 lbs", age: 34, exp: 13, country: "USA" },
-    "Andrew Wiggins": { number: 22, pos: "FORWARD", height: "6'7\"", weight: "197 lbs", age: 31, exp: 12, country: "Canada" },
-    "Giannis Antetokounmpo": { number: 34, pos: "FORWARD", height: "6'11\"", weight: "243 lbs", age: 31, exp: 13, country: "Greece" },
-    "Bam Adebayo": { number: 13, pos: "CENTER", height: "6'9\"", weight: "255 lbs", age: 29, exp: 9, country: "USA" },
-    "Klay Thompson": { number: 11, pos: "GUARD", height: "6'6\"", weight: "215 lbs", age: 36, exp: 15, country: "USA" },
-
-    // Chicago Bulls
-    "Josh Giddey": { number: 3, pos: "GUARD", height: "6'8\"", weight: "216 lbs", age: 23, exp: 5, country: "Australia" },
-    "Norman Powell": { number: 24, pos: "GUARD", height: "6'4\"", weight: "215 lbs", age: 33, exp: 11, country: "USA" },
-    "Matas Buzelis": { number: 14, pos: "FORWARD", height: "6'10\"", weight: "209 lbs", age: 21, exp: 2, country: "USA" },
-    "Patrick Williams": { number: 44, pos: "FORWARD", height: "6'7\"", weight: "215 lbs", age: 25, exp: 6, country: "USA" },
-    "Nic Claxton": { number: 9, pos: "CENTER", height: "6'11\"", weight: "215 lbs", age: 27, exp: 7, country: "USA" }
-};
-
-const teamMetadata = {
-    "Boston Celtics": { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg", salary: 201437932, status: "Luxury Tax", rings: 18, years: [1957, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1968, 1969, 1974, 1976, 1981, 1984, 1986, 2008, 2024] },
-    "Brooklyn Nets": { logo: "https://cdn.nba.com/logos/nba/1610612751/primary/L/logo.svg", salary: 160105139, status: "Under Cap", rings: 0, years: [] },
-    "New York Knicks": { logo: "https://cdn.nba.com/logos/nba/1610612752/primary/L/logo.svg", salary: 217948756, status: "1st Apron", rings: 3, years: [1970, 1973, 2026] },
-    "Philadelphia 76ers": { logo: "https://cdn.nba.com/logos/nba/1610612755/primary/L/logo.svg", salary: 206643098, status: "Luxury Tax", rings: 3, years: [1955, 1967, 1983] },
-    "Toronto Raptors": { logo: "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg", salary: 202743041, status: "Luxury Tax", rings: 1, years: [2019] },
-    "Chicago Bulls": { logo: "https://cdn.nba.com/logos/nba/1610612741/primary/L/logo.svg", salary: 161545080, status: "Under Cap", rings: 6, years: [1991, 1992, 1993, 1996, 1997, 1998] },
-    "Cleveland Cavaliers": { logo: "https://cdn.nba.com/logos/nba/1610612739/primary/L/logo.svg", salary: 222920753, status: "2nd Apron", rings: 1, years: [2016] },
-    "Detroit Pistons": { logo: "https://cdn.nba.com/logos/nba/1610612765/primary/L/logo.svg", salary: 188382759, status: "Under Cap", rings: 3, years: [1989, 1990, 2004] },
-    "Indiana Pacers": { logo: "https://cdn.nba.com/logos/nba/1610612754/primary/L/logo.svg", salary: 203715395, status: "Luxury Tax", rings: 0, years: [] },
-    "Milwaukee Bucks": { logo: "https://cdn.nba.com/logos/nba/1610612749/primary/L/logo.svg", salary: 191358866, status: "Over Cap", rings: 2, years: [1971, 2021] },
-    "Atlanta Hawks": { logo: "https://cdn.nba.com/logos/nba/1610612737/primary/L/logo.svg", salary: 221278253, status: "1st Apron", rings: 1, years: [1958] },
-    "Charlotte Hornets": { logo: "https://cdn.nba.com/logos/nba/1610612766/primary/L/logo.svg", salary: 174870647, status: "Over Cap", rings: 0, years: [] },
-    "Miami Heat": { logo: "https://cdn.nba.com/logos/nba/1610612748/primary/L/logo.svg", salary: 204486535, status: "Luxury Tax", rings: 3, years: [2006, 2012, 2013] },
-    "Orlando Magic": { logo: "https://cdn.nba.com/logos/nba/1610612753/primary/L/logo.svg", salary: 218125071, status: "1st Apron", rings: 0, years: [] },
-    "Washington Wizards": { logo: "https://cdn.nba.com/logos/nba/1610612764/primary/L/logo.svg", salary: 189013104, status: "Over Cap", rings: 1, years: [1978] },
-    "Denver Nuggets": { logo: "https://cdn.nba.com/logos/nba/1610612743/primary/L/logo.svg", salary: 215333328, status: "1st Apron", rings: 1, years: [2023] },
-    "Minnesota Timberwolves": { logo: "https://cdn.nba.com/logos/nba/1610612750/primary/L/logo.svg", salary: 215871829, status: "1st Apron", rings: 0, years: [] },
-    "Oklahoma City Thunder": { logo: "https://cdn.nba.com/logos/nba/1610612760/primary/L/logo.svg", salary: 214798992, status: "1st Apron", rings: 2, years: [1979, 2025] },
-    "Portland Trail Blazers": { logo: "https://cdn.nba.com/logos/nba/1610612757/primary/L/logo.svg", salary: 194511148, status: "Over Cap", rings: 1, years: [1977] },
-    "Utah Jazz": { logo: "https://cdn.nba.com/logos/nba/1610612762/primary/L/logo.svg", salary: 179365019, status: "Over Cap", rings: 0, years: [] },
-    "Golden State Warriors": { logo: "https://cdn.nba.com/logos/nba/1610612744/primary/L/logo.svg", salary: 219763627, status: "1st Apron", rings: 7, years: [1947, 1956, 1975, 2015, 2017, 2018, 2022] },
-    "LA Clippers": { logo: "https://cdn.nba.com/logos/nba/1610612746/primary/L/logo.svg", salary: 196862414, status: "Over Cap", rings: 0, years: [] },
-    "Los Angeles Lakers": { logo: "https://cdn.nba.com/logos/nba/1610612747/primary/L/logo.svg", salary: 201332759, status: "Luxury Tax", rings: 17, years: [1949, 1950, 1952, 1953, 1954, 1972, 1980, 1982, 1985, 1987, 1988, 2000, 2001, 2002, 2009, 2010, 2020] },
-    "Phoenix Suns": { logo: "https://cdn.nba.com/logos/nba/1610612756/primary/L/logo.svg", salary: 216225506, status: "1st Apron", rings: 0, years: [] },
-    "Sacramento Kings": { logo: "https://cdn.nba.com/logos/nba/1610612758/primary/L/logo.svg", salary: 189346486, status: "Over Cap", rings: 1, years: [1951] },
-    "Dallas Mavericks": { logo: "https://cdn.nba.com/logos/nba/1610612742/primary/L/logo.svg", salary: 197866094, status: "Over Cap", rings: 1, years: [2011] },
-    "Houston Rockets": { logo: "https://cdn.nba.com/logos/nba/1610612745/primary/L/logo.svg", salary: 205487343, status: "Luxury Tax", rings: 2, years: [1994, 1995] },
-    "Memphis Grizzlies": { logo: "https://cdn.nba.com/logos/nba/1610612763/primary/L/logo.svg", salary: 167642677, status: "Over Cap", rings: 0, years: [] },
-    "New Orleans Pelicans": { logo: "https://cdn.nba.com/logos/nba/1610612740/primary/L/logo.svg", salary: 202241014, status: "Luxury Tax", rings: 0, years: [] },
-    "San Antonio Spurs": { logo: "https://cdn.nba.com/logos/nba/1610612759/primary/L/logo.svg", salary: 198315672, status: "Over Cap", rings: 5, years: [1999, 2003, 2005, 2007, 2014] }
 };
 
 const teamColors = {
@@ -175,69 +63,6 @@ const teamColors = {
     "San Antonio Spurs":       { primary: "#000000", dark: "#1f1f1f" }
 };
 
-const teamSeasonStats2025_26 = {
-    "Boston Celtics": { record: "56-26", off_rtg: 120.8, def_rtg: 112.7, ppg: 120.1, opp_ppg: 112.4, net: "+7.7" },
-    "Brooklyn Nets": { record: "28-54", off_rtg: 106.7, def_rtg: 117.1, ppg: 106.7, opp_ppg: 117.1, net: "-10.4" },
-    "New York Knicks": { record: "54-28", off_rtg: 112.7, def_rtg: 106.8, ppg: 112.7, opp_ppg: 106.8, net: "+5.9" },
-    "Philadelphia 76ers": { record: "47-35", off_rtg: 114.3, def_rtg: 112.9, ppg: 114.3, opp_ppg: 112.9, net: "+1.4" },
-    "Toronto Raptors": { record: "39-43", off_rtg: 112.4, def_rtg: 112.6, ppg: 112.4, opp_ppg: 112.6, net: "-0.2" },
-    "Chicago Bulls": { record: "33-49", off_rtg: 112.0, def_rtg: 115.2, ppg: 112.0, opp_ppg: 115.2, net: "-3.2" },
-    "Cleveland Cavaliers": { record: "60-22", off_rtg: 112.6, def_rtg: 108.6, ppg: 112.6, opp_ppg: 108.6, net: "+4.0" },
-    "Detroit Pistons": { record: "41-41", off_rtg: 109.2, def_rtg: 111.7, ppg: 109.2, opp_ppg: 111.7, net: "-2.5" },
-    "Indiana Pacers": { record: "52-30", off_rtg: 123.3, def_rtg: 117.8, ppg: 123.3, opp_ppg: 117.8, net: "+5.5" },
-    "Milwaukee Bucks": { record: "48-34", off_rtg: 119.0, def_rtg: 114.2, ppg: 119.0, opp_ppg: 114.2, net: "+4.8" },
-    "Atlanta Hawks": { record: "36-46", off_rtg: 117.5, def_rtg: 118.6, ppg: 117.5, opp_ppg: 118.6, net: "-1.1" },
-    "Charlotte Hornets": { record: "32-50", off_rtg: 106.9, def_rtg: 113.6, ppg: 106.9, opp_ppg: 113.6, net: "-6.7" },
-    "Miami Heat": { record: "46-36", off_rtg: 110.1, def_rtg: 109.0, ppg: 110.1, opp_ppg: 109.0, net: "+1.1" },
-    "Orlando Magic": { record: "50-32", off_rtg: 108.8, def_rtg: 108.1, ppg: 108.8, opp_ppg: 108.1, net: "+0.7" },
-    "Washington Wizards": { record: "20-62", off_rtg: 114.1, def_rtg: 119.8, ppg: 114.1, opp_ppg: 119.8, net: "-5.7" },
-    "Denver Nuggets": { record: "53-29", off_rtg: 114.9, def_rtg: 109.6, ppg: 114.9, opp_ppg: 109.6, net: "+5.3" },
-    "Minnesota Timberwolves": { record: "49-33", off_rtg: 113.8, def_rtg: 112.2, ppg: 113.8, opp_ppg: 112.2, net: "+1.6" },
-    "Oklahoma City Thunder": { record: "68-14", off_rtg: 120.1, def_rtg: 106.2, ppg: 120.1, opp_ppg: 106.2, net: "+13.9" },
-    "Portland Trail Blazers": { record: "35-47", off_rtg: 106.4, def_rtg: 109.7, ppg: 106.4, opp_ppg: 109.7, net: "-3.3" },
-    "Utah Jazz": { record: "30-52", off_rtg: 115.4, def_rtg: 118.1, ppg: 115.4, opp_ppg: 118.1, net: "-2.7" },
-    "Golden State Warriors": { record: "48-34", off_rtg: 117.8, def_rtg: 112.4, ppg: 117.8, opp_ppg: 112.4, net: "+5.4" },
-    "LA Clippers": { record: "44-38", off_rtg: 112.8, def_rtg: 111.5, ppg: 112.8, opp_ppg: 111.5, net: "+1.3" },
-    "Los Angeles Lakers": { record: "52-30", off_rtg: 118.3, def_rtg: 112.7, ppg: 118.3, opp_ppg: 112.7, net: "+5.6" },
-    "Phoenix Suns": { record: "45-37", off_rtg: 116.8, def_rtg: 113.6, ppg: 116.8, opp_ppg: 113.6, net: "+3.2" },
-    "Sacramento Kings": { record: "43-39", off_rtg: 117.2, def_rtg: 116.0, ppg: 117.2, opp_ppg: 116.0, net: "+1.2" },
-    "Dallas Mavericks": { record: "50-32", off_rtg: 117.9, def_rtg: 113.8, ppg: 117.9, opp_ppg: 113.8, net: "+4.1" },
-    "Houston Rockets": { record: "52-30", off_rtg: 112.8, def_rtg: 109.5, ppg: 112.8, opp_ppg: 109.5, net: "+3.3" },
-    "Memphis Grizzlies": { record: "38-44", off_rtg: 105.6, def_rtg: 106.1, ppg: 105.6, opp_ppg: 106.1, net: "-0.5" },
-    "New Orleans Pelicans": { record: "40-42", off_rtg: 115.6, def_rtg: 115.8, ppg: 115.6, opp_ppg: 115.8, net: "-0.2" },
-    "San Antonio Spurs": { record: "34-48", off_rtg: 112.2, def_rtg: 116.1, ppg: 112.2, opp_ppg: 116.1, net: "-3.9" }
-};
-
-function getEstimatedPlayerSalary(player) {
-    if (player.salary !== undefined && player.salary !== null && Number.isFinite(Number(player.salary))) {
-        return Number(player.salary);
-    }
-
-    const pos = String(player.pos || "F").toUpperCase();
-    const pts = Number(player.pts ?? 0);
-    const reb = Number(player.reb ?? 0);
-    const ast = Number(player.ast ?? 0);
-    const baseByPos = {
-        PG: 3_300_000,
-        SG: 3_100_000,
-        SF: 3_050_000,
-        PF: 3_250_000,
-        C: 3_500_000,
-        F: 2_950_000,
-        "G-F": 3_150_000,
-        "F-C": 3_300_000
-    };
-
-    const base = baseByPos[pos] || 2_900_000;
-    const score = (pts * 1_250_000) + (reb * 600_000) + (ast * 750_000);
-    return Math.max(600_000, Math.round(base + score));
-}
-
-function formatCompactSalary(value) {
-    if (!Number.isFinite(value)) return "$0";
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-}
-
 function getTeamTransactions(teamName) {
     const normalizedTeamName = teamName.toLowerCase();
     const directMatches = [];
@@ -267,59 +92,6 @@ function getTeamTransactions(teamName) {
         text: `${teamName} has not announced a major offseason transaction yet.`
     }];
 }
-
-const PHI_76ERS_CUSTOM_ROSTER = {
-    starters: [
-        { name: "Tyrese Maxey", pos: "G", height: "6'2\"", weight: "200 lbs", age: 25, exp: 6, country: "USA" },
-        { name: "Jaylen Brown", pos: "G-F", height: "6'6\"", weight: "223 lbs", age: 29, exp: 10, country: "USA" },
-        { name: "LeBron James", pos: "F", height: "6'9\"", weight: "250 lbs", age: 41, exp: 23, country: "USA" },
-        { name: "VJ Edgecombe", pos: "G", height: "6'5\"", weight: "190 lbs", age: 21, exp: 2, country: "Bahamas" },
-        { name: "Joel Embiid", pos: "C-F", height: "7'0\"", weight: "280 lbs", age: 32, exp: 10, country: "Cameroon" }
-    ],
-    bench: [
-        { name: "Anfernee Simons", pos: "G" },
-        { name: "Kentavious Caldwell-Pope", pos: "G" },
-        { name: "Dean Wade", pos: "F-C" },
-        { name: "Rayan Rupert", pos: "G-F" },
-        { name: "Caleb Love", pos: "G" },
-        { name: "Labaron Philon", pos: "G" },
-        { name: "Tacko Fall", pos: "C" },
-        { name: "MarJon Beauchamp", pos: "F" },
-        { name: "Justin Edwards", pos: "F" },
-        { name: "Dillon Jones", pos: "F" },
-        { name: "Adem Bona", pos: "F" },
-        { name: "Jabari Walker", pos: "F" },
-        { name: "Dominick Barlow", pos: "F" },
-        { name: "Ariel Hukporti", pos: "C" },
-        { name: "Tyrese Martin", pos: "F" },
-        { name: "Jameer Nelson Jr.", pos: "G" },
-        { name: "Duke Miles", pos: "G" },
-        { name: "Saint Thomas", pos: "F" }
-    ]
-};
-
-const CHI_BULLS_CUSTOM_ROSTER = {
-    starters: [
-        { name: "Josh Giddey", pos: "G", height: "6'8\"", weight: "216 lbs", age: 23, exp: 5, country: "Australia" },
-        { name: "Norman Powell", pos: "G", height: "6'4\"", weight: "215 lbs", age: 33, exp: 11, country: "USA" },
-        { name: "Matas Buzelis", pos: "F", height: "6'10\"", weight: "209 lbs", age: 21, exp: 2, country: "USA" },
-        { name: "Patrick Williams", pos: "F", height: "6'7\"", weight: "215 lbs", age: 25, exp: 6, country: "USA" },
-        { name: "Nic Claxton", pos: "C", height: "6'11\"", weight: "215 lbs", age: 27, exp: 7, country: "USA" }
-    ],
-    bench: [
-        { name: "Rob Dillingham", pos: "G" },
-        { name: "Caleb Wilson", pos: "F" },
-        { name: "Leonard Miller", pos: "F" },
-        { name: "Zach Collins", pos: "F-C" },
-        { name: "Noa Essengue", pos: "F" },
-        { name: "Jalen Smith", pos: "F-C" },
-        { name: "Tre Jones", pos: "G" },
-        { name: "Isaac Okoro", pos: "F-G" },
-        { name: "Dailyn Swain", pos: "F" },
-        { name: "Tobe Awaka", pos: "F" },
-        { name: "Jaylin Sellers", pos: "G" }
-    ]
-};
 
 const headlines = [
     {
@@ -388,576 +160,8 @@ const headlines = [
     }
 ];
 
-const rawTimelineTransactions = [
-    {
-        date: "Friday, September 11, 2026",
-        items: [
-            { team: "Boston Celtics", type: "WAIVED", text: "Waived forward Hank Morgan." },
-            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived guard Lamont Butler." },
-            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived guard Devin Carter." }
-        ]
-    },
-    {
-        date: "Thursday, September 10, 2026",
-        items: [
-            { team: "New Orleans Pelicans", type: "SIGNING", text: "Signed guard Bennedict Mathurin to a Contract." },
-            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived forward Keyshawn Bryant." }
-        ]
-    },
-    {
-        date: "Wednesday, September 09, 2026",
-        items: [
-            { team: "Atlanta Hawks", type: "WAIVED", text: "Waived guard Devon Higgs." }
-        ]
-    },
-    {
-        date: "Tuesday, September 08, 2026",
-        items: [
-            { team: "Cleveland Cavaliers", type: "EXTENSION", text: "Re-signed guard James Harden to a Contract." },
-            { team: "Denver Nuggets", type: "SIGNING", text: "Signed guard DeMar DeRozan to a Contract." },
-            { team: "New Orleans Pelicans", type: "TRADE", text: "Received guard AJ Johnson and forward Taj Gibson from Memphis Grizzlies." },
-            { team: "Memphis Grizzlies", type: "TRADE", text: "Received guard Micah Peavy, guard Jordan Hawkins, and draft consideration from New Orleans Pelicans." },
-            { team: "New Orleans Pelicans", type: "WAIVED", text: "Waived forward Taj Gibson." }
-        ]
-    },
-    {
-        date: "Monday, September 07, 2026",
-        items: [
-            { team: "Sacramento Kings", type: "SIGNING", text: "Signed guard Ben Simmons to a Contract." },
-            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived guard Kobe Stewart." }
-        ]
-    },
-    {
-        date: "Friday, September 04, 2026",
-        items: [
-            { team: "Brooklyn Nets", type: "SIGNING", text: "Signed forward Grant Nelson to a Two-Way Contract." },
-            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived guard Jarkel Joiner." }
-        ]
-    },
-    {
-        date: "Thursday, September 03, 2026",
-        items: [
-            { team: "Houston Rockets", type: "EXTENSION", text: "Re-signed guard Amen Thompson to a Rookie Scale Extension." },
-            { team: "Minnesota Timberwolves", type: "SIGNING", text: "Signed forward Jonathan Kuminga to a Contract." },
-            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived guard Kyle Mangas." }
-        ]
-    },
-    {
-        date: "Wednesday, September 02, 2026",
-        items: [
-            { team: "Cleveland Cavaliers", type: "SIGNING", text: "Signed center Khalifa Diop to a Contract." },
-            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived forward Trey Townsend." },
-            { team: "Utah Jazz", type: "WAIVED", text: "Waived guard Matthew Murrell." }
-        ]
-    },
-    {
-        date: "Tuesday, September 01, 2026",
-        items: [
-            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived forward Josiah Allick." }
-        ]
-    },
-    {
-        date: "Friday, August 28, 2026",
-        items: [
-            { team: "Minnesota Timberwolves", type: "TRADE", text: "Received forward Cody Williams from Utah Jazz." },
-            { team: "Minnesota Timberwolves", type: "TRADE", text: "Received guard John Konchar from Utah Jazz." },
-            { team: "Utah Jazz", type: "TRADE", text: "Received guard Josh Green from Minnesota Timberwolves." },
-            { team: "Cleveland Cavaliers", type: "WAIVED", text: "Waived forward Cam Whitmore." },
-            { team: "Denver Nuggets", type: "WAIVED", text: "Waived forward Julian Reese." }
-        ]
-    },
-    {
-        date: "Thursday, August 27, 2026",
-        items: [
-            { team: "Miami Heat", type: "SIGNING", text: "Signed center Nick Richards to a Contract." },
-            { team: "Miami Heat", type: "SIGNING", text: "Re-signed forward Keshad Johnson to a Two-Way Contract." }
-        ]
-    },
-    {
-        date: "Wednesday, August 26, 2026",
-        items: [
-            { team: "Houston Rockets", type: "SIGNING", text: "Signed center Rafael Castro to a Two-Way Contract." },
-            { team: "Golden State Warriors", type: "SIGNING", text: "Signed guard Brandon Williams to a Contract." },
-            { team: "Denver Nuggets", type: "SIGNING", text: "Signed Bryce Hopkins to a Two-Way Contract." },
-            { team: "Houston Rockets", type: "WAIVED", text: "Waived guard Tristen Newton." }
-        ]
-    },
-    {
-        date: "Tuesday, August 25, 2026",
-        items: [
-            { team: "Golden State Warriors", type: "SIGNING", text: "Signed forward Georges Niang to a Contract." }
-        ]
-    },
-    {
-        date: "Sunday, August 23, 2026",
-        items: [
-            { team: "Miami Heat", type: "SIGNING", text: "Signed guard Klay Thompson to a Contract." }
-        ]
-    },
-    {
-        date: "Friday, August 21, 2026",
-        items: [
-            { team: "Dallas Mavericks", type: "WAIVED", text: "Waived guard Klay Thompson." }
-        ]
-    },
-    {
-        date: "Thursday, August 20, 2026",
-        items: [
-            { team: "Cleveland Cavaliers", type: "TRADE", text: "Received guard Peyton Watson from Denver Nuggets." },
-            { team: "Cleveland Cavaliers", type: "TRADE", text: "Received forward Cam Whitmore from Washington Wizards." },
-            { team: "Denver Nuggets", type: "TRADE", text: "Received draft consideration from Cleveland Cavaliers." },
-            { team: "LA Clippers", type: "TRADE", text: "Received guard Max Strus from Cleveland Cavaliers." },
-            { team: "Washington Wizards", type: "TRADE", text: "Received draft consideration from LA Clippers." },
-            { team: "Washington Wizards", type: "TRADE", text: "Received guard Tre Mann from Charlotte Hornets." },
-            { team: "Charlotte Hornets", type: "TRADE", text: "Received guard Dennis Schroder from Cleveland Cavaliers." }
-        ]
-    },
-    {
-        date: "Tuesday, August 18, 2026",
-        items: [
-            { team: "New Orleans Pelicans", type: "SIGNING", text: "Signed Malik Dia to a Two-Way Contract." },
-            { team: "New Orleans Pelicans", type: "WAIVED", text: "Waived center Hunter Dickinson." }
-        ]
-    },
-    {
-        date: "Monday, August 17, 2026",
-        items: [
-            { team: "Indiana Pacers", type: "SIGNING", text: "Signed guard Braden Smith to a Two-Way Contract." },
-            { team: "Houston Rockets", type: "SIGNING", text: "Signed guard Sean Pedulla to a Two-Way Contract." },
-            { team: "New Orleans Pelicans", type: "SIGNING", text: "Signed guard Trendon Watford to a Contract." }
-        ]
-    },
-    {
-        date: "Thursday, August 13, 2026",
-        items: [
-            { team: "LA Clippers", type: "EXTENSION", text: "Re-signed guard Bradley Beal to a Contract." },
-            { team: "Indiana Pacers", type: "WAIVED", text: "Waived guard Ethan Thompson." }
-        ]
-    },
-    {
-        date: "Wednesday, August 12, 2026",
-        items: [
-            { team: "LA Clippers", type: "SIGNING", text: "Signed guard Jalen Pickett to a Two-Way Contract." },
-            { team: "Phoenix Suns", type: "WAIVED", text: "Waived forward Haywood Highsmith." }
-        ]
-    },
-    {
-        date: "Saturday, August 08, 2026",
-        items: [
-            { team: "Phoenix Suns", type: "EXTENSION", text: "Re-signed guard Dillon Brooks to a Veteran Extension." }
-        ]
-    },
-    {
-        date: "Thursday, August 06, 2026",
-        items: [
-            { team: "LA Clippers", type: "SIGNING", text: "Signed center Jamarion Sharp to a Two-Way Contract." },
-            { team: "LA Clippers", type: "WAIVED", text: "Waived guard Sean Pedulla." }
-        ]
-    },
-    {
-        date: "Wednesday, August 05, 2026",
-        items: [
-            { team: "Boston Celtics", type: "SIGNING", text: "Signed forward Dillon Mitchell to a Two-Way Contract." },
-            { team: "Philadelphia 76ers", type: "SIGNING", text: "Signed guard Kentavious Caldwell-Pope to a Contract." },
-            { team: "Houston Rockets", type: "WAIVED", text: "Waived guard JD Davison." }
-        ]
-    },
-    {
-        date: "Tuesday, August 04, 2026",
-        items: [
-            { team: "Toronto Raptors", type: "SIGNING", text: "Signed center Trey Jemison III to a Two-Way Contract." }
-        ]
-    },
-    {
-        date: "Sunday, August 02, 2026",
-        items: [
-            { team: "Dallas Mavericks", type: "EXTENSION", text: "Re-signed forward Naji Marshall to a Veteran Extension." }
-        ]
-    },
-    {
-        date: "Saturday, August 01, 2026",
-        items: [
-            { team: "Golden State Warriors", type: "EXTENSION", text: "Re-signed guard Gary Payton II to a Contract." }
-        ]
-    },
-    {
-        date: "Friday, July 31, 2026",
-        items: [
-            { team: "Denver Nuggets", type: "SIGNING", text: "Signed forward Spencer Jones to a Contract." },
-            { team: "Brooklyn Nets", type: "SIGNING", text: "Signed forward Moritz Wagner to a Contract." },
-            { team: "Cleveland Cavaliers", type: "SIGNING", text: "Signed forward Mario Hezonja to a Contract." },
-            { team: "Golden State Warriors", type: "EXTENSION", text: "Re-signed guard De'Anthony Melton to a Contract." }
-        ]
-    },
-    {
-        date: "Thursday, July 30, 2026",
-        items: [
-            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived forward Mouhamadou Gueye." }
-        ]
-    },
-    {
-        date: "Wednesday, July 29, 2026",
-        items: [
-            { team: "Golden State Warriors", type: "EXTENSION", text: "Re-signed forward Draymond Green to a Contract." },
-            { team: "Memphis Grizzlies", type: "DRAFT", text: "Signed forward Karim Lopez to a Rookie Scale Contract." }
-        ]
-    },
-    {
-        date: "Tuesday, July 28, 2026",
-        items: [
-            { team: "LA Clippers", type: "TRADE", text: "Received forward Johni Broome and draft consideration from Philadelphia 76ers." }
-        ]
-    },
-    {
-        date: "Monday, July 27, 2026",
-        items: [
-            { team: "Los Angeles Lakers", type: "SIGNING", text: "Signed guard Matisse Thybulle to a Contract." },
-            { team: "Sacramento Kings", type: "WAIVED", text: "Waived guard Isaiah Stevens." }
-        ]
-    },
-    {
-        date: "Sunday, July 26, 2026",
-        items: [
-            { team: "Philadelphia 76ers", type: "SIGNING", text: "Signed forward LeBron James to a Contract." }
-        ]
-    },
-    {
-        date: "Saturday, July 25, 2026",
-        items: [
-            { team: "Memphis Grizzlies", type: "WAIVED", text: "Waived guard Kentavious Caldwell-Pope." },
-            { team: "Philadelphia 76ers", type: "WAIVED", text: "Waived forward Dalen Terry." }
-        ]
-    },
-    {
-        date: "Friday, July 24, 2026",
-        items: [
-            { team: "Portland Trail Blazers", type: "SIGNING", text: "Signed guard John Tonje to a Two-Way Contract." }
-        ]
-    },
-    {
-        date: "Thursday, July 23, 2026",
-        items: [
-            { team: "Boston Celtics", type: "EXTENSION", text: "Re-signed guard Jordan Walsh to a Veteran Extension." },
-            { team: "Houston Rockets", type: "EXTENSION", text: "Re-signed forward Jae'Sean Tate to a Contract." },
-            { team: "New Orleans Pelicans", type: "SIGNING", text: "Signed guard Jaron Pierre Jr. to a Two-Way Contract." }
-        ]
-    },
-    {
-        date: "Wednesday, July 22, 2026",
-        items: [
-            { team: "Indiana Pacers", type: "EXTENSION", text: "Re-signed forward Jalen Slawson to a Two-Way Contract." },
-            { team: "Atlanta Hawks", type: "SIGNING", text: "Signed forward Jalen Wilson to a Two-Way Contract." },
-            { team: "San Antonio Spurs", type: "EXTENSION", text: "Re-signed guard David Jones Garcia to a Two-Way Contract." },
-            { team: "Dallas Mavericks", type: "SIGNING", text: "Signed center Moussa Cisse to a Contract." },
-            { team: "Houston Rockets", type: "EXTENSION", text: "Re-signed forward Isaiah Crawford to a Contract." },
-            { team: "San Antonio Spurs", type: "WAIVED", text: "Waived forward Emanuel Miller." }
-        ]
-    },
-    {
-        date: "Tuesday, July 21, 2026",
-        items: [
-            { team: "Los Angeles Lakers", type: "SIGNING", text: "Signed forward Arthur Kaluma to a Two-Way Contract." },
-            { team: "Los Angeles Lakers", type: "WAIVED", text: "Waived guard Peter Suder." }
-        ]
-    },
-    {
-        date: "Monday, July 20, 2026",
-        items: [
-            { team: "Dallas Mavericks", type: "SIGNING", text: "Signed guard Jett Howard to a Two-Way Contract." },
-            { team: "Indiana Pacers", type: "WAIVED", text: "Waived guard Taelon Peter." },
-            { team: "Dallas Mavericks", type: "WAIVED", text: "Waived forward Tyler Smith." }
-        ]
-    },
-    {
-        date: "Sunday, July 19, 2026",
-        items: [
-            { team: "Los Angeles Lakers", type: "SIGNING", text: "Signed forward Ziaire Williams to a Contract." },
-            { team: "Atlanta Hawks", type: "TRADE", text: "Received guard Ryan Nembhard from Dallas Mavericks & guard Luguentz Dort from Oklahoma City Thunder." },
-            { team: "Dallas Mavericks", type: "TRADE", text: "Received forward Zaccharie Risacher & draft consideration from Atlanta Hawks." },
-            { team: "Oklahoma City Thunder", type: "TRADE", text: "Received draft considerations from Atlanta Hawks & Dallas Mavericks." }
-        ]
-    },
-    {
-        date: "Thursday, July 16, 2026",
-        items: [
-            { team: "Miami Heat", type: "EXTENSION", text: "Re-signed center Vladislav Goldin to a Two-Way Contract." }
-        ]
-    },
-    {
-        date: "Wednesday, July 15, 2026",
-        items: [
-            { team: "Denver Nuggets", type: "SIGNING", text: "Signed forward Marvin Bagley III to a Contract." },
-            { team: "Milwaukee Bucks", type: "EXTENSION", text: "Re-signed guard Gary Trent Jr. to a Contract." }
-        ]
-    },
-    {
-        date: "Tuesday, July 14, 2026",
-        items: [
-            { team: "Phoenix Suns", type: "SIGNING", text: "Signed guard Luke Kennard to a Contract." },
-            { team: "Denver Nuggets", type: "EXTENSION", text: "Re-signed guard Tyus Jones to a Contract." }
-        ]
-    },
-    {
-        date: "Monday, July 13, 2026",
-        items: [
-            { team: "Memphis Grizzlies", type: "DRAFT", text: "Signed forward Cameron Boozer to a Rookie Scale Contract." },
-            { team: "San Antonio Spurs", type: "EXTENSION", text: "Re-signed guard Jordan McLaughlin to a Contract." },
-            { team: "Denver Nuggets", type: "SIGNING", text: "Signed Alpha Diallo to a Contract." },
-            { team: "Phoenix Suns", type: "TRADE", text: "Received forward Miles Bridges and draft consideration from Charlotte Hornets." },
-            { team: "Charlotte Hornets", type: "TRADE", text: "Received guard Grayson Allen, forward Royce O'Neale & draft consideration from Phoenix Suns." }
-        ]
-    },
-    {
-        date: "Sunday, July 12, 2026",
-        items: [
-            { team: "Los Angeles Lakers", type: "EXTENSION", text: "Re-signed guard Austin Reaves to a Contract." },
-            { team: "Los Angeles Lakers", type: "SIGNING", text: "Signed forward Kevon Looney to a Contract." }
-        ]
-    },
-    {
-        date: "Saturday, July 11, 2026",
-        items: [
-            { team: "Minnesota Timberwolves", type: "SIGNING", text: "Signed forward Isaiah Evans to a Contract." },
-            { team: "Los Angeles Lakers", type: "SIGNING", text: "Signed guard Collin Sexton to a Contract." }
-        ]
-    },
-    {
-        date: "Friday, July 10, 2026",
-        items: [
-            { team: "Portland Trail Blazers", type: "SIGNING", text: "Claimed center Micah Potter off waivers." },
-            { team: "Dallas Mavericks", type: "SIGNING", text: "Signed forward Tarik Biberovic to a Contract." },
-            { team: "Utah Jazz", type: "SIGNING", text: "Signed center Mo Bamba to a Contract." },
-            { team: "New York Knicks", type: "EXTENSION", text: "Re-signed guard Jordan Clarkson to a Contract." },
-            { team: "Houston Rockets", type: "SIGNING", text: "Signed guard Marcus Smart to a Contract." },
-            { team: "Minnesota Timberwolves", type: "EXTENSION", text: "Re-signed guard Ayo Dosunmu & guard Jaylen Clark to Contracts." },
-            { team: "Brooklyn Nets", type: "DRAFT", text: "Signed forward Joshua Jefferson to a Rookie Scale Contract." },
-            { team: "Denver Nuggets", type: "SIGNING", text: "Signed forward Trevon Brazile to a Contract." },
-            { team: "Atlanta Hawks", type: "EXTENSION", text: "Re-signed center Jock Landale to a Contract." },
-            { team: "San Antonio Spurs", type: "EXTENSION", text: "Re-signed forward Victor Wembanyama to a Rookie Scale Extension." },
-            { team: "Chicago Bulls", type: "SIGNING", text: "Signed guard Norman Powell to a Contract." },
-            { team: "New Orleans Pelicans", type: "EXTENSION", text: "Re-signed center DeAndre Jordan to a Contract." },
-            { team: "Minnesota Timberwolves", type: "SIGNING", text: "Signed forward Trey Lyles to a Contract." },
-            { team: "Chicago Bulls", type: "TRADE", text: "Received center Nic Claxton from Brooklyn Nets." },
-            { team: "Minnesota Timberwolves", type: "TRADE", text: "Received guard Josh Green & guard LaMelo Ball from Charlotte Hornets." },
-            { team: "Brooklyn Nets", type: "TRADE", text: "Received forward Julius Randle from Minnesota Timberwolves." },
-            { team: "Charlotte Hornets", type: "TRADE", text: "Received center Naz Reid & draft consideration from Timberwolves, plus forward Mouhamadou Gueye from Bulls." },
-            { team: "Brooklyn Nets", type: "WAIVED", text: "Waived guard Malachi Smith." }
-        ]
-    },
-    {
-        date: "Thursday, July 09, 2026",
-        items: [
-            { team: "Indiana Pacers", type: "SIGNING", text: "Signed forward Larry Nance Jr. & re-signed Kobe Brown to a Two-Way Contract." },
-            { team: "Houston Rockets", type: "EXTENSION", text: "Re-signed forward Tari Eason to a Contract." },
-            { team: "Utah Jazz", type: "EXTENSION", text: "Re-signed center Jusuf Nurkic & signed center Jaxson Hayes and guard Josh Okogie." },
-            { team: "Golden State Warriors", type: "EXTENSION", text: "Re-signed center Charles Bassey to a Contract." },
-            { team: "Detroit Pistons", type: "EXTENSION", text: "Re-signed guard Kevin Huerter to a Contract." },
-            { team: "LA Clippers", type: "SIGNING", text: "Signed forward Baba Miller & re-signed Jordan Miller." },
-            { team: "Milwaukee Bucks", type: "EXTENSION", text: "Re-signed forward Ousmane Dieng to a Contract." },
-            { team: "Boston Celtics", type: "WAIVED", text: "Waived forward Dalano Banton." }
-        ]
-    },
-    {
-        date: "Wednesday, July 08, 2026",
-        items: [
-            { team: "San Antonio Spurs", type: "EXTENSION", text: "Re-signed forward Harrison Barnes to a Contract." },
-            { team: "Houston Rockets", type: "SIGNING", text: "Signed guard Bogdan Bogdanovic to a Contract." },
-            { team: "Philadelphia 76ers", type: "SIGNING", text: "Signed guard Rayan Rupert to a Two-Way Contract." },
-            { team: "Memphis Grizzlies", type: "SIGNING", text: "Signed center Quinten Post to a Contract." },
-            { team: "Milwaukee Bucks", type: "DRAFT", text: "Signed forward Nate Ament to a Rookie Scale Contract." },
-            { team: "Cleveland Cavaliers", type: "EXTENSION", text: "Re-signed guard Donovan Mitchell to a Veteran Extension." },
-            { team: "Detroit Pistons", type: "EXTENSION", text: "Re-signed guard Javonte Green & signed Elijah Harkless to Two-Way." },
-            { team: "Milwaukee Bucks", type: "SIGNING", text: "Signed forward Pete Nance to a Contract." },
-            { team: "Dallas Mavericks", type: "TRADE", text: "Received forward Santi Aldama from Grizzlies & guard Marcus Sasser from Pistons." },
-            { team: "Milwaukee Bucks", type: "TRADE", text: "Received guard Caris LeVert & draft consideration from Detroit Pistons." },
-            { team: "Memphis Grizzlies", type: "TRADE", text: "Received AJ Johnson from Mavericks, D'Angelo Russell from Wizards & Isaiah Stewart from Pistons." },
-            { team: "Washington Wizards", type: "TRADE", text: "Received forward Khris Middleton & draft consideration from Dallas Mavericks." },
-            { team: "Detroit Pistons", type: "TRADE", text: "Received forward John Collins (Clippers), Taurean Prince & Gary Harris (Bucks)." },
-            { team: "Los Angeles Lakers", type: "TRADE", text: "Received center Walker Kessler from Utah Jazz for draft consideration." },
-            { team: "Denver Nuggets", type: "WAIVED", text: "Waived center Jonas Valanciunas." },
-            { team: "Indiana Pacers", type: "WAIVED", text: "Waived center Micah Potter." }
-        ]
-    },
-    {
-        date: "Tuesday, July 07, 2026",
-        items: [
-            { team: "Houston Rockets", type: "SIGNING", text: "Signed guard Bruce Thornton & guard Quadir Copeland to Contracts." },
-            { team: "Cleveland Cavaliers", type: "EXTENSION", text: "Re-signed center Thomas Bryant to a Contract." },
-            { team: "Phoenix Suns", type: "EXTENSION", text: "Re-signed center Mark Williams, Jordan Goodwin & Collin Gillespie." },
-            { team: "Washington Wizards", type: "SIGNING", text: "Signed center Felix Okpara to a Two-Way Contract." },
-            { team: "Sacramento Kings", type: "EXTENSION", text: "Re-signed forward Precious Achiuwa to a Contract." },
-            { team: "Utah Jazz", type: "SIGNING", text: "Signed guard Trey Alexander to a Two-Way Contract." },
-            { team: "New Orleans Pelicans", type: "EXTENSION", text: "Re-signed center Hunter Dickinson to a Two-Way Contract." },
-            { team: "LA Clippers", type: "EXTENSION", text: "Re-signed guard Kobe Sanders to a Contract." },
-            { team: "Los Angeles Lakers", type: "SIGNING", text: "Signed forward Sandro Mamukelashvili & guard Quentin Grimes." },
-            { team: "Indiana Pacers", type: "SIGNING", text: "Signed forward Kelly Oubre Jr. to a Contract." },
-            { team: "Los Angeles Lakers", type: "TRADE", text: "Received guard Jaden Hardy & draft consideration from Washington Wizards." },
-            { team: "Washington Wizards", type: "TRADE", text: "Received center Deandre Ayton from Los Angeles Lakers." }
-        ]
-    },
-    {
-        date: "Monday, July 06, 2026",
-        items: [
-            { team: "Charlotte Hornets", type: "DRAFT", text: "Signed forward Hannes Steinbach & guard Christian Anderson to Rookie Scale Contracts." },
-            { team: "Philadelphia 76ers", type: "SIGNING", text: "Signed forward Dean Wade, guard Anfernee Simons & center Ariel Hukporti." },
-            { team: "Brooklyn Nets", type: "SIGNING", text: "Signed center Day'Ron Sharpe, forward Josh Minott & guard Keon Ellis." },
-            { team: "Detroit Pistons", type: "DRAFT", text: "Signed guard Ebuka Okorie to a Rookie Scale Contract." },
-            { team: "Boston Celtics", type: "EXTENSION", text: "Re-signed guard Ron Harper Jr. & Neemias Queta to extensions." },
-            { team: "Miami Heat", type: "EXTENSION", text: "Re-signed forward Andrew Wiggins to a Veteran Extension & signed Tim Hardaway Jr." },
-            { team: "Golden State Warriors", type: "EXTENSION", text: "Re-signed center Al Horford to a Contract." },
-            { team: "Phoenix Suns", type: "EXTENSION", text: "Re-signed guard Koby Brea to a Two-Way Contract." },
-            { team: "Charlotte Hornets", type: "EXTENSION", text: "Re-signed guard Coby White & signed Michael Ajayi, Kylan Boswell." },
-            { team: "Toronto Raptors", type: "SIGNING", text: "Signed forward Kyle Anderson to a Contract." },
-            { team: "New York Knicks", type: "EXTENSION", text: "Re-signed Jose Alvarado, Mohamed Diawara, Landry Shamet & signed Andre Drummond." },
-            { team: "San Antonio Spurs", type: "SIGNING", text: "Signed forward Tobias Harris to a Contract." },
-            { team: "Boston Celtics", type: "SIGNING", text: "Signed center Mitchell Robinson & guard Mike Conley." },
-            { team: "LA Clippers", type: "SIGNING", text: "Signed forward Rui Hachimura to a Contract." },
-            { team: "Washington Wizards", type: "EXTENSION", text: "Re-signed guard Trae Young to a Contract." },
-            { team: "Oklahoma City Thunder", type: "EXTENSION", text: "Re-signed center Isaiah Hartenstein & guard Kenrich Williams." },
-            { team: "Atlanta Hawks", type: "TRADE", text: "Received guard Aaron Wiggins from Oklahoma City Thunder." },
-            { team: "Miami Heat", type: "TRADE", text: "Received Giannis Antetokounmpo & Bobby Portis Jr. from Milwaukee Bucks." },
-            { team: "Milwaukee Bucks", type: "TRADE", text: "Received Tyler Herro, Jaime Jaquez Jr., Kel'el Ware, Kasparas Jakucionis & picks from Heat." },
-            { team: "Boston Celtics", type: "TRADE", text: "Received forward Paul George & draft consideration from Philadelphia 76ers." },
-            { team: "Philadelphia 76ers", type: "TRADE", text: "Received guard Jaylen Brown from Boston Celtics." },
-            { team: "Detroit Pistons", type: "TRADE", text: "Received guard Isaiah Joe from Oklahoma City Thunder." },
-            { team: "Charlotte Hornets", type: "TRADE", text: "Received forward Dorian Finney-Smith & draft consideration from Houston Rockets." },
-            { team: "Sacramento Kings", type: "WAIVED", text: "Waived guard DeMar DeRozan." },
-            { team: "Charlotte Hornets", type: "WAIVED", text: "Waived forward Tosan Evbuomwan." }
-        ]
-    },
-    {
-        date: "Sunday, July 05, 2026",
-        items: [
-            { team: "Boston Celtics", type: "DRAFT", text: "Signed forward Christopher Cenac Jr. to a Rookie Scale Contract." },
-            { team: "Philadelphia 76ers", type: "SIGNING", text: "Signed guard Caleb Love to a Two-Way Contract." },
-            { team: "LA Clippers", type: "SIGNING", text: "Signed forward Nick Martinelli to a Two-Way Contract." },
-            { team: "Milwaukee Bucks", type: "DRAFT", text: "Signed guard Brayden Burries to Rookie Contract & Kam Jones to Two-Way." }
-        ]
-    },
-    {
-        date: "Saturday, July 04, 2026",
-        items: [
-            { team: "Toronto Raptors", type: "SIGNING", text: "Signed guard Jaden Bradley to a Two-Way Contract." }
-        ]
-    },
-    {
-        date: "Friday, July 03, 2026",
-        items: [
-            { team: "Toronto Raptors", type: "EXTENSION", text: "Re-signed guard Alijah Martin to a Contract." },
-            { team: "Miami Heat", type: "SIGNING", text: "Signed guard Tre Donaldson to a Two-Way Contract." },
-            { team: "San Antonio Spurs", type: "DRAFT", text: "Signed center Tarris Reed Jr. & Jayden Quaintance to Rookie Contracts; Maliq Brown & Ja'Kobi Gillespie to Two-Way." },
-            { team: "Oklahoma City Thunder", type: "DRAFT", text: "Signed Bennett Stirtz & Aday Mara to Rookie Contracts; Otega Oweh, Brooks Barnhizer & Josh Dix to Two-Way." },
-            { team: "Utah Jazz", type: "SIGNING", text: "Signed guard Tamar Bates to a Two-Way Contract." },
-            { team: "Chicago Bulls", type: "DRAFT", text: "Signed forward Caleb Wilson & Dailyn Swain to Rookie Contracts; Tobe Awaka & Jaylin Sellers to Two-Way." },
-            { team: "Dallas Mavericks", type: "DRAFT", text: "Signed guard Sergio de Larrea to Rookie Contract & Tobi Lawal to Two-Way." },
-            { team: "Minnesota Timberwolves", type: "EXTENSION", text: "Re-signed guard Bones Hyland to a Contract." },
-            { team: "Philadelphia 76ers", type: "DRAFT", text: "Signed guard Labaron Philon to a Rookie Scale Contract." },
-            { team: "LA Clippers", type: "DRAFT", text: "Signed guard Keaton Wagler to a Rookie Scale Contract." },
-            { team: "Los Angeles Lakers", type: "SIGNING", text: "Re-signed Chris Manon & signed Peter Suder and AK Okereke to Two-Ways." },
-            { team: "Phoenix Suns", type: "SIGNING", text: "Signed guard Pat Spencer to a Two-Way Contract." },
-            { team: "Milwaukee Bucks", type: "WAIVED", text: "Waived forward Pete Nance." }
-        ]
-    },
-    {
-        date: "Thursday, July 02, 2026",
-        items: [
-            { team: "Toronto Raptors", type: "DRAFT", text: "Signed forward Allen Graves to a Rookie Scale Contract." },
-            { team: "Washington Wizards", type: "DRAFT", text: "Signed forward AJ Dybantsa to a Rookie Scale Contract." },
-            { team: "Atlanta Hawks", type: "DRAFT", text: "Signed guard Kingston Flemings to a Rookie Scale Contract." },
-            { team: "Sacramento Kings", type: "SIGNING", text: "Signed forward Jonathan Mogbo & re-signed Daeqwon Plowden." },
-            { team: "Miami Heat", type: "EXTENSION", text: "Re-signed forward Simone Fontecchio to a Contract." },
-            { team: "Minnesota Timberwolves", type: "EXTENSION", text: "Re-signed forward Enrique Freeman to a Two-Way Contract." },
-            { team: "Dallas Mavericks", type: "DRAFT", text: "Signed forward Morez Johnson to a Rookie Scale Contract." },
-            { team: "Detroit Pistons", type: "SIGNING", text: "Signed center Ugonna Onyenso to a Two-Way Contract." },
-            { team: "Los Angeles Lakers", type: "DRAFT", text: "Signed guard Cameron Carr to a Rookie Scale Contract." },
-            { team: "Brooklyn Nets", type: "DRAFT", text: "Signed guard Mikel Brown Jr. to Rookie Contract & Tyler Bilodeau to Two-Way." },
-            { team: "Oklahoma City Thunder", type: "WAIVED", text: "Waived forward Payton Sandfort." }
-        ]
-    },
-    {
-        date: "Wednesday, July 01, 2026",
-        items: [
-            { team: "Portland Trail Blazers", type: "SIGNING", text: "Signed center Branden Carlson to a Contract." },
-            { team: "Washington Wizards", type: "EXTENSION", text: "Re-signed forward Jamir Watkins to a Two-Way Contract." },
-            { team: "Cleveland Cavaliers", type: "SIGNING", text: "Signed guard Meleek Thomas & center Ernest Udeh, Jr." },
-            { team: "Orlando Magic", type: "SIGNING", text: "Signed center Nikola Vucevic, forward Jonathan Isaac & re-signed Jevon Carter." },
-            { team: "Atlanta Hawks", type: "DRAFT", text: "Signed forward Zuby Ejiofor to Rookie Contract & Henri Veesaar." },
-            { team: "Milwaukee Bucks", type: "SIGNING", text: "Signed forward Bogoljub Markovic to a Contract." },
-            { team: "Golden State Warriors", type: "DRAFT", text: "Signed forward Yaxel Lendeborg to a Rookie Scale Contract." },
-            { team: "Phoenix Suns", type: "DRAFT", text: "Signed forward Koa Peat to a Rookie Scale Contract." },
-            { team: "Utah Jazz", type: "DRAFT", text: "Signed guard Darryn Peterson to a Rookie Scale Contract." },
-            { team: "Miami Heat", type: "SIGNING", text: "Signed guard Ryan Conwell to a Contract." },
-            { team: "Orlando Magic", type: "SIGNING", text: "Re-signed Colin Castleton & signed Izaiyah Nelson to Two-Ways." },
-            { team: "Boston Celtics", type: "EXTENSION", text: "Re-signed forward Amari Williams to a Two-Way Contract." },
-            { team: "Sacramento Kings", type: "DRAFT", text: "Signed guard Darius Acuff Jr., Alex Karaban & Emanuel Sharp." },
-            { team: "Chicago Bulls", type: "WAIVED", text: "Waived guard Kam Jones." },
-            { team: "Washington Wizards", type: "WAIVED", text: "Waived forward Leaky Black." }
-        ]
-    },
-    {
-        date: "Tuesday, June 30, 2026",
-        items: [
-            { team: "Portland Trail Blazers", type: "EXTENSION", text: "Re-signed center Robert Williams III to a Veteran Extension." },
-            { team: "Golden State Warriors", type: "EXTENSION", text: "Re-signed forward Kristaps Porzingis to a Veteran Extension." },
-            { team: "Chicago Bulls", type: "EXTENSION", text: "Re-signed forward Zach Collins to a Veteran Extension." },
-            { team: "Atlanta Hawks", type: "TRADE", text: "Received guard Devin Carter & draft consideration from Sacramento Kings." }
-        ]
-    },
-    {
-        date: "Monday, June 29, 2026",
-        items: [
-            { team: "Brooklyn Nets", type: "EXTENSION", text: "Re-signed guard Chaney Johnson to a Two-Way Contract." },
-            { team: "San Antonio Spurs", type: "EXTENSION", text: "Re-signed forward Julian Champagnie to a Veteran Extension." },
-            { team: "Portland Trail Blazers", type: "TRADE", text: "Received guard Ja Morant from Memphis Grizzlies." },
-            { team: "Memphis Grizzlies", type: "TRADE", text: "Received forward Jerami Grant & forward Kris Murray from Portland Trail Blazers." }
-        ]
-    },
-    {
-        date: "Saturday, June 27, 2026",
-        items: [
-            { team: "Orlando Magic", type: "WAIVED", text: "Waived forward Jonathan Isaac." }
-        ]
-    },
-    {
-        date: "Thursday, June 25, 2026",
-        items: [
-            { team: "Toronto Raptors", type: "EXTENSION", text: "Re-signed guard Chucky Hepburn to a Two-Way Contract." }
-        ]
-    },
-    {
-        date: "Wednesday, June 24, 2026",
-        items: [
-            { team: "Chicago Bulls", type: "TRADE", text: "Received guard Kam Jones & draft consideration from Indiana Pacers." }
-        ]
-    },
-    {
-        date: "Monday, June 22, 2026",
-        items: [
-            { team: "Atlanta Hawks", type: "EXTENSION", text: "Re-signed guard CJ McCollum to a Veteran Extension." }
-        ]
-    }
-];
-
-const scheduleGames = [
-    { stage: "PRESEASON", date: "Sun, Oct 4, 2026", time: "7:00 PM ET", home: "Toronto Raptors", away: "Miami Heat", venue: "Videotron Centre (Quebec City)" },
-    { stage: "PRESEASON", date: "Mon, Oct 5, 2026", time: "7:00 PM ET", home: "Denver Nuggets", away: "Utah Jazz", venue: "CU Events Center" },
-    { stage: "PRESEASON", date: "Tue, Oct 6, 2026", time: "7:00 PM ET", home: "Philadelphia 76ers", away: "New York Knicks", venue: "Xfinity Mobile Arena" },
-    { stage: "PRESEASON", date: "Tue, Oct 6, 2026", time: "10:00 PM ET", home: "Golden State Warriors", away: "Los Angeles Lakers", venue: "Chase Center" },
-    { stage: "INTL", date: "Fri, Oct 9, 2026", time: "8:00 AM ET", home: "Dallas Mavericks", away: "Houston Rockets", venue: "The Venetian Arena (Macao)" },
-    { stage: "INTL", date: "Sat, Nov 7, 2026", time: "9:00 PM ET", home: "Denver Nuggets", away: "Indiana Pacers", venue: "Mexico City Arena" },
-    { stage: "INTL", date: "Thu, Jan 14, 2027", time: "3:00 PM ET", home: "New Orleans Pelicans", away: "San Antonio Spurs", venue: "Accor Arena (Paris)" },
-    { stage: "INTL", date: "Sun, Jan 17, 2027", time: "2:00 PM ET", home: "San Antonio Spurs", away: "New Orleans Pelicans", venue: "Co-op Live (Manchester)" },
-    { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "3:00 PM ET", home: "Detroit Pistons", away: "Boston Celtics", venue: "Little Caesars Arena" },
-    { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "7:00 PM ET", home: "New York Knicks", away: "Philadelphia 76ers", venue: "Madison Square Garden" },
-    { stage: "OPENING_WEEK", date: "Tue, Oct 20, 2026", time: "9:30 PM ET", home: "San Antonio Spurs", away: "Oklahoma City Thunder", venue: "Frost Bank Center" },
-    { stage: "OPENING_WEEK", date: "Wed, Oct 21, 2026", time: "7:30 PM ET", home: "Miami Heat", away: "Minnesota Timberwolves", venue: "Kaseya Center" },
-    { stage: "OPENING_WEEK", date: "Wed, Oct 21, 2026", time: "8:00 PM ET", home: "Memphis Grizzlies", away: "Utah Jazz", venue: "FedExForum" },
-    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "12:00 PM ET", home: "New York Knicks", away: "San Antonio Spurs", venue: "Madison Square Garden" },
-    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "2:30 PM ET", home: "Boston Celtics", away: "Cleveland Cavaliers", venue: "TD Garden" },
-    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "5:00 PM ET", home: "Los Angeles Lakers", away: "Philadelphia 76ers", venue: "Crypto.com Arena" },
-    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "8:00 PM ET", home: "Minnesota Timberwolves", away: "Oklahoma City Thunder", venue: "Target Center" },
-    { stage: "CHRISTMAS", date: "Fri, Dec 25, 2026", time: "10:30 PM ET", home: "Golden State Warriors", away: "Denver Nuggets", venue: "Chase Center" }
-];
+let rawTimelineTransactions = [];
+let scheduleGames = [];
 
 function animateNumber(element, targetValue, duration = 650) {
     if (!element) return;
@@ -992,82 +196,227 @@ function formatSeasonStat(value, suffix = "") {
     return value == null || !Number.isFinite(number) ? "—" : `${number.toFixed(1)}${suffix}`;
 }
 
-function normalizePlayerName(name) {
-    return String(name || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLocaleLowerCase()
-        .replace(/[^a-z0-9]/g, "");
-}
-
 function formatPlayerSeasonStat(player, field, suffix = "") {
     return player.stats_season ? formatSeasonStat(player[field], suffix) : "—";
 }
 
 async function loadTeams() {
-    setupHeadlineDots();
-    updateHeadline(0);
-    startHeadlineAutoPlay();
-    filterTransactions();
-    renderSchedule();
-
+    if (isRefreshingTeams) return;
+    isRefreshingTeams = true;
     try {
         const response = await fetch(`${API_URL}/api/v1/teams`, {
             headers: {
                 "x-api-key": API_KEY
             }
         });
+        if (!response.ok) throw new Error(`API request failed (${response.status})`);
         const data = await response.json();
-        allTeams = data.teams || [];
-        window.applyPlayerSeasonStatsOverrides(allTeams);
-        const seasonStatsByName = new Map(
-            allTeams.flatMap(team => [
-                ...(team.starters_2026_27 || []),
-                ...(team.bench_2026_27 || [])
-            ]).map(player => [normalizePlayerName(player.name), player])
-        );
-        const attachSeasonStats = player => {
-            const source = seasonStatsByName.get(normalizePlayerName(player.name));
-            if (!source) return player;
-            return {
-                ...player,
-                stats_season: source.stats_season,
-                gp: source.gp,
-                pts: source.pts,
-                reb: source.reb,
-                ast: source.ast,
-                stl: source.stl,
-                blk: source.blk,
-                tov: source.tov,
-                fg: source.fg,
-                fg3: source.fg3,
-                ft: source.ft
-            };
-        };
-
-        const sixersIndex = allTeams.findIndex(t => t.name === "Philadelphia 76ers" || t.id === 1610612755);
-        if (sixersIndex !== -1) {
-            allTeams[sixersIndex].starters_2026_27 = PHI_76ERS_CUSTOM_ROSTER.starters.map(attachSeasonStats);
-            allTeams[sixersIndex].bench_2026_27 = PHI_76ERS_CUSTOM_ROSTER.bench.map(attachSeasonStats);
+        if (!Array.isArray(data.teams) || data.teams.length === 0) {
+            throw new Error("The API returned no NBA teams.");
         }
+        allTeams = data.teams;
+        lastTeamsRefreshAt = Date.now();
+        renderStatsUpdateStatus(data.stats, data.roster);
+        applyFilters();
 
-        const bullsIndex = allTeams.findIndex(t => t.name === "Chicago Bulls" || t.id === 1610612741);
-        if (bullsIndex !== -1) {
-            allTeams[bullsIndex].starters_2026_27 = CHI_BULLS_CUSTOM_ROSTER.starters.map(attachSeasonStats);
-            allTeams[bullsIndex].bench_2026_27 = CHI_BULLS_CUSTOM_ROSTER.bench.map(attachSeasonStats);
+        if (activeTeamId !== null && document.getElementById("detailModal").classList.contains("open")) {
+            const refreshedTeam = allTeams.find(team => team.id === activeTeamId);
+            if (refreshedTeam) openModal(refreshedTeam);
         }
-
-        displayTeams(allTeams);
     } catch (error) {
         console.error("API load failed:", error);
-        document.getElementById("teamGrid").innerHTML = "<p style='grid-column: 1/-1; text-align:center; color:#c9082a; padding: 40px 0;'>Unable to connect to the NBA API.</p>";
+        const status = document.getElementById("statsUpdateStatus");
+        if (allTeams.length) {
+            if (status) status.textContent = "Stats refresh failed. Showing the last API response; automatic retry in 15 minutes.";
+        } else {
+            document.getElementById("teamGrid").innerHTML = "<p style='grid-column: 1/-1; text-align:center; color:#c9082a; padding: 40px 0;'>Unable to connect to the NBA API.</p>";
+            if (status) status.textContent = "Unable to load NBA data. Check the API connection and refresh the page.";
+        }
+    } finally {
+        isRefreshingTeams = false;
     }
 }
 
-function filterScheduleStage(stage, element) {
-    selectedScheduleStage = stage;
-    document.querySelectorAll(".schedule-date-btn").forEach(btn => btn.classList.remove("active"));
-    if (element) element.classList.add("active");
+function renderStatsUpdateStatus(stats, roster) {
+    const status = document.getElementById("statsUpdateStatus");
+    if (!status) return;
+    const updatedAt = stats?.last_updated
+        ? new Date(stats.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        : "";
+    const season = stats?.season || "current-season";
+    const rosterLabel = roster?.status === "fresh"
+        ? "NBA roster current"
+        : "NBA roster may be outdated";
+    status.title = [roster?.message, stats?.message].filter(Boolean).join(" ");
+    if (stats?.status === "fresh") {
+        status.textContent = `${rosterLabel} · ${season} stats refreshed ${updatedAt} · auto-refresh every 15 minutes`;
+        status.classList.toggle("is-warning", roster?.status !== "fresh");
+    } else if (stats?.status === "pending") {
+        status.textContent = `${rosterLabel} · ${season} regular-season stats are not published yet. Showing the season stats supplied by the API.`;
+        status.classList.add("is-warning");
+    } else {
+        status.textContent = `${rosterLabel} · ${stats?.message || "Live stats are unavailable."} Showing the latest stats supplied by the API.`;
+        status.classList.add("is-warning");
+    }
+}
+
+function escapeMarkup(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}
+
+function localDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function formatScheduleDate(dateKey, options = { weekday: "long", month: "long", day: "numeric", year: "numeric" }) {
+    if (!dateKey) return "";
+    return new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, options);
+}
+
+function updateScheduleStatus(payload = {}) {
+    const statusElement = document.getElementById("scheduleUpdateStatus");
+    if (!statusElement) return;
+    const scheduleUpdatedAt = payload.last_updated
+        ? new Date(payload.last_updated).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+        : "";
+    const scoreUpdatedAt = payload.scores?.last_updated
+        ? new Date(payload.scores.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        : "";
+    const schedulePart = payload.status === "fresh"
+        ? `${Number(payload.count || scheduleGames.length).toLocaleString()} games · schedule checked ${scheduleUpdatedAt}`
+        : payload.status === "stale"
+            ? "Showing the last saved full schedule"
+            : payload.message || "The full season schedule is unavailable.";
+    const scorePart = payload.scores?.status === "fresh"
+        ? `Scores refreshed ${scoreUpdatedAt}`
+        : payload.scores?.message || "Live scores unavailable";
+    statusElement.textContent = `${schedulePart} · ${scorePart} · live scores auto-refresh every minute`;
+    statusElement.title = [payload.message, payload.scores?.message].filter(Boolean).join(" ");
+    statusElement.classList.toggle("is-warning", payload.status !== "fresh" || payload.scores?.status !== "fresh");
+}
+
+async function loadSchedule() {
+    if (isRefreshingSchedule) return;
+    isRefreshingSchedule = true;
+    const statusElement = document.getElementById("scheduleUpdateStatus");
+    try {
+        const response = await fetch(`${API_URL}/api/v1/schedule`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`Schedule request failed (${response.status}).`);
+        const payload = await response.json();
+        if (!Array.isArray(payload.games) || payload.games.length < 1230) {
+            throw new Error("The API did not return the full 2026–27 schedule.");
+        }
+        scheduleGames = payload.games;
+        lastScheduleRefreshAt = Date.now();
+        const datePicker = document.getElementById("scheduleDatePicker");
+        const dates = scheduleGames.map(game => game.date).filter(Boolean).sort();
+        datePicker.min = dates[0] || "";
+        datePicker.max = dates[dates.length - 1] || "";
+        if (!selectedScheduleDate || !dates.includes(selectedScheduleDate)) {
+            const today = localDateKey();
+            selectedScheduleDate = dates.includes(today)
+                ? today
+                : dates.find(date => date >= today) || dates[0] || today;
+        }
+        updateScheduleStatus(payload);
+        renderSchedule();
+        loadLiveScores({ background: true });
+    } catch (error) {
+        console.error("Full season schedule load failed:", error);
+        if (statusElement) {
+            statusElement.textContent = scheduleGames.length
+                ? "Schedule refresh failed. Showing the last loaded full season schedule."
+                : "Could not load the full season schedule. Check the API connection and try again.";
+            statusElement.classList.add("is-warning");
+        }
+        renderSchedule();
+    } finally {
+        isRefreshingSchedule = false;
+    }
+}
+
+async function loadLiveScores({ background = false } = {}) {
+    if (isRefreshingScores) return;
+    isRefreshingScores = true;
+    try {
+        const response = await fetch(`${API_URL}/api/v1/schedule/scores`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`Live score request failed (${response.status}).`);
+        const payload = await response.json();
+        lastScoreRefreshAt = Date.now();
+        if (payload.status === "fresh" && Array.isArray(payload.games)) {
+            const liveScores = new Map(payload.games.map(game => [game.id, game]));
+            const scoresByMatchup = new Map();
+            payload.games.forEach(game => {
+                if (!game.home_tricode || !game.away_tricode) return;
+                const key = `${game.home_tricode.toLowerCase()}:${game.away_tricode.toLowerCase()}`;
+                scoresByMatchup.set(key, [...(scoresByMatchup.get(key) || []), game]);
+            });
+            scheduleGames = scheduleGames.map(game => {
+                const matchup = `${String(game.home_tricode || "").toLowerCase()}:${String(game.away_tricode || "").toLowerCase()}`;
+                const candidates = scoresByMatchup.get(matchup) || [];
+                const datedCandidates = candidates
+                    .map(score => ({
+                        score,
+                        distance: Math.abs(
+                            Date.parse(`${game.date}T12:00:00Z`) - Date.parse(`${score.date}T12:00:00Z`)
+                        )
+                    }))
+                    .filter(candidate => Number.isFinite(candidate.distance) && candidate.distance <= 24 * 60 * 60 * 1000)
+                    .sort((left, right) => left.distance - right.distance);
+                const score = liveScores.get(game.id)
+                    || datedCandidates[0]?.score
+                    || (candidates.length === 1 && !candidates[0].date ? candidates[0] : null);
+                return score ? {
+                    ...game,
+                    status: score.status,
+                    status_code: score.status_code,
+                    period: score.period,
+                    clock: score.clock,
+                    home_score: score.home_score,
+                    away_score: score.away_score
+                } : game;
+            });
+        }
+        const statusElement = document.getElementById("scheduleUpdateStatus");
+        const schedulePayload = {
+            status: scheduleGames.length ? "fresh" : "unavailable",
+            count: scheduleGames.length,
+            last_updated: lastScheduleRefreshAt ? new Date(lastScheduleRefreshAt).toISOString() : null,
+            scores: payload
+        };
+        updateScheduleStatus(schedulePayload);
+        renderSchedule();
+    } catch (error) {
+        console.error("Live score refresh failed:", error);
+        if (!background && !scheduleGames.length) {
+            const statusElement = document.getElementById("scheduleUpdateStatus");
+            if (statusElement) {
+                statusElement.textContent = "Live scores could not be reached. The full schedule will still load when available.";
+                statusElement.classList.add("is-warning");
+            }
+        }
+    } finally {
+        isRefreshingScores = false;
+    }
+}
+
+function changeScheduleDate(offset) {
+    const current = new Date(`${selectedScheduleDate || localDateKey()}T12:00:00`);
+    current.setDate(current.getDate() + offset);
+    selectedScheduleDate = localDateKey(current);
     renderSchedule();
 }
 
@@ -1075,40 +424,218 @@ function renderSchedule() {
     const grid = document.getElementById("scheduleGrid");
     if (!grid) return;
     grid.innerHTML = "";
+    const datePicker = document.getElementById("scheduleDatePicker");
+    if (datePicker && selectedScheduleDate) datePicker.value = selectedScheduleDate;
+    const dayGames = scheduleGames.filter(game => game.date === selectedScheduleDate);
+    const previousButton = document.getElementById("schedulePreviousDay");
+    const nextButton = document.getElementById("scheduleNextDay");
+    if (previousButton) previousButton.disabled = Boolean(datePicker?.min && selectedScheduleDate <= datePicker.min);
+    if (nextButton) nextButton.disabled = Boolean(datePicker?.max && selectedScheduleDate >= datePicker.max);
+    if (!scheduleGames.length) {
+        const empty = document.createElement("p");
+        empty.className = "schedule-empty";
+        empty.textContent = "Loading the full NBA schedule…";
+        grid.appendChild(empty);
+        return;
+    }
+    if (!dayGames.length) {
+        const empty = document.createElement("p");
+        empty.className = "schedule-empty";
+        empty.textContent = `No NBA games scheduled for ${formatScheduleDate(selectedScheduleDate)}.`;
+        grid.appendChild(empty);
+        return;
+    }
 
-    const filtered = scheduleGames.filter(g => selectedScheduleStage === "ALL" || g.stage === selectedScheduleStage);
+    dayGames.forEach((game, index) => {
+        const homeTeam = allTeams.find(team => team.name === game.home);
+        const awayTeam = allTeams.find(team => team.name === game.away);
+        const homeLogo = game.home_logo || homeTeam?.logo || "";
+        const awayLogo = game.away_logo || awayTeam?.logo || "";
+        const statusCode = Number(game.status_code);
+        const statusText = game.status || "Scheduled";
+        const liveState = statusCode === 3 || /final/i.test(statusText)
+            ? "final"
+            : statusCode === 2 || /(live|q[1-4]|half|ot|in progress)/i.test(statusText)
+                ? "live"
+                : "upcoming";
+        const hasScores = liveState !== "upcoming"
+            && game.home_score != null && game.away_score != null;
+        const awayScore = hasScores ? `<strong class="game-team-score">${escapeMarkup(game.away_score)}</strong>` : "";
+        const homeScore = hasScores ? `<strong class="game-team-score">${escapeMarkup(game.home_score)}</strong>` : "";
 
-    filtered.forEach((game, index) => {
-        const homeMeta = teamMetadata[game.home] || { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg" };
-        const awayMeta = teamMetadata[game.away] || { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg" };
-
-        const card = document.createElement("div");
+        const card = document.createElement("article");
         card.className = "game-card";
+        card.dataset.gameId = game.id;
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", `Open box score: ${game.away} at ${game.home}, ${statusText}`);
         card.style.animation = `heroSlideIn 0.38s var(--ease-out-expo) forwards`;
         card.style.animationDelay = `${Math.min(index * 0.04, 0.45)}s`;
 
         card.innerHTML = `
-            <div class="game-type-tag">${game.stage.replace('_', ' ')} • ${game.venue}</div>
+            <div class="game-type-tag">${escapeMarkup(game.stage || "NBA")} · ${escapeMarkup(game.venue || "Venue TBD")}</div>
             <div class="game-main-row">
                 <div class="game-teams-col">
                     <div class="game-team-row">
-                        <img src="${awayMeta.logo}" alt="${game.away}" class="game-team-logo">
-                        <span class="game-team-name">${game.away}</span>
+                        ${awayLogo ? `<img src="${escapeMarkup(awayLogo)}" alt="" class="game-team-logo">` : ""}
+                        <span class="game-team-name">${escapeMarkup(game.away)}</span>${awayScore}
                     </div>
                     <div class="game-team-row">
-                        <img src="${homeMeta.logo}" alt="${game.home}" class="game-team-logo">
-                        <span class="game-team-name">${game.home}</span>
+                        ${homeLogo ? `<img src="${escapeMarkup(homeLogo)}" alt="" class="game-team-logo">` : ""}
+                        <span class="game-team-name">${escapeMarkup(game.home)}</span>${homeScore}
                     </div>
                 </div>
                 <div class="game-divider"></div>
                 <div class="game-time-col">
-                    <div class="game-date-label">${game.date.split(',')[1] || game.date}</div>
-                    <div class="game-time-label">${game.time}</div>
+                    <div class="game-live-status is-${liveState}">${escapeMarkup(statusText)}</div>
+                    <div class="game-time-label">${escapeMarkup(game.time || "Time TBD")}</div>
                 </div>
             </div>
         `;
         grid.appendChild(card);
     });
+}
+
+async function loadTransactions() {
+    if (isRefreshingTransactions) return;
+    isRefreshingTransactions = true;
+    try {
+        const response = await fetch(`${API_URL}/api/v1/transactions`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`Transaction request failed (${response.status}).`);
+        const payload = await response.json();
+        rawTimelineTransactions = Array.isArray(payload.transactions) ? payload.transactions : [];
+        transactionsFeedStatus = payload;
+        lastTransactionsRefreshAt = Date.now();
+        filterTransactions();
+    } catch (error) {
+        console.error("NBA transaction feed refresh failed:", error);
+        transactionsFeedStatus = {
+            ...transactionsFeedStatus,
+            status: rawTimelineTransactions.length ? "stale" : "unavailable",
+            message: rawTimelineTransactions.length
+                ? "Transaction refresh failed. Showing the last loaded reported feed."
+                : "The transaction feed is unavailable; no unverified transaction list is shown."
+        };
+        filterTransactions();
+    } finally {
+        isRefreshingTransactions = false;
+    }
+}
+
+function formatBoxScoreStat(value) {
+    return value == null || value === "" ? "—" : String(value);
+}
+
+function shootingLine(statistics, madeKey, attemptKey) {
+    return `${formatBoxScoreStat(statistics[madeKey])}-${formatBoxScoreStat(statistics[attemptKey])}`;
+}
+
+function renderBoxScoreTeam(team) {
+    const players = Array.isArray(team.players) ? team.players : [];
+    const rows = players.map(player => {
+        const stats = player.statistics || {};
+        const status = player.played ? formatBoxScoreStat(stats.minutes) : "DNP";
+        return `
+            <tr class="${player.starter ? "is-starter" : ""}">
+                <th scope="row">${escapeMarkup(player.name)}<small>${escapeMarkup(player.position || "")}</small></th>
+                <td>${escapeMarkup(status)}</td>
+                <td>${escapeMarkup(formatBoxScoreStat(stats.points))}</td>
+                <td>${escapeMarkup(formatBoxScoreStat(stats.rebounds))}</td>
+                <td>${escapeMarkup(formatBoxScoreStat(stats.assists))}</td>
+                <td>${escapeMarkup(formatBoxScoreStat(stats.steals))}</td>
+                <td>${escapeMarkup(formatBoxScoreStat(stats.blocks))}</td>
+                <td>${escapeMarkup(formatBoxScoreStat(stats.turnovers))}</td>
+                <td>${escapeMarkup(shootingLine(stats, "field_goals", "field_goals_attempted"))}</td>
+                <td>${escapeMarkup(shootingLine(stats, "three_pointers", "three_pointers_attempted"))}</td>
+                <td>${escapeMarkup(shootingLine(stats, "free_throws", "free_throws_attempted"))}</td>
+            </tr>
+        `;
+    }).join("");
+    return `
+        <section class="box-score-team">
+            <h3>${team.logo ? `<img src="${escapeMarkup(team.logo)}" alt="">` : ""}${escapeMarkup(team.name)} <strong>${escapeMarkup(formatBoxScoreStat(team.score))}</strong></h3>
+            <div class="box-score-table-wrap">
+                <table class="box-score-table">
+                    <thead><tr><th scope="col">Player</th><th scope="col">MIN</th><th scope="col">PTS</th><th scope="col">REB</th><th scope="col">AST</th><th scope="col">STL</th><th scope="col">BLK</th><th scope="col">TO</th><th scope="col">FG</th><th scope="col">3P</th><th scope="col">FT</th></tr></thead>
+                    <tbody>${rows || '<tr><td colspan="11">Player box-score data is not available.</td></tr>'}</tbody>
+                </table>
+            </div>
+        </section>
+    `;
+}
+
+async function loadBoxScore(gameId, { background = false } = {}) {
+    if (!gameId || activeBoxScoreGameId !== gameId) return;
+    const statusElement = document.getElementById("boxScoreStatus");
+    const content = document.getElementById("boxScoreContent");
+    try {
+        const response = await fetch(`${API_URL}/api/v1/games/${encodeURIComponent(gameId)}/boxscore`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`Box score request failed (${response.status}).`);
+        const payload = await response.json();
+        if (payload.status === "unavailable" || !payload.home || !payload.away) {
+            if (!background) {
+                statusElement.textContent = payload.message || "The box score is not available yet.";
+                content.innerHTML = "";
+            }
+            return;
+        }
+
+        const updatedAt = payload.last_updated
+            ? new Date(payload.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+            : "";
+        statusElement.textContent = `${payload.game_status || "Game"}${updatedAt ? ` · Updated ${updatedAt}` : ""}${payload.status === "stale" ? " · Showing last available box score" : ""}`;
+        content.innerHTML = `${renderBoxScoreTeam(payload.away)}${renderBoxScoreTeam(payload.home)}`;
+        const isLive = Number(payload.status_code) === 2
+            || /(live|q[1-4]|half|ot|in progress)/i.test(payload.game_status || "");
+        if (boxScoreRefreshInterval) {
+            window.clearInterval(boxScoreRefreshInterval);
+            boxScoreRefreshInterval = null;
+        }
+        if (isLive) {
+            boxScoreRefreshInterval = window.setInterval(() => loadBoxScore(gameId, { background: true }), 30 * 1000);
+        }
+    } catch (error) {
+        console.error("Game box score load failed:", error);
+        if (!background) {
+            statusElement.textContent = "Could not load this box score. Check the API connection and try again.";
+            content.innerHTML = "";
+        }
+    }
+}
+
+function openBoxScore(gameId) {
+    const game = scheduleGames.find(item => item.id === gameId);
+    const dialog = document.getElementById("boxScoreDialog");
+    if (!game || !dialog) return;
+    activeBoxScoreGameId = gameId;
+    document.getElementById("boxScoreTitle").textContent = `${game.away} at ${game.home}`;
+    const statusElement = document.getElementById("boxScoreStatus");
+    const content = document.getElementById("boxScoreContent");
+    const hasStarted = Number(game.status_code) > 1
+        || /final|in progress|q[1-4]|half|ot|live/i.test(game.status || "");
+    if (!hasStarted) {
+        statusElement.textContent = `Tipoff ${game.date} · ${game.time}. Player box scores appear after the game begins.`;
+        content.innerHTML = "";
+    } else {
+        statusElement.textContent = "Loading player box score…";
+        content.innerHTML = '<p class="box-score-loading">Loading player statistics…</p>';
+    }
+    if (!dialog.open) dialog.showModal();
+    if (hasStarted) loadBoxScore(gameId);
+}
+
+function closeBoxScore() {
+    const dialog = document.getElementById("boxScoreDialog");
+    if (dialog?.open) dialog.close();
+    activeBoxScoreGameId = "";
+    if (boxScoreRefreshInterval) {
+        window.clearInterval(boxScoreRefreshInterval);
+        boxScoreRefreshInterval = null;
+    }
 }
 
 function updateHeadline(index) {
@@ -1207,8 +734,6 @@ function handleGlobalSearch() {
     allTeams.forEach(team => {
         const roster = [...(team.starters_2026_27 || []), ...(team.bench_2026_27 || [])];
         roster.forEach(player => {
-            if (player.name.toLowerCase().includes("lowry")) return;
-
             if (player.name.toLowerCase().includes(query) || player.pos.toLowerCase() === query) {
                 matchedPlayers.push({
                     player: player,
@@ -1305,9 +830,28 @@ function setTxFilter(type, element) {
     filterTransactions();
 }
 
+function updateTransactionsStatus() {
+    const statusElement = document.getElementById("transactionsUpdateStatus");
+    if (!statusElement) return;
+    const status = transactionsFeedStatus?.status || "unavailable";
+    const refreshedAt = transactionsFeedStatus?.last_updated
+        ? new Date(transactionsFeedStatus.last_updated).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+        : "";
+    if (status === "fresh") {
+        statusElement.textContent = `${transactionsFeedStatus.count || 0} reported transactions · feed checked ${refreshedAt}. Coverage may be incomplete, especially for extensions.`;
+    } else if (status === "stale") {
+        statusElement.textContent = `Showing the last successful reported transaction feed${refreshedAt ? ` from ${refreshedAt}` : ""}. Coverage may be incomplete.`;
+    } else {
+        statusElement.textContent = transactionsFeedStatus?.message || "The transaction feed is unavailable; no unverified transaction list is shown.";
+    }
+    statusElement.title = transactionsFeedStatus?.message || "";
+    statusElement.classList.toggle("is-warning", status !== "fresh");
+}
+
 function filterTransactions() {
     const container = document.getElementById("transactionsTimeline");
     container.innerHTML = "";
+    updateTransactionsStatus();
 
     rawTimelineTransactions.forEach(group => {
         const filteredItems = group.items.filter(item => {
@@ -1332,16 +876,17 @@ function filterTransactions() {
                 card.style.animation = `heroSlideIn 0.38s var(--ease-out-expo) forwards`;
                 card.style.animationDelay = `${Math.min(itemIdx * 0.035, 0.4)}s`;
 
-                const meta = teamMetadata[item.team] || { logo: "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg" };
+                const team = allTeams.find(candidate => candidate.name === item.team);
+                const logo = team?.logo || "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
 
                 card.innerHTML = `
-                    <img src="${meta.logo}" alt="${item.team}" class="tx-team-logo" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
+                    <img src="${escapeMarkup(logo)}" alt="${escapeMarkup(item.team)}" class="tx-team-logo" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
                     <div class="tx-card-right">
                         <div class="tx-meta-row">
-                            <span class="tx-badge tx-badge-${item.type}">${item.type.replace('_', ' ')}</span>
+                            <span class="tx-badge tx-badge-${escapeMarkup(item.type)}">${escapeMarkup(item.type.replace('_', ' '))}</span>
                         </div>
-                        <h4 class="tx-title">${item.team}</h4>
-                        <p class="tx-desc">${item.text}</p>
+                        <h4 class="tx-title">${escapeMarkup(item.team)}</h4>
+                        <p class="tx-desc">${escapeMarkup(item.text)}</p>
                     </div>
                 `;
                 itemsGrid.appendChild(card);
@@ -1351,6 +896,14 @@ function filterTransactions() {
             container.appendChild(groupEl);
         }
     });
+    if (!container.childElementCount) {
+        const empty = document.createElement("p");
+        empty.className = "transactions-empty";
+        empty.textContent = transactionsFeedStatus?.status === "unavailable"
+            ? "No verified transaction updates are available right now."
+            : "No transactions match this filter.";
+        container.appendChild(empty);
+    }
 }
 
 function applyTeamThemeToElement(element, teamName) {
@@ -1378,9 +931,9 @@ function displayTeams(teams) {
         card.onclick = () => openModal(team);
         applyTeamThemeToElement(card, team.name);
 
-        const meta = teamMetadata[team.name] || { salary: team.total_salary || 0, status: team.tax_status || "Over Cap", rings: team.championships || 0, years: team.championship_years || [] };
-        const formattedSalary = `$${(meta.salary).toLocaleString()}`;
-        const yearsString = (meta.years && meta.years.length > 0) ? meta.years.join(', ') : 'None';
+        const formattedSalary = typeof team.total_salary === "number" ? `$${team.total_salary.toLocaleString()}` : "Payroll unavailable";
+        const yearsString = team.championship_years?.length ? team.championship_years.join(", ") : "None";
+        const taxStatus = team.tax_status || "Unavailable";
 
         card.innerHTML = `
             <div class="card-top">
@@ -1392,12 +945,12 @@ function displayTeams(teams) {
                 <p class="card-subtitle">Star: ${team.featured_star}</p>
                 <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; margin-top: 6px; line-height: 1.4;">
                     <div>Last Season: <strong style="color:#111827;">${team.last_season_record}</strong></div>
-                    <div>Championships: <strong style="color:#111827;">${meta.rings}</strong></div>
+                    <div>Championships: <strong style="color:#111827;">${team.championships ?? "—"}</strong></div>
                     <div>Years: <strong style="color:#111827;">${yearsString}</strong></div>
                 </div>
                 <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.8rem; font-weight: 800; color: #111827;">${formattedSalary}</span>
-                    <span class="tx-badge tx-badge-${meta.status.replace(' ', '_')}">${meta.status}</span>
+                    <span class="tx-badge tx-badge-${taxStatus.replace(' ', '_')}">${taxStatus}</span>
                 </div>
             </div>
         `;
@@ -1466,21 +1019,9 @@ function applyFilters() {
     displayTeams(list);
 }
 
-// REALGM NBA PLAYER CARD RENDERER
-function renderRealGmCard(p, team) {
-    const staticInfo = realGmPlayerData[p.name] || {};
-    const jerseyNumber = Number.isInteger(staticInfo.number)
-        ? staticInfo.number
-        : (typeof p.jersey_number === "number" ? p.jersey_number : "");
-
+function renderPlayerCard(p, team) {
     const info = {
-        number: jerseyNumber,
-        pos: staticInfo.pos || p.pos || "FORWARD",
-        height: staticInfo.height || p.height || "N/A",
-        weight: staticInfo.weight || p.weight || "N/A",
-        age: staticInfo.age ?? p.age ?? "N/A",
-        exp: staticInfo.exp ?? p.experience ?? p.exp ?? "N/A",
-        country: staticInfo.country || p.country || "N/A",
+        pos: p.pos || "—",
         gp: p.gp ?? "—",
         ppg: formatPlayerSeasonStat(p, "pts"),
         apg: formatPlayerSeasonStat(p, "ast"),
@@ -1488,7 +1029,9 @@ function renderRealGmCard(p, team) {
         statsSeason: p.stats_season || "Stats unavailable"
     };
 
-    const estimatedSalary = getEstimatedPlayerSalary(p);
+    const salary = typeof p.salary === "number"
+        ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 }).format(p.salary)
+        : "Salary unavailable";
     const headshotId = getPlayerHeadshotId(p.name);
     const photoUrl = headshotId ? getPlayerHeadshotUrl(p.name) : "";
     const safeName = p.name.replace(/'/g, "\\'");
@@ -1521,33 +1064,19 @@ function renderRealGmCard(p, team) {
                     <div class="stat-cell"><span class="stat-title">APG</span><span class="stat-num">${info.apg}</span></div>
                     <div class="stat-cell"><span class="stat-title">RPG</span><span class="stat-num">${info.rpg}</span></div>
                 </div>
-                <div class="card-player-salary">${formatCompactSalary(estimatedSalary)}</div>
+                <div class="card-player-salary">${salary}</div>
             </div>
         </div>
     `;
 }
 
 function openModal(team) {
+    activeTeamId = team.id;
     const modalCard = document.querySelector(".modal-card");
     applyTeamThemeToElement(modalCard, team.name);
 
-    const meta = teamMetadata[team.name] || {
-        salary: team.total_salary || 0,
-        status: team.tax_status || "Over Cap",
-        rings: team.championships || 0,
-        years: team.championship_years || []
-    };
-
-    const formattedSalary = `$${(meta.salary).toLocaleString()}`;
-    const yearsString = (meta.years && meta.years.length > 0) ? meta.years.join(", ") : "None";
-    const teamStats = teamSeasonStats2025_26[team.name] || {
-        record: team.last_season_record || "--",
-        off_rtg: "--",
-        def_rtg: "--",
-        ppg: "--",
-        opp_ppg: "--",
-        net: "--"
-    };
+    const formattedSalary = typeof team.total_salary === "number" ? `$${team.total_salary.toLocaleString()}` : "Payroll unavailable";
+    const yearsString = team.championship_years?.length ? team.championship_years.join(", ") : "None";
 
     const teamTxContainer = document.getElementById("modalTeamTransactions");
     const teamTxList = getTeamTransactions(team.name);
@@ -1558,15 +1087,10 @@ function openModal(team) {
 
     document.getElementById("modalRecord").innerHTML = `
         <div style="margin-bottom: 6px;">Last Season: <strong>${team.last_season_record}</strong></div>
-        <div style="margin-bottom: 6px;">Championships: <strong>${meta.rings}</strong></div>
+        <div style="margin-bottom: 6px;">Championships: <strong>${team.championships ?? "—"}</strong></div>
         <div style="font-size: 0.78rem; line-height: 1.4; color: #475569; margin-bottom: 14px;">Years: <strong>${yearsString}</strong></div>
         <div class="modal-season-stats-grid">
-            <div class="modal-season-stat-box"><span>Off RTG</span><strong>${typeof teamStats.off_rtg === 'number' ? teamStats.off_rtg.toFixed(1) : teamStats.off_rtg}</strong></div>
-            <div class="modal-season-stat-box"><span>Def RTG</span><strong>${typeof teamStats.def_rtg === 'number' ? teamStats.def_rtg.toFixed(1) : teamStats.def_rtg}</strong></div>
-            <div class="modal-season-stat-box"><span>PPG</span><strong>${typeof teamStats.ppg === 'number' ? teamStats.ppg.toFixed(1) : teamStats.ppg}</strong></div>
-            <div class="modal-season-stat-box"><span>Opp PPG</span><strong>${typeof teamStats.opp_ppg === 'number' ? teamStats.opp_ppg.toFixed(1) : teamStats.opp_ppg}</strong></div>
-            <div class="modal-season-stat-box"><span>Net</span><strong>${teamStats.net}</strong></div>
-            <div class="modal-season-stat-box"><span>2025-26</span><strong>${team.last_season_record}</strong></div>
+            <div class="modal-season-stat-box"><span>Featured player</span><strong>${team.headline_stat || "Stats unavailable"}</strong></div>
         </div>
     `;
 
@@ -1578,23 +1102,19 @@ function openModal(team) {
         modalImg.src = "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
     };
 
-    const cleanStarters = (Array.isArray(team.starters_2026_27) ? team.starters_2026_27 : []).filter(
-        p => p && !p.name.toLowerCase().includes("lowry")
-    );
-    const cleanBench = (Array.isArray(team.bench_2026_27) ? team.bench_2026_27 : []).filter(
-        p => p && !p.name.toLowerCase().includes("lowry")
-    );
+    const cleanStarters = Array.isArray(team.starters_2026_27) ? team.starters_2026_27 : [];
+    const cleanBench = Array.isArray(team.bench_2026_27) ? team.bench_2026_27 : [];
 
     // Populate Cards Grids
     const startersGrid = document.getElementById("modalStartersGrid");
-    startersGrid.innerHTML = cleanStarters.map(p => renderRealGmCard(p, team)).join("");
+    startersGrid.innerHTML = cleanStarters.map(p => renderPlayerCard(p, team)).join("");
 
     const benchGrid = document.getElementById("modalBenchGrid");
     const benchCount = document.getElementById("modalBenchCount");
     if (benchGrid) {
         if (benchCount) benchCount.textContent = `${cleanBench.length} players`;
         if (cleanBench && cleanBench.length > 0) {
-            benchGrid.innerHTML = cleanBench.map(p => renderRealGmCard(p, team)).join("");
+            benchGrid.innerHTML = cleanBench.map(p => renderPlayerCard(p, team)).join("");
         } else {
             benchGrid.innerHTML = `<p style="color:#94a3b8; font-size:0.85rem; padding: 12px 0;">No bench players currently registered.</p>`;
         }
@@ -1602,9 +1122,10 @@ function openModal(team) {
 
     const salaryRow = document.getElementById("modalSalaryRow");
     if (salaryRow) {
+        const taxStatus = team.tax_status || "Unavailable";
         salaryRow.innerHTML = `
             <span style="font-size: 0.85rem; font-weight: 800; color: #111827;">Payroll: ${formattedSalary}</span>
-            <span class="tx-badge tx-badge-${meta.status.replace(' ', '_')}">${meta.status}</span>
+            <span class="tx-badge tx-badge-${taxStatus.replace(' ', '_')}">${taxStatus}</span>
         `;
     }
 
@@ -1698,4 +1219,54 @@ function handlePlayerBackdropClick(event) {
     }
 }
 
+setupHeadlineDots();
+updateHeadline(0);
+startHeadlineAutoPlay();
+filterTransactions();
+renderSchedule();
 loadTeams();
+loadSchedule();
+loadLiveScores();
+loadTransactions();
+document.getElementById("schedulePreviousDay").addEventListener("click", () => changeScheduleDate(-1));
+document.getElementById("scheduleNextDay").addEventListener("click", () => changeScheduleDate(1));
+document.getElementById("scheduleToday").addEventListener("click", () => {
+    selectedScheduleDate = localDateKey();
+    renderSchedule();
+});
+document.getElementById("scheduleDatePicker").addEventListener("change", event => {
+    selectedScheduleDate = event.target.value;
+    renderSchedule();
+});
+document.getElementById("scheduleGrid").addEventListener("click", event => {
+    const gameCard = event.target.closest(".game-card[data-game-id]");
+    if (gameCard) openBoxScore(gameCard.dataset.gameId);
+});
+document.getElementById("scheduleGrid").addEventListener("keydown", event => {
+    const gameCard = event.target.closest(".game-card[data-game-id]");
+    if (gameCard && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        openBoxScore(gameCard.dataset.gameId);
+    }
+});
+document.getElementById("closeBoxScore").addEventListener("click", closeBoxScore);
+document.getElementById("boxScoreDialog").addEventListener("close", () => {
+    activeBoxScoreGameId = "";
+    if (boxScoreRefreshInterval) {
+        window.clearInterval(boxScoreRefreshInterval);
+        boxScoreRefreshInterval = null;
+    }
+});
+window.setInterval(loadTeams, 15 * 60 * 1000);
+window.setInterval(loadSchedule, 24 * 60 * 60 * 1000);
+window.setInterval(() => loadLiveScores({ background: true }), 60 * 1000);
+window.setInterval(() => loadTransactions({ background: true }), 60 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && Date.now() - lastTeamsRefreshAt >= 15 * 60 * 1000) loadTeams();
+});
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    if (Date.now() - lastScheduleRefreshAt >= 24 * 60 * 60 * 1000) loadSchedule();
+    if (Date.now() - lastScoreRefreshAt >= 60 * 1000) loadLiveScores({ background: true });
+    if (Date.now() - lastTransactionsRefreshAt >= 60 * 60 * 1000) loadTransactions({ background: true });
+});

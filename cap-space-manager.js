@@ -43,12 +43,6 @@ const RULE_INSTRUCTIONS = {
   low_turnovers: "Every player must have played this season and average no more than 1.5 turnovers.",
   balanced: "Every player must have played this season and average at least 12.0 points, 4.0 rebounds, and 3.0 assists."
 };
-const VERIFIED_HEADSHOT_OVERRIDES = {
-  herbjones: "1630529",
-  jimmybutler: "202710",
-  khalifadiop: "1631215",
-  teranceshannonjr: "1630545"
-};
 const OFFICIAL_CHALLENGES = [
   { id: "best-team", title: "2026–27 Best Team", description: "Draft the best all-around five you can build with the full league pool.", rule_type: "all", difficulty: "Easy", icon: "🏆" },
   { id: "bucket-getters", title: "Five-Star Offense", description: "Every pick is a bucket getter averaging at least 18 points per game.", rule_type: "scorers", difficulty: "Medium", icon: "🔥" },
@@ -189,8 +183,7 @@ function createPlayerPool(teams) {
         name: player.name,
         team: team.name,
         logo: team.logo,
-        headshotId: VERIFIED_HEADSHOT_OVERRIDES[normalizePlayerName(player.name)]
-          || window.NBA_PLAYER_IDS?.[normalizePlayerName(player.name)]
+        headshotId: window.NBA_PLAYER_IDS?.[normalizePlayerName(player.name)]
           || null,
         positionLabel: player.pos || "—",
         statsSeason: player.stats_season || "Unavailable",
@@ -482,7 +475,17 @@ function renderTierPlayer(player, pickedIds) {
   const isPicked = pickedIds.has(player.id);
   const fullLineup = state.picks.length >= TEAM_SIZE;
   const exceedsBudget = getBudgetSpent() + player.tier > BUDGET;
-  const disabled = isPicked || fullLineup || exceedsBudget;
+  const meetsChallenge = matchesRule(player, state.activeChallenge.rule_type);
+  const disabled = isPicked || fullLineup || exceedsBudget || !meetsChallenge;
+  const buttonLabel = isPicked
+    ? "✓ Picked"
+    : exceedsBudget
+      ? "Over budget"
+      : !meetsChallenge
+        ? "No longer qualifies"
+        : fullLineup
+          ? "Five picked"
+          : "+ Pick";
   const portrait = player.headshotId
     ? `<img class="player-face__portrait" src="https://cdn.nba.com/headshots/nba/latest/1040x760/${player.headshotId}.png" alt="${escapeHtml(player.name)}" loading="lazy" />`
     : "";
@@ -502,14 +505,14 @@ function renderTierPlayer(player, pickedIds) {
         <span class="market-player__team">${escapeHtml(player.team)}</span>
       </div>
       <div class="market-player__stats">
-        <span><b>${formatPlayerStat(player.pts, player.hasSeasonStats)}</b> PTS</span>
-        <span><b>${formatPlayerStat(player.reb, player.hasSeasonStats)}</b> REB</span>
-        <span><b>${formatPlayerStat(player.ast, player.hasSeasonStats)}</b> AST</span>
-        <span><b>${player.hasSeasonStats ? player.gp : "—"}</b> GP</span>
+        <span><b>${formatPlayerStat(player.pts, player.hasSeasonStats)}</b><small>PTS</small></span>
+        <span><b>${formatPlayerStat(player.reb, player.hasSeasonStats)}</b><small>REB</small></span>
+        <span><b>${formatPlayerStat(player.ast, player.hasSeasonStats)}</b><small>AST</small></span>
+        <span><b>${player.hasSeasonStats ? player.gp : "—"}</b><small>GP</small></span>
       </div>
       <small class="market-player__season">${escapeHtml(player.statsSeason)} regular season</small>
-      <button type="button" class="market-add ${isPicked ? "is-picked" : ""}" data-pick-player="${escapeHtml(player.id)}" ${disabled ? "disabled" : ""} aria-label="${isPicked ? "Picked" : exceedsBudget ? "Over budget" : `Draft ${player.name} for ${player.tier} dollars`}">
-        ${isPicked ? "✓ Picked" : exceedsBudget ? "Over budget" : fullLineup ? "Five picked" : "+ Pick"}
+      <button type="button" class="market-add ${isPicked ? "is-picked" : ""}" data-pick-player="${escapeHtml(player.id)}" ${disabled ? "disabled" : ""} aria-label="${isPicked ? "Picked" : exceedsBudget ? "Over budget" : !meetsChallenge ? `${player.name} no longer qualifies for this challenge` : `Draft ${player.name} for ${player.tier} dollars`}">
+        ${buttonLabel}
       </button>
     </article>
   `;
@@ -764,7 +767,30 @@ function showLoadError(error) {
   elements.tierBoard.innerHTML = `<div class="loading-message">Could not load the NBA player pool: ${escapeHtml(message)}<br />Refresh the page to try again.</div>`;
 }
 
-async function loadPlayers() {
+let lastPoolRefreshAt = 0;
+let isLoadingPlayers = false;
+
+function updatePlayerPoolStatus(stats, roster) {
+  const updatedAt = stats?.last_updated
+    ? new Date(stats.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : "";
+  const season = stats?.season || "current-season";
+  const rosterLabel = roster?.status === "fresh" ? "current rosters" : "rosters may be outdated";
+  elements.apiStatus.title = [roster?.message, stats?.message].filter(Boolean).join(" ");
+  elements.apiStatus.classList.remove("is-error");
+  if (stats?.status === "fresh") {
+    elements.apiStatus.textContent = `${state.players.length} NBA players · ${rosterLabel} · ${season} stats ${updatedAt}`;
+  } else if (stats?.status === "pending") {
+    elements.apiStatus.textContent = `${state.players.length} NBA players · ${rosterLabel} · ${season} stats pending`;
+  } else {
+    elements.apiStatus.textContent = `${state.players.length} NBA players · ${rosterLabel} · live stats unavailable`;
+    elements.apiStatus.classList.add("is-error");
+  }
+}
+
+async function loadPlayers({ background = false } = {}) {
+  if (isLoadingPlayers) return;
+  isLoadingPlayers = true;
   try {
     const response = await fetch(`${API_URL}/api/v1/teams`, {
       headers: { "X-API-Key": API_KEY }
@@ -774,24 +800,43 @@ async function loadPlayers() {
     if (!Array.isArray(payload.teams) || payload.teams.length === 0) {
       throw new Error("The API returned no NBA teams.");
     }
-    window.applyPlayerSeasonStatsOverrides(payload.teams);
-    const rosterPlayers = payload.teams.flatMap((team) => getTeamRoster(team));
-    if (rosterPlayers.some((player) =>
-      player.stats_season !== "2025-26" && !window.PLAYER_SEASON_STAT_OVERRIDES[normalizePlayerName(player.name)]
-    )) {
-      throw new Error("The API is not serving current regular-season stats yet. Deploy the updated API and reload this page.");
+    const refreshedPlayers = createPlayerPool(payload.teams);
+    if (refreshedPlayers.length < 25) {
+      throw new Error(`Only ${refreshedPlayers.length} usable players were returned; need enough for the five price tiers.`);
     }
-    state.players = createPlayerPool(payload.teams);
-    if (state.players.length < 25) {
-      throw new Error(`Only ${state.players.length} usable players were returned; need enough for the five price tiers.`);
+    const refreshedById = new Map(refreshedPlayers.map((player) => [player.id, player]));
+    const hasPlayerPool = state.players.length > 0;
+    state.players = refreshedPlayers;
+    if (hasPlayerPool) {
+      state.board = state.board.map(({ tier, players }) => ({
+        tier,
+        players: players.map((player) => ({
+          ...(refreshedById.get(player.id) || player),
+          tier
+        }))
+      }));
+      state.picks = state.picks.map((player) => ({
+        ...(refreshedById.get(player.id) || player),
+        tier: player.tier
+      }));
+    } else {
+      state.board = makeRandomBoard(state.activeChallenge);
     }
-    state.board = makeRandomBoard(state.activeChallenge);
+    lastPoolRefreshAt = Date.now();
     render();
-    elements.apiStatus.textContent = `NBA PLAYER POOL · ${state.players.length} PLAYERS`;
+    updatePlayerPoolStatus(payload.stats, payload.roster);
     renderCommunityChallenges();
     updateChallengePlayerPicker();
   } catch (error) {
-    showLoadError(error);
+    if (background && state.players.length) {
+      console.error("Player statistics refresh failed:", error);
+      elements.apiStatus.textContent = "Stats refresh failed. Showing the last API response; automatic retry in 15 minutes.";
+      elements.apiStatus.classList.add("is-error");
+    } else {
+      showLoadError(error);
+    }
+  } finally {
+    isLoadingPlayers = false;
   }
 }
 
@@ -951,3 +996,9 @@ elements.createChallengeForm.elements.rule_type.addEventListener("change", () =>
 renderOfficialChallenges();
 renderCommunityChallenges();
 Promise.all([loadPlayers(), loadCommunityChallenges()]);
+window.setInterval(() => loadPlayers({ background: true }), 15 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() - lastPoolRefreshAt >= 15 * 60 * 1000) {
+    loadPlayers({ background: true });
+  }
+});

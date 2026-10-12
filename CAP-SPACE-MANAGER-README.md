@@ -33,13 +33,12 @@ Each category is capped at its maximum weight. The grade panel shows the categor
 
 ## Player data
 
-The player pool uses roster and regular-season statistics from the configured NBA API. Each player card identifies the regular-season season available for that player. Kyrie Irving, Damian Lillard, and Tyrese Haliburton use 2024–25 statistics because their 2025–26 season statistics are unavailable; their other roster fields remain sourced as before.
+The player pool uses roster and season-stat data from the configured NBA API. The API refreshes player averages from NBA.com Stats and caches the response for 15 minutes; the page refreshes its player pool every 15 minutes and when returning to the tab. Each card identifies the season represented by its stats. Before current-season stats are published or if NBA.com is unavailable, the API reports the status and continues to serve its existing season data.
 
 ## Main files
 
 - `cap-space-manager.html` — page structure and external script loading.
 - `cap-space-manager.js` — player pool, challenges, budget rules, draft state, and team-fit grading.
 - `cap-space-manager.css` — responsive interface and visual styles.
-- `player-season-overrides.js` — shared season-stat corrections for players without 2025–26 statistics.
-
+- Player, roster, and season-stat data come from the API; the page contains no local player-stat overrides.
 

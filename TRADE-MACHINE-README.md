@@ -14,7 +14,7 @@ Open `trade-machine.html` in a browser, or serve the project directory with a lo
 4. Review the trade to see salary changes, transferred assets, and rule checks.
 5. Save a trade from the review screen. Open **Saved trades** to inspect it later or continue editing it.
 
-The builder supports up to five teams. Player cards open from player names and show the rostered team, available statistics, and salary. Trending players also open in-app player cards.
+The builder supports up to five teams. Player cards open from player names and show the rostered team, available statistics, and salary. The scoring-leaders rail is generated from API player stats and opens the same in-app player cards.
 
 ## Modeled checks
 
@@ -24,7 +24,7 @@ Trade review reports checks for trade structure, pick swaps, salary matching, co
 
 Saved trades are stored in the current browser's local storage under `nba-trade-desk.saved-trades.v1`. They are not synchronized between browsers or devices. Clearing browser storage can remove them.
 
-The Trade Machine uses roster, salary, and draft-pick data from the configured NBA API, plus local corrections for selected roster and contract details. Player cards label the season associated with displayed statistics. Kyrie Irving, Damian Lillard, and Tyrese Haliburton use their 2024–25 regular-season stats because their 2025–26 season statistics are unavailable.
+The Trade Machine reads roster, salary, and draft-pick data from the configured NBA API. The API refreshes player averages from NBA.com Stats and caches the response for 15 minutes; each open page checks the API every 15 minutes and when returning to the tab. Player cards label the season associated with displayed statistics. If NBA.com has not published current-season results or is temporarily unavailable, the API reports that status and serves its existing season data rather than inventing a live update.
 
 ## Main files
 
@@ -32,4 +32,4 @@ The Trade Machine uses roster, salary, and draft-pick data from the configured N
 - `trade-machine.js` — team selection, trade state, asset transfers, saved trades, player cards, and modeled validation.
 - `trade-machine.css` — Trade Desk design, team themes, and responsive layouts.
 - `player-headshots.js` — player headshot lookup.
-- `player-season-overrides.js` — shared season-stat corrections.
+- Player, roster, salary, and season-stat data come from the API; the page has no local correction tables.

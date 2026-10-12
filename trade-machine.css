@@ -7132,3 +7132,67 @@ h1 {
     transition: none;
   }
 }
+
+.roster-player__stats { color: #b7c5c7; font-size: 11px; line-height: 1.45; white-space: normal; }
+.trending-player__name { font-size: 11px; }
+.trending-player__team-name { font-size: 9px; }
+.trending-player__stats { color: #9ddfd5; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.trade-trending__note { font-size: 10px; line-height: 1.45; }
+.player-profile__stats-heading span { font-size: 11px; }
+.player-profile__stat span { font-size: 11px; }
+.player-profile__stat strong { font-size: 22px; }
+
+.roster-row:not(.roster-row--header) {
+  min-height: 64px;
+  padding-block: 8px;
+}
+
+.roster-row--header {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.roster-player__name {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.roster-player__position {
+  color: #b1c0c6;
+  font-size: 10px;
+}
+
+.roster-player__stats {
+  color: #c1ced2;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.roster-salary,
+.roster-row:not(.roster-row--header) > .roster-salary {
+  color: #f1f5f6;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.roster-action .trade-toggle {
+  min-width: 68px;
+  min-height: 36px;
+  font-size: 11px;
+}
+
+.roster-rank {
+  font-size: 10px;
+}
+
+@media (max-width: 600px) {
+  .roster-player__stats {
+    font-size: 10px;
+  }
+
+  .roster-salary,
+  .roster-row:not(.roster-row--header) > .roster-salary {
+    font-size: 11px;
+  }
+}

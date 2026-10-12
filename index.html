@@ -70,7 +70,7 @@
             <div class="transactions-header-block">
                 <span class="nba-badge">OFFSEASON LEDGER</span>
                 <h2 class="section-heading">2026 OFFSEASON TRANSACTIONS</h2>
-                <p class="section-subheading">Complete timeline of every trade, free agency signing, contract extension, draft selection, and waiver move across the NBA.</p>
+                <p class="section-subheading">Reported trades, signings, extensions, draft selections, and waiver moves. Feed coverage may be incomplete, especially for extensions.</p>
             </div>
 
             <!-- TYPE FILTER TABS -->
@@ -85,6 +85,7 @@
                 </div>
             </div>
 
+            <p id="transactionsUpdateStatus" class="transactions-update-status" role="status" aria-live="polite">Loading verified transaction updates…</p>
             <div id="transactionsTimeline" class="tx-timeline-feed"></div>
         </div>
     </section>
@@ -95,18 +96,19 @@
             <div class="schedule-header-block">
                 <span class="nba-badge">GAME TRACKER</span>
                 <h2 class="section-heading">2026–27 SEASON SCHEDULE & SCORES</h2>
-                <p class="section-subheading">Live updates, preseason showcases, and key regular season match dates.</p>
+                <p class="section-subheading">Browse preseason and regular-season games across the full 2026–27 schedule, with live scores as they update.</p>
             </div>
 
-            <!-- DATE / STAGE SELECTOR -->
+            <!-- FULL-SEASON DATE SELECTOR -->
             <div class="schedule-date-filter-wrap">
                 <div class="schedule-date-tabs" id="scheduleDateTabs">
-                    <button class="schedule-date-btn active" onclick="filterScheduleStage('OPENING_WEEK', this)">Opening Week</button>
-                    <button class="schedule-date-btn" onclick="filterScheduleStage('CHRISTMAS', this)">Christmas Day</button>
-                    <button class="schedule-date-btn" onclick="filterScheduleStage('PRESEASON', this)">Preseason Showcases</button>
-                    <button class="schedule-date-btn" onclick="filterScheduleStage('INTL', this)">Global Games</button>
-                    <button class="schedule-date-btn" onclick="filterScheduleStage('ALL', this)">All Key Dates</button>
+                    <button type="button" class="schedule-date-btn" id="schedulePreviousDay" aria-label="Previous day">← Previous</button>
+                    <label class="schedule-date-picker-label" for="scheduleDatePicker">Game date</label>
+                    <input type="date" id="scheduleDatePicker" aria-label="Choose a date from the season schedule">
+                    <button type="button" class="schedule-date-btn" id="scheduleToday">Today</button>
+                    <button type="button" class="schedule-date-btn" id="scheduleNextDay" aria-label="Next day">Next →</button>
                 </div>
+                <p id="scheduleUpdateStatus" class="schedule-update-status" role="status" aria-live="polite">Loading the full NBA schedule…</p>
             </div>
 
             <!-- MATCH GRID -->
@@ -144,6 +146,7 @@
                 </div>
             </div>
 
+            <p id="statsUpdateStatus" class="stats-update-status" role="status" aria-live="polite">Connecting to NBA stats…</p>
             <div id="teamGrid" class="watch-grid"></div>
         </div>
     </section>
@@ -168,7 +171,7 @@
                     <p class="modal-description" id="modalDescription"></p>
                     <div class="modal-divider"></div>
 
-                    <h4 class="modal-section-title">2026–27 Projected Starting Lineup</h4>
+                    <h4 class="modal-section-title">2026–27 Team Starters</h4>
                     <div id="modalStartersGrid" class="player-cards-grid"></div>
 
                     <div class="modal-divider"></div>
@@ -260,9 +263,20 @@
         </div>
     </div>
 
+    <dialog id="boxScoreDialog" class="box-score-dialog" aria-labelledby="boxScoreTitle">
+        <div class="box-score-dialog__header">
+            <div>
+                <span class="nba-badge">LIVE GAME CENTER</span>
+                <h2 id="boxScoreTitle">Game box score</h2>
+                <p id="boxScoreStatus" role="status" aria-live="polite">Loading box score…</p>
+            </div>
+            <button type="button" class="box-score-dialog__close" id="closeBoxScore" aria-label="Close box score">×</button>
+        </div>
+        <div id="boxScoreContent" class="box-score-dialog__content"></div>
+    </dialog>
+
     <script src="nba-player-ids.js"></script>
     <script src="player-headshots.js"></script>
-    <script src="player-season-overrides.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
