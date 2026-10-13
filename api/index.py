@@ -5796,6 +5796,71 @@ def _value_by_key(data: dict, *names: str):
     return None
 
 
+def _normalize_espn_scoreboard(payload: dict) -> list[dict]:
+    events = payload.get("events")
+    if not isinstance(events, list):
+        raise ValueError("ESPN scoreboard response is missing events.")
+
+    games = []
+    status_codes = {"pre": 1, "in": 2, "post": 3}
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        competitions = event.get("competitions")
+        if not isinstance(competitions, list) or not competitions:
+            continue
+        competition = competitions[0]
+        if not isinstance(competition, dict):
+            continue
+        competitors = competition.get("competitors")
+        if not isinstance(competitors, list):
+            continue
+        teams = {}
+        for competitor in competitors:
+            if not isinstance(competitor, dict):
+                continue
+            side = str(competitor.get("homeAway") or "").casefold()
+            team = competitor.get("team")
+            if side in ("home", "away") and isinstance(team, dict):
+                teams[side] = {
+                    "teamTricode": str(team.get("abbreviation") or ""),
+                    "score": competitor.get("score"),
+                }
+        if "home" not in teams or "away" not in teams:
+            continue
+
+        status = event.get("status")
+        if not isinstance(status, dict):
+            status = competition.get("status")
+        if not isinstance(status, dict):
+            status = {}
+        status_type = status.get("type")
+        if not isinstance(status_type, dict):
+            status_type = {}
+        state = str(status_type.get("state") or "").casefold()
+        if state not in status_codes and status_type.get("completed") is True:
+            state = "post"
+        status_code = status_codes.get(state)
+        status_text = (
+            "Scheduled" if status_code == 1
+            else status_type.get("shortDetail")
+            or status_type.get("detail")
+            or ("Final" if status_code == 3 else "In Progress")
+        )
+        event_id = str(event.get("id") or "")
+        games.append({
+            "gameId": f"espn:{event_id}" if event_id else "",
+            "date": str(event.get("date") or ""),
+            "gameStatus": status_code,
+            "gameStatusText": str(status_text),
+            "period": status.get("period"),
+            "gameClock": status.get("displayClock"),
+            "homeTeam": teams["home"],
+            "awayTeam": teams["away"],
+        })
+    return games
+
+
 def _as_schedule_date(value: object) -> str:
     text = str(value or "").strip()
     if not text:
@@ -6034,28 +6099,45 @@ def _fetch_nba_scoreboard() -> dict:
             "games": games,
         }
     except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
-        logger.warning("NBA scoreboard refresh failed: %s", error)
-        previous = cached["snapshot"] if cached else None
-        if previous and previous.get("games"):
+        logger.warning("NBA scoreboard refresh failed; trying ESPN fallback: %s", error)
+        try:
+            payload = _request_nba_json(
+                "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+            )
+            games = _normalize_espn_scoreboard(payload)
             snapshot = {
-                **previous,
-                "status": "stale",
-                "message": (
-                    f"NBA live scoreboard refresh failed ({type(error).__name__}: {error}); "
-                    "showing the last successful score update."
-                ),
+                "status": "fresh",
+                "source": "ESPN scoreboard fallback",
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "games": games,
+                "message": "Live scores are being provided by ESPN because NBA.com is unavailable.",
             }
-        else:
-            snapshot = {
-                "status": "unavailable",
-                "source": "NBA.com live scoreboard",
-                "last_updated": None,
-                "message": (
-                    f"NBA live scoreboard is unavailable "
-                    f"({type(error).__name__}: {error}); the full schedule remains available."
-                ),
-                "games": [],
-            }
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as fallback_error:
+            logger.warning("ESPN scoreboard fallback failed: %s", fallback_error)
+            previous = cached["snapshot"] if cached else None
+            if previous and previous.get("games"):
+                snapshot = {
+                    **previous,
+                    "status": "stale",
+                    "message": (
+                        f"NBA scoreboard refresh failed ({type(error).__name__}: {error}); "
+                        f"ESPN fallback failed ({type(fallback_error).__name__}: {fallback_error}); "
+                        "showing the last successful score update."
+                    ),
+                }
+            else:
+                snapshot = {
+                    "status": "unavailable",
+                    "source": "NBA.com / ESPN live scoreboards",
+                    "last_updated": None,
+                    "message": (
+                        f"NBA scoreboard is unavailable ({type(error).__name__}: {error}); "
+                        f"ESPN fallback is also unavailable "
+                        f"({type(fallback_error).__name__}: {fallback_error}). "
+                        "The full schedule remains available."
+                    ),
+                    "games": [],
+                }
     NBA_SCOREBOARD_CACHE["today"] = {
         "expires_at": now + NBA_SCOREBOARD_CACHE_TTL_SECONDS,
         "snapshot": snapshot,
@@ -6175,7 +6257,7 @@ def fetch_current_nba_scores() -> dict:
             status = "Final" if status_code_number == 3 else "In Progress"
         normalized_games.append({
             "id": str(_value_by_key(game, "gameId") or ""),
-            "date": str(_value_by_key(game, "date") or "")[:10],
+            "date": str(_value_by_key(game, "date") or ""),
             "status": status,
             "status_code": status_code_number,
             "period": _value_by_key(game, "period"),
