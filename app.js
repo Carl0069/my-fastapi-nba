@@ -273,25 +273,107 @@ function escapeMarkup(value) {
 }
 
 function localDateKey(date = new Date()) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
 }
 
 function formatScheduleDate(dateKey, options = { weekday: "long", month: "long", day: "numeric", year: "numeric" }) {
     if (!dateKey) return "";
-    return new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, options);
+    return new Date(`${dateKey}T00:00:00Z`).toLocaleDateString(undefined, {
+        ...options,
+        timeZone: "Asia/Manila"
+    });
+}
+
+function dateKeyInPhilippines(date) {
+    if (!date || !Number.isFinite(date.getTime())) return "";
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
+function convertEasternTipoffToPhilippines(dateKey, timeLabel) {
+    const match = String(timeLabel || "").match(/^(\d{1,2}):(\d{2})\s*(AM|PM)\s*(ET|UTC)$/i);
+    if (!match || !dateKey) return { date: dateKey, time: timeLabel };
+
+    let hour = Number(match[1]) % 12;
+    if (match[3].toUpperCase() === "PM") hour += 12;
+    const minute = Number(match[2]);
+    const sourceTimeZone = match[4].toUpperCase() === "ET" ? "America/New_York" : "UTC";
+    const assumedUtc = Date.parse(`${dateKey}T${String(hour).padStart(2, "0")}:${match[2]}:00Z`);
+    let instant = assumedUtc;
+
+    if (sourceTimeZone !== "UTC") {
+        const sourceFormatter = new Intl.DateTimeFormat("en-US", {
+            timeZone: sourceTimeZone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hourCycle: "h23"
+        });
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+            const sourceParts = Object.fromEntries(
+                sourceFormatter.formatToParts(new Date(instant)).map(part => [part.type, part.value])
+            );
+            const sourceAsUtc = Date.UTC(
+                Number(sourceParts.year),
+                Number(sourceParts.month) - 1,
+                Number(sourceParts.day),
+                Number(sourceParts.hour),
+                Number(sourceParts.minute),
+                Number(sourceParts.second)
+            );
+            instant = assumedUtc - (sourceAsUtc - instant);
+        }
+    }
+
+    const gameInstant = new Date(instant);
+    const philippinesTime = gameInstant.toLocaleTimeString("en-PH", {
+        timeZone: "Asia/Manila",
+        hour: "numeric",
+        minute: "2-digit"
+    });
+    return {
+        date: dateKeyInPhilippines(gameInstant),
+        time: `${philippinesTime} PHT`
+    };
+}
+
+function scheduleGameInPhilippines(game) {
+    const localizedTipoff = convertEasternTipoffToPhilippines(game.date, game.time);
+    return { ...game, ...localizedTipoff };
 }
 
 function updateScheduleStatus(payload = {}) {
     const statusElement = document.getElementById("scheduleUpdateStatus");
     if (!statusElement) return;
     const scheduleUpdatedAt = payload.last_updated
-        ? new Date(payload.last_updated).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+        ? new Date(payload.last_updated).toLocaleString([], {
+            dateStyle: "medium",
+            timeStyle: "short",
+            timeZone: "Asia/Manila"
+        })
         : "";
     const scoreUpdatedAt = payload.scores?.last_updated
-        ? new Date(payload.scores.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        ? new Date(payload.scores.last_updated).toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+            timeZone: "Asia/Manila"
+        })
         : "";
     const schedulePart = scheduleRouteMissing
         ? "The deployed API is missing the schedule route. Publish the latest api/index.py to Vercel."
@@ -300,10 +382,13 @@ function updateScheduleStatus(payload = {}) {
             : payload.status === "fresh"
                 ? `${Number(payload.count || scheduleGames.length).toLocaleString()} games · schedule checked ${scheduleUpdatedAt}`
                 : payload.status === "stale"
-                    ? "Showing the last saved full schedule"
+                    ? payload.message || "Showing the last saved full schedule"
                     : payload.message || "The full season schedule is unavailable.";
+    const scoreSource = payload.scores?.source === "ESPN scoreboard fallback"
+        ? " · ESPN backup"
+        : "";
     const scorePart = payload.scores?.status === "fresh"
-        ? `Scores refreshed ${scoreUpdatedAt}`
+        ? `Scores refreshed ${scoreUpdatedAt}${scoreSource}`
         : payload.scores?.message || "Live scores unavailable";
     statusElement.textContent = `${schedulePart} · ${scorePart} · live scores auto-refresh every minute`;
     statusElement.title = [scheduleLoadMessage, payload.message, payload.scores?.message].filter(Boolean).join(" ");
@@ -326,7 +411,7 @@ async function loadSchedule() {
         }
         scheduleLoadMessage = "";
         scheduleRouteMissing = false;
-        scheduleGames = schedulePayload.games;
+        scheduleGames = schedulePayload.games.map(scheduleGameInPhilippines);
         lastScheduleRefreshAt = Date.now();
         const datePicker = document.getElementById("scheduleDatePicker");
         const dates = scheduleGames.map(game => game.date).filter(Boolean).sort();
@@ -378,7 +463,11 @@ async function loadLiveScores({ background = false } = {}) {
             payload.games.forEach(game => {
                 if (!game.home_tricode || !game.away_tricode) return;
                 const key = `${game.home_tricode.toLowerCase()}:${game.away_tricode.toLowerCase()}`;
-                scoresByMatchup.set(key, [...(scoresByMatchup.get(key) || []), game]);
+                const scoreDate = game.date && game.date.includes("T")
+                    ? dateKeyInPhilippines(new Date(game.date))
+                    : game.date;
+                const localizedScore = { ...game, date: scoreDate };
+                scoresByMatchup.set(key, [...(scoresByMatchup.get(key) || []), localizedScore]);
             });
             scheduleGames = scheduleGames.map(game => {
                 const matchup = `${String(game.home_tricode || "").toLowerCase()}:${String(game.away_tricode || "").toLowerCase()}`;
@@ -490,22 +579,22 @@ function renderSchedule() {
 
         card.innerHTML = `
             <div class="game-type-tag">${escapeMarkup(game.stage || "NBA")} · ${escapeMarkup(game.venue || "Venue TBD")}</div>
-            <div class="game-main-row">
-                <div class="game-teams-col">
-                    <div class="game-team-row">
-                        ${awayLogo ? `<img src="${escapeMarkup(awayLogo)}" alt="" class="game-team-logo">` : ""}
-                        <span class="game-team-name">${escapeMarkup(game.away)}</span>${awayScore}
-                    </div>
-                    <div class="game-team-row">
-                        ${homeLogo ? `<img src="${escapeMarkup(homeLogo)}" alt="" class="game-team-logo">` : ""}
-                        <span class="game-team-name">${escapeMarkup(game.home)}</span>${homeScore}
-                    </div>
+            <div class="game-matchup">
+                <div class="game-matchup-team game-matchup-team--away">
+                    ${awayLogo ? `<img src="${escapeMarkup(awayLogo)}" alt="" class="game-team-logo">` : ""}
+                    <span class="game-team-name">${escapeMarkup(game.away)}</span>
+                    ${awayScore}
                 </div>
-                <div class="game-divider"></div>
-                <div class="game-time-col">
-                    <div class="game-live-status is-${liveState}">${escapeMarkup(statusText)}</div>
-                    <div class="game-time-label">${escapeMarkup(game.time || "Time TBD")}</div>
+                <span class="game-matchup-separator" aria-hidden="true">AT</span>
+                <div class="game-matchup-team game-matchup-team--home">
+                    ${homeLogo ? `<img src="${escapeMarkup(homeLogo)}" alt="" class="game-team-logo">` : ""}
+                    <span class="game-team-name">${escapeMarkup(game.home)}</span>
+                    ${homeScore}
                 </div>
+            </div>
+            <div class="game-card-footer">
+                <div class="game-live-status is-${liveState}">${escapeMarkup(statusText)}</div>
+                <div class="game-time-label">${escapeMarkup(game.time || "Time TBD")}</div>
             </div>
         `;
         grid.appendChild(card);
@@ -558,35 +647,69 @@ function shootingLine(statistics, madeKey, attemptKey) {
     return `${formatBoxScoreStat(statistics[madeKey])}-${formatBoxScoreStat(statistics[attemptKey])}`;
 }
 
-function renderBoxScoreTeam(team) {
+function findBoxScoreTeamLogo(team) {
+    if (team.logo) return team.logo;
+    const teamName = String(team.name || "").trim().toLocaleLowerCase();
+    const match = allTeams.find(candidate =>
+        candidate.name?.trim().toLocaleLowerCase() === teamName
+    );
+    return match?.logo || "";
+}
+
+function renderBoxScoreTeam(team, side) {
     const players = Array.isArray(team.players) ? team.players : [];
-    const rows = players.map(player => {
+    const teamLogo = findBoxScoreTeamLogo(team);
+    const playerCards = players.map(player => {
         const stats = player.statistics || {};
         const status = player.played ? formatBoxScoreStat(stats.minutes) : "DNP";
+        const headshot = getPlayerHeadshotUrl(player.name);
+        const playerRole = player.played
+            ? `${player.position || "Player"} · ${status} MIN`
+            : `${player.position || "Player"} · DID NOT PLAY`;
+        const shootingStats = [
+            ["FG", shootingLine(stats, "field_goals", "field_goals_attempted")],
+            ["3P", shootingLine(stats, "three_pointers", "three_pointers_attempted")],
+            ["FT", shootingLine(stats, "free_throws", "free_throws_attempted")],
+            ["STL", formatBoxScoreStat(stats.steals)],
+            ["BLK", formatBoxScoreStat(stats.blocks)],
+            ["TO", formatBoxScoreStat(stats.turnovers)]
+        ];
         return `
-            <tr class="${player.starter ? "is-starter" : ""}">
-                <th scope="row">${escapeMarkup(player.name)}<small>${escapeMarkup(player.position || "")}</small></th>
-                <td>${escapeMarkup(status)}</td>
-                <td>${escapeMarkup(formatBoxScoreStat(stats.points))}</td>
-                <td>${escapeMarkup(formatBoxScoreStat(stats.rebounds))}</td>
-                <td>${escapeMarkup(formatBoxScoreStat(stats.assists))}</td>
-                <td>${escapeMarkup(formatBoxScoreStat(stats.steals))}</td>
-                <td>${escapeMarkup(formatBoxScoreStat(stats.blocks))}</td>
-                <td>${escapeMarkup(formatBoxScoreStat(stats.turnovers))}</td>
-                <td>${escapeMarkup(shootingLine(stats, "field_goals", "field_goals_attempted"))}</td>
-                <td>${escapeMarkup(shootingLine(stats, "three_pointers", "three_pointers_attempted"))}</td>
-                <td>${escapeMarkup(shootingLine(stats, "free_throws", "free_throws_attempted"))}</td>
-            </tr>
+            <article class="box-score-player-card${player.starter ? " is-starter" : ""}${player.played ? "" : " is-dnp"}">
+                <div class="box-score-player-card__identity">
+                    <img src="${escapeMarkup(headshot)}" alt="" loading="lazy" class="box-score-player-card__headshot" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_FALLBACK}'">
+                    <div class="box-score-player-card__bio">
+                        <h4>${escapeMarkup(player.name)}</h4>
+                        <p>${escapeMarkup(playerRole)}</p>
+                    </div>
+                    ${player.starter ? '<span class="box-score-player-card__badge">STARTER</span>' : ""}
+                </div>
+                <div class="box-score-player-card__leaders">
+                    <div><strong>${escapeMarkup(formatBoxScoreStat(stats.points))}</strong><span>PTS</span></div>
+                    <div><strong>${escapeMarkup(formatBoxScoreStat(stats.rebounds))}</strong><span>REB</span></div>
+                    <div><strong>${escapeMarkup(formatBoxScoreStat(stats.assists))}</strong><span>AST</span></div>
+                </div>
+                <div class="box-score-player-card__details">
+                    ${shootingStats.map(([label, value]) => `
+                        <div><span>${label}</span><strong>${escapeMarkup(value)}</strong></div>
+                    `).join("")}
+                </div>
+            </article>
         `;
     }).join("");
     return `
-        <section class="box-score-team">
-            <h3>${team.logo ? `<img src="${escapeMarkup(team.logo)}" alt="">` : ""}${escapeMarkup(team.name)} <strong>${escapeMarkup(formatBoxScoreStat(team.score))}</strong></h3>
+        <section class="box-score-team box-score-team--${side}">
+            <div class="box-score-team__heading">
+                <div>
+                    <span class="box-score-team__side">${side === "away" ? "AWAY TEAM" : "HOME TEAM"}</span>
+                    <h3>${teamLogo ? `<img src="${escapeMarkup(teamLogo)}" alt="" class="box-score-team__logo" loading="lazy">` : ""}${escapeMarkup(team.name)}</h3>
+                </div>
+                <strong class="box-score-team__score">${escapeMarkup(formatBoxScoreStat(team.score))}</strong>
+            </div>
             <div class="box-score-table-wrap">
-                <table class="box-score-table">
-                    <thead><tr><th scope="col">Player</th><th scope="col">MIN</th><th scope="col">PTS</th><th scope="col">REB</th><th scope="col">AST</th><th scope="col">STL</th><th scope="col">BLK</th><th scope="col">TO</th><th scope="col">FG</th><th scope="col">3P</th><th scope="col">FT</th></tr></thead>
-                    <tbody>${rows || '<tr><td colspan="11">Player box-score data is not available.</td></tr>'}</tbody>
-                </table>
+                <div class="box-score-player-grid">
+                    ${playerCards || '<p class="box-score-player-empty">Player box-score data is not available.</p>'}
+                </div>
             </div>
         </section>
     `;
@@ -614,7 +737,17 @@ async function loadBoxScore(gameId, { background = false } = {}) {
             ? new Date(payload.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
             : "";
         statusElement.textContent = `${payload.game_status || "Game"}${updatedAt ? ` · Updated ${updatedAt}` : ""}${payload.status === "stale" ? " · Showing last available box score" : ""}`;
-        content.innerHTML = `${renderBoxScoreTeam(payload.away)}${renderBoxScoreTeam(payload.home)}`;
+        const scrollPositions = background
+            ? {
+                content: content.scrollTop,
+                teams: [...content.querySelectorAll(".box-score-table-wrap")].map(table => table.scrollTop)
+            }
+            : null;
+        content.innerHTML = `${renderBoxScoreTeam(payload.away, "away")}${renderBoxScoreTeam(payload.home, "home")}`;
+        content.scrollTop = scrollPositions?.content || 0;
+        content.querySelectorAll(".box-score-table-wrap").forEach((table, index) => {
+            table.scrollTop = scrollPositions?.teams[index] || 0;
+        });
         const isLive = Number(payload.status_code) === 2
             || /(live|q[1-4]|half|ot|in progress)/i.test(payload.game_status || "");
         if (boxScoreRefreshInterval) {
@@ -1098,6 +1231,9 @@ function renderPlayerCard(p, team) {
 
 function openModal(team) {
     activeTeamId = team.id;
+    document.querySelector(".modal-body").scrollTop = 0;
+    document.querySelector(".modal-image-col").scrollTop = 0;
+    document.querySelector(".modal-info-col").scrollTop = 0;
     const modalCard = document.querySelector(".modal-card");
     applyTeamThemeToElement(modalCard, team.name);
 
@@ -1112,9 +1248,9 @@ function openModal(team) {
     document.getElementById("modalStar").innerText = `Featured Star: ${team.featured_star} (${team.headline_stat})`;
 
     document.getElementById("modalRecord").innerHTML = `
-        <div style="margin-bottom: 6px;">Last Season: <strong>${team.last_season_record}</strong></div>
-        <div style="margin-bottom: 6px;">Championships: <strong>${team.championships ?? "—"}</strong></div>
-        <div style="font-size: 0.78rem; line-height: 1.4; color: #475569; margin-bottom: 14px;">Years: <strong>${yearsString}</strong></div>
+        <div class="modal-record__line"><span>Last season</span><strong>${team.last_season_record}</strong></div>
+        <div class="modal-record__line"><span>Championships</span><strong>${team.championships ?? "—"}</strong></div>
+        <div class="modal-record__years">Title years <strong>${yearsString}</strong></div>
         <div class="modal-season-stats-grid">
             <div class="modal-season-stat-box"><span>Featured player</span><strong>${team.headline_stat || "Stats unavailable"}</strong></div>
         </div>
@@ -1150,7 +1286,7 @@ function openModal(team) {
     if (salaryRow) {
         const taxStatus = team.tax_status || "Unavailable";
         salaryRow.innerHTML = `
-            <span style="font-size: 0.85rem; font-weight: 800; color: #111827;">Payroll: ${formattedSalary}</span>
+            <span class="modal-payroll"><span>TEAM PAYROLL</span><strong>${formattedSalary}</strong></span>
             <span class="tx-badge tx-badge-${taxStatus.replace(' ', '_')}">${taxStatus}</span>
         `;
     }
@@ -1158,15 +1294,18 @@ function openModal(team) {
     if (teamTxContainer) {
         teamTxContainer.innerHTML = teamTxList.length > 0 ? teamTxList.map(t => `
             <div class="modal-tx-item">
-                <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                <div class="modal-tx-item__meta">
                     <span class="tx-badge tx-badge-${t.type}">${t.type}</span>
-                    <span style="font-size:0.72rem; color:#64748b; font-weight:700;">${t.date}</span>
+                    <span class="modal-tx-item__date">${t.date}</span>
                 </div>
                 <div>${t.text}</div>
             </div>
         `).join("") : `<p style="font-size:0.8rem; color:#64748b;">No major offseason transactions recorded.</p>`;
     }
 
+    document.querySelector(".modal-body").scrollTop = 0;
+    document.querySelector(".modal-image-col").scrollTop = 0;
+    document.querySelector(".modal-info-col").scrollTop = 0;
     document.getElementById("detailModal").classList.add("open");
 }
 
