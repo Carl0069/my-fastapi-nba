@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Hub | 2026–27 Teams, Starters & Transactions</title>
+    <title>NBA Hub | NBA Scores, Standings & News</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,9 +19,11 @@
             </a>
             
             <nav class="nav-links">
-                <a href="#hero">Headline News</a>
+                <a href="#hero">NBA Today</a>
                 <a href="#transactionsSection" class="nav-highlight">Offseason Transactions</a>
                 <a href="#scheduleSection">Live Scores & Schedule</a>
+                <a href="#gamePicksSection">Game Picks</a>
+                <a href="#standingsSection">Standings</a>
                 <a href="#teamsSection">Teams Directory</a>
             </nav>
 
@@ -38,7 +40,7 @@
     </header>
 
     <!-- HEADLINE HERO SECTION -->
-    <section id="hero" class="hero-section">
+    <section id="hero" class="hero-section" aria-label="Today's NBA headlines and scores">
         <button class="hero-nav-btn prev-btn" onclick="prevHeadline()" aria-label="Previous News">&#10094;</button>
         <button class="hero-nav-btn next-btn" onclick="nextHeadline()" aria-label="Next News">&#10095;</button>
 
@@ -46,18 +48,20 @@
             <div class="hero-content">
                 <div class="breaking-badge-row">
                     <span class="pulse-indicator"></span>
-                    <span class="news-category" id="newsCategory">TRADE ALERT</span>
+                    <span class="news-category" id="newsCategory">NBA NEWS & SCORES</span>
                 </div>
-                <h1 class="hero-title" id="newsHeadline">Giannis Antetokounmpo & Klay Thompson Unite with Miami Heat</h1>
-                <p class="hero-desc" id="newsStory">In a seismic Eastern Conference shakeup, the Heat acquire Giannis Antetokounmpo from Milwaukee to pair with Bam Adebayo, followed by signing veteran champion Klay Thompson.</p>
+                <h1 class="hero-title" id="newsHeadline">The latest from around the NBA</h1>
+                <p class="hero-desc" id="newsStory">Headlines, game results and league stories will appear here as soon as the live feeds load.</p>
                 <div class="hero-pills" id="newsPills">
-                    <span class="pill pill-highlight" id="newsPill1">Trade: Giannis to Miami</span>
-                    <span class="pill" id="newsPill2">Signing: Klay Thompson</span>
-                    <span class="pill" id="newsPill3">Miami Heat</span>
+                    <span class="pill pill-highlight" id="newsPill1">ESPN</span>
+                    <span class="pill" id="newsPill2" hidden></span>
+                    <span class="pill" id="newsPill3">Latest story</span>
                 </div>
+                <a id="newsArticleLink" class="hero-source-link" href="https://www.espn.ph/nba/" target="_blank" rel="noopener noreferrer">Read on ESPN</a>
+                <p id="newsFeedStatus" class="news-feed-status" role="status" aria-live="polite">Loading current NBA headlines…</p>
             </div>
             <div class="hero-visual">
-                <img id="newsImage" src="https://cdn.nba.com/logos/nba/1610612748/primary/L/logo.svg" alt="Team News Graphic" onerror="this.src='https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg'">
+                <img id="newsImage" src="https://cdn.nba.com/logos/leagues/logo-nba.svg" alt="NBA logo">
             </div>
         </div>
 
@@ -95,13 +99,22 @@
         <div class="section-container">
             <div class="schedule-header-block">
                 <span class="nba-badge">GAME TRACKER</span>
-                <h2 class="section-heading">2026–27 SEASON SCHEDULE & SCORES</h2>
-                <p class="section-subheading">Browse preseason and regular-season games across the full 2026–27 schedule, with live scores as they update.</p>
+                <h2 class="section-heading">NBA SEASON SCHEDULE & SCORES</h2>
+                <p class="section-subheading">Choose a season from 2000 onward, select a phase and any date in that season, then open a completed game to view its box score.</p>
             </div>
 
             <!-- FULL-SEASON DATE SELECTOR -->
             <div class="schedule-date-filter-wrap">
                 <div class="schedule-date-tabs" id="scheduleDateTabs">
+                    <label class="schedule-date-picker-label" for="scheduleSeasonPicker">Season</label>
+                    <select id="scheduleSeasonPicker" aria-label="Choose an NBA schedule season"></select>
+                    <label class="schedule-date-picker-label" for="schedulePhasePicker">Phase</label>
+                    <select id="schedulePhasePicker" aria-label="Filter games by season phase">
+                        <option value="all">All games</option>
+                        <option value="preseason">Preseason</option>
+                        <option value="regular">Regular season</option>
+                        <option value="playoffs">Playoffs</option>
+                    </select>
                     <button type="button" class="schedule-date-btn" id="schedulePreviousDay" aria-label="Previous day">← Previous</button>
                     <label class="schedule-date-picker-label" for="scheduleDatePicker">Game date</label>
                     <input type="date" id="scheduleDatePicker" aria-label="Choose a date from the season schedule">
@@ -116,7 +129,111 @@
         </div>
     </section>
 
-    <!-- CATALOG / TEAMS DIRECTORY SECTION -->S
+    <section id="gamePicksSection" class="game-picks-section">
+        <div class="section-container">
+            <div class="game-picks-header-block">
+                <span class="nba-badge">VIRTUAL TOKENS ONLY</span>
+                <h2 class="section-heading">GAME PICKS</h2>
+                <p class="section-subheading">Build a parlay by picking a winner in each game, then stake your daily claimable tokens. A one-game slip is a straight pick. Tokens have no cash value and cannot be deposited, transferred, or redeemed.</p>
+            </div>
+
+            <div class="game-picks-wallet">
+                <div class="game-picks-wallet-balance">
+                    <span>Token balance</span>
+                    <strong id="gamePicksBalance">0</strong>
+                </div>
+                <button type="button" class="game-picks-claim-button" id="claimDailyGameTokens">Claim 1,000 daily tokens</button>
+            </div>
+            <p id="gamePicksWalletStatus" class="game-picks-status" role="status" aria-live="polite"></p>
+
+            <div class="game-picks-odds-toolbar">
+                <p id="gamePicksOddsStatus" class="game-picks-status" role="status" aria-live="polite">Loading real NBA moneyline odds…</p>
+                <button type="button" class="game-picks-refresh-button" id="refreshGamePicksOdds">Refresh odds</button>
+            </div>
+
+            <section class="game-picks-slip" aria-labelledby="gamePicksSlipTitle">
+                <div class="game-picks-slip-header">
+                    <h3 id="gamePicksSlipTitle">Parlay slip</h3>
+                    <span id="gamePicksSlipCount">0 picks</span>
+                </div>
+                <div id="gamePicksSlipList" class="game-picks-slip-list"></div>
+                <div class="game-picks-slip-controls">
+                    <label for="gamePicksStake">Tokens to stake
+                        <input id="gamePicksStake" type="number" min="1" step="1" value="100" inputmode="numeric">
+                    </label>
+                    <div class="game-picks-parlay-summary">
+                        <span>Combined odds</span>
+                        <strong id="gamePicksCombinedOdds">—</strong>
+                        <span>Potential return</span>
+                        <strong id="gamePicksPotentialReturn">—</strong>
+                    </div>
+                    <div class="game-picks-slip-actions">
+                        <button type="button" class="game-picks-place-button" id="placeGamePicksBet" disabled>Place parlay</button>
+                        <button type="button" class="game-picks-clear-button" id="clearGamePicksSlip" disabled>Clear slip</button>
+                    </div>
+                </div>
+            </section>
+
+            <div id="gamePicksGamesGrid" class="game-picks-games-grid"></div>
+
+            <div class="game-picks-bets-panel">
+                <h3>My picks</h3>
+                <div id="gamePicksBetsList" class="game-picks-bets-list"></div>
+            </div>
+            <p class="game-picks-disclaimer">Odds are provided by The Odds API and may be delayed or unavailable. They are displayed for informational use only; Game Picks uses simulated tokens, not real-money bets.</p>
+        </div>
+    </section>
+
+    <section id="standingsSection" class="standings-section">
+        <div class="section-container">
+            <div class="standings-header-block">
+                <span class="nba-badge">NBA GAME CENTER</span>
+                <h2 class="section-heading">NBA STANDINGS</h2>
+                <p class="section-subheading">Choose a season and compare preseason or regular-season records across the East and West.</p>
+            </div>
+            <div class="standings-controls">
+                <label class="standings-season-picker-label" for="standingsSeasonPicker">Season
+                    <select id="standingsSeasonPicker" aria-label="Choose an NBA standings season"></select>
+                </label>
+                <div class="standings-phase-tabs" role="tablist" aria-label="Standings season phase">
+                    <button type="button" class="standings-phase-tab active" id="standings-phase-preseason" role="tab" aria-selected="true" aria-controls="standings-panel" data-season-type="preseason">Preseason</button>
+                    <button type="button" class="standings-phase-tab" id="standings-phase-regular" role="tab" aria-selected="false" aria-controls="standings-panel" data-season-type="regular">Regular Season</button>
+                </div>
+                <div class="standings-conference-tabs" role="tablist" aria-label="Standings conference">
+                    <button type="button" class="standings-tab active" id="standings-tab-west" role="tab" aria-selected="true" aria-controls="standings-panel" data-conference="Western">Western Conference</button>
+                    <button type="button" class="standings-tab" id="standings-tab-east" role="tab" aria-selected="false" aria-controls="standings-panel" data-conference="Eastern">Eastern Conference</button>
+                </div>
+                <p id="standingsUpdateStatus" class="standings-update-status" role="status" aria-live="polite">Loading current NBA standings…</p>
+            </div>
+            <div id="standings-panel" class="standings-table-wrap" role="tabpanel" aria-labelledby="standings-tab-west" tabindex="0">
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="standings-team-heading">TEAM</th>
+                            <th scope="col">W</th>
+                            <th scope="col">L</th>
+                            <th scope="col">PCT</th>
+                            <th scope="col">GB</th>
+                            <th scope="col">HOME</th>
+                            <th scope="col">AWAY</th>
+                            <th scope="col">DIV</th>
+                            <th scope="col">CONF</th>
+                            <th scope="col">PPG</th>
+                            <th scope="col">OPP PPG</th>
+                            <th scope="col">DIFF</th>
+                            <th scope="col">L10</th>
+                            <th scope="col">STRK</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standingsTableBody">
+                        <tr><td colspan="14" class="standings-empty">Loading current standings…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- CATALOG / TEAMS DIRECTORY SECTION -->
     <section id="teamsSection" class="catalog-section">
         <div class="catalog-container">
             
@@ -171,7 +288,8 @@
                     <p class="modal-description" id="modalDescription"></p>
                     <div class="modal-divider"></div>
 
-                    <h4 class="modal-section-title">2026–27 Team Starters</h4>
+                    <h4 class="modal-section-title">2026–27 Projected Starters</h4>
+                    <p class="roster-projection-note">These are roster-based projections, not confirmed game-day lineups.</p>
                     <div id="modalStartersGrid" class="player-cards-grid"></div>
 
                     <div class="modal-divider"></div>
@@ -266,7 +384,7 @@
     <dialog id="boxScoreDialog" class="box-score-dialog" aria-labelledby="boxScoreTitle">
         <div class="box-score-dialog__header">
             <div>
-                <span class="nba-badge">LIVE GAME CENTER</span>
+                <span class="nba-badge" id="boxScoreBadge">LIVE GAME CENTER</span>
                 <h2 id="boxScoreTitle">Game box score</h2>
                 <p id="boxScoreStatus" role="status" aria-live="polite">Loading box score…</p>
             </div>
