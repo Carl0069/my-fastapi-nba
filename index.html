@@ -117,10 +117,18 @@
 
     <section id="injuryReportSection" class="injury-report-section" aria-labelledby="injuryReportTitle">
         <div class="section-container">
-            <div class="injury-report-header-block">
-                <span class="nba-badge">NBA INJURY WATCH</span>
-                <h2 id="injuryReportTitle" class="section-heading">NBA INJURY REPORT</h2>
-                <p class="section-subheading">Live availability notes from ESPN. The report refreshes throughout the day as new updates come in.</p>
+            <div class="injury-report-header-row">
+                <div class="injury-report-header-block">
+                    <span class="nba-badge">NBA INJURY WATCH</span>
+                    <h2 id="injuryReportTitle" class="section-heading">NBA INJURY REPORT</h2>
+                    <p class="section-subheading">Live availability notes from ESPN. The report refreshes throughout the day as new updates come in.</p>
+                </div>
+                <label class="injury-report-filter" for="injuryTeamFilter">
+                    <span class="injury-report-filter__label">Team Injuries</span>
+                    <select id="injuryTeamFilter" aria-label="Select a team injury report">
+                        <option value="All teams">All teams</option>
+                    </select>
+                </label>
             </div>
             <p id="injuryReportStatus" class="injury-report-status" role="status" aria-live="polite">Loading live injury updates…</p>
             <div id="injuryReportGrid" class="injury-report-grid" aria-live="polite"></div>
@@ -545,6 +553,14 @@
                         <span class="h-label">TOV</span>
                         <span class="h-val" id="playerStatTov">0.0</span>
                     </div>
+                </div>
+
+                <div class="player-career-panel" id="playerCareerPanel" hidden>
+                    <div class="player-career-panel__header">
+                        <span>Rookie to now</span>
+                        <strong id="playerCareerLabel">Career timeline</strong>
+                    </div>
+                    <div id="playerCareerHistory" class="player-career-history"></div>
                 </div>
 
                 <button class="hero-roster-jump-btn" id="playerModalViewTeamBtn">

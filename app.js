@@ -744,7 +744,7 @@ const NBA_TEAM_INFO = {
     "Miami Heat": { code: "mia", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mia.png" },
     "Milwaukee Bucks": { code: "mil", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mil.png" },
     "Minnesota Timberwolves": { code: "min", logo: "https://a.espncdn.com/i/teamlogos/nba/500/min.png" },
-    "New Orleans Pelicans": { code: "nop", logo: "https://a.espncdn.com/i/teamlogos/nba/500/nop.png" },
+    "New Orleans Pelicans": { code: "no", logo: "https://a.espncdn.com/i/teamlogos/nba/500/no.png" },
     "New York Knicks": { code: "nyk", logo: "https://a.espncdn.com/i/teamlogos/nba/500/nyk.png" },
     "Oklahoma City Thunder": { code: "okc", logo: "https://a.espncdn.com/i/teamlogos/nba/500/okc.png" },
     "Orlando Magic": { code: "orl", logo: "https://a.espncdn.com/i/teamlogos/nba/500/orl.png" },
@@ -757,6 +757,22 @@ const NBA_TEAM_INFO = {
     "Utah Jazz": { code: "utah", logo: "https://a.espncdn.com/i/teamlogos/nba/500/utah.png" },
     "Washington Wizards": { code: "was", logo: "https://a.espncdn.com/i/teamlogos/nba/500/was.png" }
 };
+
+const NBA_TEAM_NAME_ALIASES = {
+    "LA Clippers": "Los Angeles Clippers",
+    "Los Angeles Clippers": "Los Angeles Clippers",
+    "New Orleans Pelicans": "New Orleans Pelicans",
+    "NO Pelicans": "New Orleans Pelicans",
+    "Pelicans": "New Orleans Pelicans"
+};
+
+function normalizeNbaTeamName(teamName) {
+    const raw = String(teamName || "").trim();
+    if (!raw) return "";
+    if (NBA_TEAM_NAME_ALIASES[raw]) return NBA_TEAM_NAME_ALIASES[raw];
+    return raw;
+}
+
 const ALL_NBA_TEAM_NAMES = Object.keys(NBA_TEAM_INFO);
 
 const INJURY_REPORT_CACHE = {
@@ -778,13 +794,15 @@ async function loadLiveInjuryReports({ background = false } = {}) {
         }
         for (const teamEntry of Array.isArray(payload.teams) ? payload.teams : []) {
             if (!teamEntry || typeof teamEntry.team !== "string") continue;
-            const teamName = teamEntry.team;
+            const teamName = normalizeNbaTeamName(teamEntry.team);
             const players = Array.isArray(teamEntry.players)
                 ? teamEntry.players.map(player => ({
                     player: String(player.player || player.name || "Player").trim(),
                     status: String(player.status || "Unknown").trim() || "Unknown",
-                    note: String(player.note || player.details || player.shortComment || "No update available").trim() || "No update available",
+                    note: String(player.note || player.details || player.shortComment || player.longComment || "No update available").trim() || "No update available",
                     details: player.details || "",
+                    position: String(player.position || player.pos || "-").trim() || "-",
+                    returnDate: String(player.returnDate || player.estReturnDate || player.date || "-").trim() || "-",
                     updatedAt: player.updatedAt || player.date || ""
                 })).filter(player => player.player)
                 : [];
@@ -801,6 +819,8 @@ async function loadLiveInjuryReports({ background = false } = {}) {
             statusElement.textContent = `Updated ${updatedAt} · live from ESPN`;
         }
         renderInjuryReportSection();
+        const filter = document.getElementById("injuryTeamFilter");
+        if (filter && !filter.value) filter.value = "All teams";
         return byTeam;
     } catch (error) {
         console.warn("Live NBA injury reports are unavailable.", error);
@@ -812,57 +832,106 @@ async function loadLiveInjuryReports({ background = false } = {}) {
     }
 }
 
+function formatInjuryStatusClass(status) {
+    const cleaned = String(status || "unknown").trim().toLowerCase();
+    if (!cleaned) return "status-unknown";
+    const normalized = cleaned.replace(/[^a-z]+/g, "-");
+    return `status-${normalized}`;
+}
+
+function bindInjuryReportFilter() {
+    const filter = document.getElementById("injuryTeamFilter");
+    if (!filter || filter.dataset.bound === "true") return;
+    filter.dataset.bound = "true";
+    filter.addEventListener("change", () => {
+        renderInjuryReportSection();
+    });
+}
+
 function renderInjuryReportSection() {
     const grid = document.getElementById("injuryReportGrid");
+    const filter = document.getElementById("injuryTeamFilter");
     if (!grid) return;
 
     const teams = ALL_NBA_TEAM_NAMES.map(team => {
         const players = Array.isArray(INJURY_REPORT_CACHE.byTeam?.[team]) ? INJURY_REPORT_CACHE.byTeam[team] : [];
         return {
             team,
-            players: players.slice(0, 4),
+            players,
             logo: NBA_TEAM_INFO[team]?.logo || "https://cdn.nba.com/logos/leagues/logo-nba.svg"
         };
-    });
+    }).filter(team => team.players.length);
 
-    if (!teams.length) {
+    if (filter) {
+        bindInjuryReportFilter();
+        const selected = filter.value || "All teams";
+        const available = new Set(teams.map(team => team.team));
+        const existingOptions = [...filter.querySelectorAll("option")].map(option => option.value);
+        const expected = ["All teams", ...ALL_NBA_TEAM_NAMES];
+        if (JSON.stringify(existingOptions) !== JSON.stringify(expected)) {
+            filter.innerHTML = expected.map(value => `<option value="${escapeMarkup(value)}">${escapeMarkup(value)}</option>`).join("");
+        }
+
+        if (selected === "All teams" || available.has(selected)) {
+            filter.value = selected;
+        } else {
+            filter.value = "All teams";
+        }
+    }
+
+    const selectedTeam = filter?.value || "All teams";
+    const visibleTeams = selectedTeam === "All teams" ? teams : teams.filter(team => team.team === selectedTeam);
+
+    if (!visibleTeams.length) {
         grid.innerHTML = '<div class="injury-report-empty">Loading live ESPN injury updates…</div>';
         return;
     }
 
-    grid.innerHTML = teams.map(team => {
-        const listItems = team.players.length
-            ? team.players.map(player => `
-                <li class="injury-report-card__item">
-                    <div class="injury-report-card__player">
-                        <span>${escapeMarkup(player.player)}</span>
-                        <strong class="injury-report-card__status status-${escapeMarkup(String(player.status || "unknown").trim().toLowerCase().replace(/\s+/g, "-"))}">${escapeMarkup(player.status || "Updated")}</strong>
-                    </div>
-                    <p class="injury-report-card__note">${escapeMarkup(player.note || "No update available.")}</p>
-                </li>
-            `).join("")
-            : `
-                <li class="injury-report-card__item is-empty">
-                    <span class="injury-report-card__empty-label">No active report</span>
-                    <p class="injury-report-card__note">No current injury updates for this team.</p>
-                </li>
-            `;
-
-        return `
-            <article class="injury-report-card">
-                <div class="injury-report-card__teamline">
-                    <img src="${team.logo}" alt="${escapeMarkup(team.team)} logo" class="injury-report-card__logo" loading="lazy" />
-                    <div class="injury-report-card__meta">
-                        <h3>${escapeMarkup(team.team)}</h3>
-                        <span class="injury-report-card__count">${team.players.length} active</span>
-                    </div>
+    grid.innerHTML = visibleTeams.map(team => `
+        <div class="injury-team-block">
+            <div class="injury-team-block__header">
+                <div class="injury-team-block__brand">
+                    <img src="${team.logo}" alt="${escapeMarkup(team.team)} logo" class="injury-team-block__logo" loading="lazy" />
+                    <h3>${escapeMarkup(team.team)}</h3>
                 </div>
-                <ul class="injury-report-card__list">
-                    ${listItems}
-                </ul>
-            </article>
-        `;
-    }).join("");
+            </div>
+            <div class="injury-team-table-wrap">
+                <table class="injury-team-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Pos</th>
+                            <th>Est. Return Date</th>
+                            <th>Status</th>
+                            <th>Comment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${team.players.map(player => {
+                            const status = String(player.status || "Unknown").trim() || "Unknown";
+                            const position = String(player.position || player.pos || "-").trim() || "-";
+                            const returnDate = String(player.returnDate || player.estReturnDate || player.date || "-").trim() || "-";
+                            const comment = String(player.note || player.longComment || player.details || "No update available.").trim() || "No update available.";
+                            const dateLabel = returnDate === "-" ? "-" : new Date(returnDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                            return `
+                                <tr>
+                                    <td class="injury-player-name">${escapeMarkup(player.player)}</td>
+                                    <td class="injury-player-position">${escapeMarkup(position)}</td>
+                                    <td class="injury-player-date">${escapeMarkup(dateLabel)}</td>
+                                    <td class="injury-player-status">
+                                        <span class="injury-status-badge ${formatInjuryStatusClass(status)}">
+                                            ${escapeMarkup(status)}
+                                        </span>
+                                    </td>
+                                    <td class="injury-player-comment">${escapeMarkup(comment)}</td>
+                                </tr>
+                            `;
+                        }).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `).join("");
 }
 
 function normalizeGameTeamNames(game) {
@@ -5053,6 +5122,84 @@ function closeModal() {
     if (detailModal) detailModal.classList.remove("open");
 }
 
+function renderPlayerCareerHistory(history) {
+    const panel = document.getElementById("playerCareerPanel");
+    const grid = document.getElementById("playerCareerHistory");
+    const labelEl = document.getElementById("playerCareerLabel");
+    if (!panel || !grid || !labelEl) return;
+
+    const items = Array.isArray(history) ? history : [];
+    if (!items.length) {
+        panel.hidden = true;
+        labelEl.textContent = "Career timeline";
+        grid.innerHTML = "";
+        return;
+    }
+
+    panel.hidden = false;
+    labelEl.textContent = `${items.length} seasons`;
+    grid.innerHTML = items
+        .slice()
+        .reverse()
+        .map(item => {
+            const season = escapeMarkup(item.season || "Season");
+            const team = escapeMarkup(item.team || "Team");
+            const pts = item.pts != null ? Number(item.pts).toFixed(1) : "—";
+            const reb = item.reb != null ? Number(item.reb).toFixed(1) : "—";
+            const ast = item.ast != null ? Number(item.ast).toFixed(1) : "—";
+            const fgPct = item.fg_pct != null ? `${Number(item.fg_pct).toFixed(1)}%` : "—";
+            const gp = item.gp != null ? Number(item.gp) : "—";
+            return `
+                <div class="player-career-season">
+                    <span>${season}</span>
+                    <strong>${escapeMarkup(pts)}</strong>
+                    <small>${team}<br>GP ${escapeMarkup(String(gp))} · RPG ${escapeMarkup(String(reb))} · APG ${escapeMarkup(String(ast))}<br>FG ${escapeMarkup(fgPct)}</small>
+                </div>
+            `;
+        })
+        .join("");
+}
+
+async function loadPlayerCareerHistory(player) {
+    const playerId = Number(player?.id ?? player?.player_id ?? player?.nba_id ?? "");
+    const panel = document.getElementById("playerCareerPanel");
+    const grid = document.getElementById("playerCareerHistory");
+    const labelEl = document.getElementById("playerCareerLabel");
+    if (!panel || !grid || !labelEl) return;
+    if (!Number.isFinite(playerId) || playerId <= 0) {
+        panel.hidden = true;
+        labelEl.textContent = "Career timeline";
+        grid.innerHTML = "";
+        return;
+    }
+
+    panel.hidden = false;
+    labelEl.textContent = "Loading…";
+    grid.innerHTML = `
+        <div class="player-career-season">
+            <span>Career</span>
+            <strong>…</strong>
+            <small>Loading rookie-to-now stats…</small>
+        </div>
+    `;
+
+    try {
+        const response = await fetch(
+            `${API_URL}/api/v1/player-career?player_id=${encodeURIComponent(playerId)}&player_name=${encodeURIComponent(player?.name || "")}`,
+            { headers: { "x-api-key": API_KEY } }
+        );
+        if (!response.ok) throw new Error(`Career stats request failed (${response.status}).`);
+        const payload = await response.json();
+        const history = Array.isArray(payload?.history) ? payload.history : [];
+        renderPlayerCareerHistory(history);
+    } catch (error) {
+        console.warn("Player career history is unavailable.", error);
+        panel.hidden = true;
+        labelEl.textContent = "Career timeline";
+        grid.innerHTML = "";
+    }
+}
+
 function handleBackdropClick(event) {
     if (event.target.id === "detailModal") {
         closeModal();
@@ -5104,6 +5251,8 @@ function openPlayerModal(player, team) {
     animateNumber(document.getElementById("playerStatFg3"), fg3);
     animateNumber(document.getElementById("playerStatFt"), ft);
     animateNumber(document.getElementById("playerStatTov"), tov);
+
+    loadPlayerCareerHistory(player);
 
     const viewTeamBtn = document.getElementById("playerModalViewTeamBtn");
     viewTeamBtn.onclick = function() {

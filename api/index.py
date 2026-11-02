@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import html as html_lib
 import json
 import logging
 import math
@@ -9521,6 +9522,117 @@ def create_community_challenge(challenge: CommunityChallengeCreate):
 def get_teams_legacy():
     response = build_teams_response()
     return {"teams": response["teams"], "stats": response["stats"], "roster": response["roster"]}
+
+@app.get("/api/v1/player-career", dependencies=[Depends(verify_api_key)])
+def get_player_career(player_id: int = Query(..., ge=1), player_name: str = Query(default="")):
+    """Fetch the ESPN player stats page and return a season-by-season career summary."""
+    try:
+        request = Request(
+            f"https://www.espn.com/nba/player/stats/_/id/{player_id}",
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; NBA Hub/1.0; +https://github.com/)",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+        )
+        with urlopen(request, timeout=20) as response:
+            page_html = response.read().decode("utf-8", errors="ignore")
+    except (HTTPError, URLError, TimeoutError, OSError) as exc:
+        logger.warning("ESPN player career fetch failed for id %s: %s", player_id, exc)
+        return {
+            "status": "unavailable",
+            "source": "ESPN",
+            "player_id": player_id,
+            "player_name": player_name,
+            "history": [],
+            "message": "Player career stats are unavailable right now.",
+        }
+
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", page_html, re.S | re.I)
+    season_labels = []
+    season_teams = {}
+    for row in rows:
+        cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
+        values = []
+        for cell in cells:
+            text = re.sub(r"<.*?>", " ", cell)
+            text = html_lib.unescape(text)
+            values.append(" ".join(text.split()))
+        values = [value for value in values if value]
+        if not values:
+            continue
+        if re.fullmatch(r"\d{4}-\d{2}", values[0]):
+            season_labels.append(values[0])
+            season_teams[values[0]] = values[1] if len(values) > 1 else ""
+
+    stat_rows = []
+    header_seen = False
+    for row in rows:
+        if "GP" in row and "PTS" in row and "Table__TH" in row:
+            header_seen = True
+            continue
+        if not header_seen:
+            continue
+        cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
+        values = []
+        for cell in cells:
+            text = re.sub(r"<.*?>", " ", cell)
+            text = html_lib.unescape(text)
+            values.append(" ".join(text.split()))
+        values = [value for value in values if value]
+        if not values:
+            continue
+        first = values[0]
+        if first.lower() == "career":
+            continue
+        if not re.fullmatch(r"\d{1,3}", first) and not re.fullmatch(r"\d{1,3}\.\d", first):
+            continue
+        stat_rows.append(values)
+
+    if not season_labels or not stat_rows:
+        return {
+            "status": "fresh",
+            "source": "ESPN",
+            "player_id": player_id,
+            "player_name": player_name,
+            "history": [],
+            "message": "No career history was found for this player.",
+        }
+
+    ordered_stat_rows = list(reversed(stat_rows[-len(season_labels):]))
+    history = []
+    for season_name, row in zip(season_labels, ordered_stat_rows):
+        if len(row) < 18:
+            continue
+        try:
+            history.append({
+                "season": season_name,
+                "team": season_teams.get(season_name, ""),
+                "gp": int(row[0]) if row[0].isdigit() else None,
+                "gs": int(row[1]) if len(row) > 1 and row[1].isdigit() else None,
+                "min": float(row[2]) if len(row) > 2 and row[2] not in ("", "-") else None,
+                "fg": row[3] if len(row) > 3 else None,
+                "fg_pct": float(row[4]) if len(row) > 4 and row[4] not in ("", "-") else None,
+                "fg3": row[5] if len(row) > 5 else None,
+                "fg3_pct": float(row[6]) if len(row) > 6 and row[6] not in ("", "-") else None,
+                "ft": row[7] if len(row) > 7 else None,
+                "ft_pct": float(row[8]) if len(row) > 8 and row[8] not in ("", "-") else None,
+                "reb": float(row[11]) if len(row) > 11 and row[11] not in ("", "-") else None,
+                "ast": float(row[12]) if len(row) > 12 and row[12] not in ("", "-") else None,
+                "blk": float(row[13]) if len(row) > 13 and row[13] not in ("", "-") else None,
+                "stl": float(row[14]) if len(row) > 14 and row[14] not in ("", "-") else None,
+                "tov": float(row[16]) if len(row) > 16 and row[16] not in ("", "-") else None,
+                "pts": float(row[17]) if len(row) > 17 and row[17] not in ("", "-") else None,
+            })
+        except ValueError:
+            continue
+
+    return {
+        "status": "fresh",
+        "source": "ESPN",
+        "player_id": player_id,
+        "player_name": player_name or None,
+        "history": history,
+    }
 
 @app.get("/api/v1/health")
 def health_check_v1():
