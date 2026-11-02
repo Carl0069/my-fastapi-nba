@@ -37,13 +37,263 @@ html {
 
 body {
     background:
-        radial-gradient(circle at top left, rgba(43, 111, 227, 0.18), transparent 22%),
-        radial-gradient(circle at top right, rgba(217, 183, 108, 0.14), transparent 18%),
+        radial-gradient(circle at top left, rgba(43, 111, 227, 0.22), transparent 22%),
+        radial-gradient(circle at top right, rgba(217, 183, 108, 0.18), transparent 18%),
         linear-gradient(180deg, #061b2e 0%, #0a1f34 24%, #0e2338 52%, #0c1827 100%);
     color: var(--text-soft);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    min-height: 100vh;
+}
+
+.section-heading {
+    color: #f8fbff;
+    font-size: clamp(2.2rem, 4vw, 4.2rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+    font-weight: 900;
+    text-shadow: 0 12px 35px rgba(3, 12, 22, 0.3);
+}
+
+.section-heading::after {
+    content: "";
+    display: block;
+    width: 100%;
+    max-width: 520px;
+    height: 1px;
+    margin-top: 14px;
+    background: linear-gradient(90deg, rgba(217, 183, 108, 0.7), rgba(43, 111, 227, 0.2), transparent);
+}
+
+.injury-report-section,
+.schedule-section,
+.transactions-section,
+.standings-section,
+.catalog-section,
+.game-picks-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.injury-report-section {
+    background:
+        radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.18), transparent 22%),
+        radial-gradient(circle at 85% 0%, rgba(239, 68, 68, 0.13), transparent 28%),
+        linear-gradient(180deg, #061a2b 0%, #0b1d2d 100%);
+    padding: 72px 24px 52px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.injury-report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.injury-report-card {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(8, 18, 30, 0.96), rgba(12, 22, 34, 0.96));
+    box-shadow: 0 16px 30px rgba(2, 8, 18, 0.22);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.injury-report-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(96, 165, 250, 0.35);
+    box-shadow: 0 22px 44px rgba(2, 8, 18, 0.28);
+}
+
+.injury-report-card__teamline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.injury-report-card__logo {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    flex: 0 0 42px;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.22));
+}
+
+.injury-report-card__meta {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+}
+
+.injury-report-card__header h3,
+.injury-report-card__meta h3 {
+    margin: 0;
+    color: #f8fbff;
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.injury-report-card__count {
+    color: #cfe3ff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.injury-report-card__list {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.injury-report-card__item {
+    display: grid;
+    gap: 5px;
+    padding: 10px 11px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.injury-report-card__item.is-empty {
+    background: rgba(148, 163, 184, 0.04);
+    border-style: dashed;
+}
+
+.injury-report-card__empty-label {
+    color: #dfe9f5;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.injury-report-card__player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #edf6ff;
+    font-size: 0.82rem;
+    font-weight: 750;
+}
+
+.injury-report-card__status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.injury-report-card__status.status-out {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+}
+
+.injury-report-card__status.status-questionable {
+    background: rgba(250, 204, 21, 0.12);
+    color: #fcd34d;
+}
+
+.injury-report-card__status.status-probable {
+    background: rgba(52, 211, 153, 0.12);
+    color: #86efac;
+}
+
+.injury-report-card__status.status-suspension {
+    background: rgba(168, 85, 247, 0.12);
+    color: #d8b4fe;
+}
+
+.injury-report-card__note {
+    margin: 0;
+    color: #b9cfe3;
+    font-size: 0.72rem;
+    line-height: 1.5;
+}
+
+.injury-report-empty {
+    display: grid;
+    place-items: center;
+    min-height: 160px;
+    border: 1px dashed rgba(169, 192, 216, 0.2);
+    border-radius: 16px;
+    color: #cfe3ff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.injury-report-status {
+    margin-top: 12px;
+    color: #b9d2ea;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.schedule-section {
+    background:
+        radial-gradient(circle at 20% 10%, rgba(43, 111, 227, 0.15), transparent 22%),
+        radial-gradient(circle at 80% 30%, rgba(201, 8, 42, 0.1), transparent 18%),
+        linear-gradient(180deg, #0b1d2f 0%, #102848 100%);
+    padding: 80px 24px 80px;
+    color: #fff;
+    border-top: 1px solid rgba(146, 176, 206, 0.16);
+}
+
+.schedule-date-filter-wrap {
+    background: rgba(8, 18, 30, 0.55);
+    border: 1px solid rgba(146, 176, 206, 0.18);
+    border-radius: 18px;
+    padding: 12px 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.schedule-date-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(146, 176, 206, 0.16);
+    color: #e7f0ff;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.schedule-date-btn.active,
+.schedule-date-btn:hover {
+    background: linear-gradient(135deg, rgba(43,111,227,0.26), rgba(201,8,42,0.18));
+    border-color: rgba(143, 181, 255, 0.3);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(43, 111, 227, 0.18);
+}
+
+.game-card {
+    background: linear-gradient(180deg, rgba(12, 26, 39, 0.96), rgba(8, 17, 29, 0.98));
+    border: 1px solid rgba(160, 184, 211, 0.18);
+    border-radius: 20px;
+    box-shadow: 0 18px 32px rgba(3, 12, 22, 0.18);
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(84, 146, 255, 0.5);
+    box-shadow: 0 22px 38px rgba(3, 12, 22, 0.24);
 }
 
 body, button, input, select, textarea {
@@ -5377,6 +5627,154 @@ button:disabled {
     border-color: rgba(169, 192, 216, 0.13);
 }
 
+.game-win-probability {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(169, 192, 216, 0.18);
+    border-radius: 14px;
+    background: rgba(12, 20, 30, 0.52);
+}
+
+.game-win-probability__header,
+.game-injury-report__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #dfeaf7;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.game-win-probability__header strong,
+.game-injury-report__header strong {
+    color: #f4f8ff;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+}
+
+.game-win-probability__meter {
+    display: flex;
+    overflow: hidden;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.18);
+}
+
+.game-win-probability__segment {
+    display: block;
+    height: 100%;
+}
+
+.game-win-probability__segment.is-away {
+    background: linear-gradient(90deg, rgba(100, 116, 139, 0.65), rgba(148, 163, 184, 0.8));
+}
+
+.game-win-probability__segment.is-home {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.7), rgba(37, 99, 235, 0.95));
+}
+
+.game-win-probability__labels {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #dfeaf7;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.game-injury-report {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(169, 192, 216, 0.18);
+    border-radius: 16px;
+    background: rgba(9, 17, 28, 0.62);
+}
+
+.game-injury-report__teams {
+    display: grid;
+    gap: 12px;
+}
+
+.game-injury-report__team {
+    display: grid;
+    gap: 8px;
+}
+
+.game-injury-report__team h4 {
+    color: #f7fbff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.game-injury-report__team ul {
+    list-style: none;
+    display: grid;
+    gap: 6px;
+}
+
+.game-injury-report__team li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 7px 9px;
+    border: 1px solid rgba(169, 192, 216, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    color: #ddeaf6;
+    font-size: 0.75rem;
+}
+
+.game-injury-report__team li span {
+    font-weight: 700;
+}
+
+.game-injury-report__team li strong {
+    justify-self: end;
+    border-radius: 999px;
+    padding: 4px 7px;
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.game-injury-report__team li small {
+    grid-column: 1 / -1;
+    color: #a8bfd3;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+.game-injury-report__team li .severity-out {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+}
+
+.game-injury-report__team li .severity-questionable {
+    background: rgba(250, 204, 21, 0.15);
+    color: #fcd34d;
+}
+
+.game-injury-report__team li .severity-probable {
+    background: rgba(52, 211, 153, 0.14);
+    color: #86efac;
+}
+
+.game-injury-report__empty {
+    color: #bfd0e1;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
 .game-live-status,
 .game-time-label {
     font-size: 0.78rem;
@@ -6938,9 +7336,12 @@ button:disabled {
 }
 
 html[data-site-theme="hardwood"] {
-    --nba-red: #b9c9d9;
-    --nba-red-deep: #94aabf;
-    --nba-royal: #dfeaf8;
+    --nba-blue: #0b1d2f;
+    --nba-navy-deep: #071827;
+    --nba-navy-card: #102d45;
+    --nba-red: #c9082a;
+    --nba-red-deep: #8f071d;
+    --nba-royal: #2b6fe3;
 }
 
 html[data-site-theme="franchise"] {
@@ -7013,9 +7414,9 @@ html[data-site-theme="hardwood"] .hero-dot.active,
 html[data-site-theme="hardwood"] .tx-tab.active,
 html[data-site-theme="hardwood"] .schedule-date-btn.active,
 html[data-site-theme="hardwood"] .game-picks-claim-button {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(191, 211, 228, 0.18);
-    color: #edf6ff;
+    background-color: var(--nba-red);
+    border-color: var(--nba-red);
+    color: #071421;
 }
 
 html[data-site-theme="franchise"] .nav-highlight,

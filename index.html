@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NBA Hub | NBA Scores, Standings & News</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20261104">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -113,6 +113,18 @@
             </div>
             <div id="playerSpotlightContent"></div>
         </section>
+    </section>
+
+    <section id="injuryReportSection" class="injury-report-section" aria-labelledby="injuryReportTitle">
+        <div class="section-container">
+            <div class="injury-report-header-block">
+                <span class="nba-badge">NBA INJURY WATCH</span>
+                <h2 id="injuryReportTitle" class="section-heading">NBA INJURY REPORT</h2>
+                <p class="section-subheading">Live availability notes from ESPN. The report refreshes throughout the day as new updates come in.</p>
+            </div>
+            <p id="injuryReportStatus" class="injury-report-status" role="status" aria-live="polite">Loading live injury updates…</p>
+            <div id="injuryReportGrid" class="injury-report-grid" aria-live="polite"></div>
+        </div>
     </section>
 
     <!-- OFFSEASON TRANSACTIONS SECTION -->
@@ -554,8 +566,8 @@
         <div id="boxScoreContent" class="box-score-dialog__content"></div>
     </dialog>
 
-    <script src="nba-player-ids.js"></script>
-    <script src="player-headshots.js"></script>
-    <script src="app.js"></script>
+    <script src="nba-player-ids.js?v=20261104"></script>
+    <script src="player-headshots.js?v=20261104"></script>
+    <script src="app.js?v=20261104"></script>
 </body>
 </html>

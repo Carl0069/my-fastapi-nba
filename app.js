@@ -672,6 +672,260 @@ function teamRecordForGame(teamName, game) {
     return { text: `${wins}-${losses}`, label };
 }
 
+function recordTextToWinPct(recordText) {
+    const match = String(recordText || "").match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (!match) return null;
+    const wins = Number(match[1]);
+    const losses = Number(match[2]);
+    if (!Number.isFinite(wins) || !Number.isFinite(losses) || wins < 0 || losses < 0) return null;
+    const total = wins + losses;
+    if (!total) return null;
+    return wins / total;
+}
+
+function buildGameWinProbability(game) {
+    if (!game || typeof game !== "object") return { away: 50, home: 50, label: "Even odds" };
+    const names = normalizeGameTeamNames(game);
+    const awayRecord = teamRecordForGame(names.away, game);
+    const homeRecord = teamRecordForGame(names.home, game);
+    const awayPct = recordTextToWinPct(awayRecord.text) ?? 0.5;
+    const homePct = recordTextToWinPct(homeRecord.text) ?? 0.5;
+    const homeCourtAdjustment = 0.04;
+    const ratingGap = (homePct - awayPct) + homeCourtAdjustment;
+    const homeChance = Math.min(Math.max(0.5 + ratingGap * 0.55, 0.12), 0.88);
+    const awayChance = 1 - homeChance;
+    const awayWinPct = Math.round(awayChance * 100);
+    const homeWinPct = Math.round(homeChance * 100);
+    const favorite = homeWinPct >= awayWinPct ? game.home : game.away;
+    return {
+        away: awayWinPct,
+        home: homeWinPct,
+        label: `${favorite} favored`
+    };
+}
+
+function renderGameWinProbability(game) {
+    const normalized = normalizeGameTeamNames(game);
+    const probability = buildGameWinProbability(game);
+    return `
+        <div class="game-win-probability" aria-label="Win probability for ${escapeMarkup(normalized.away)} vs ${escapeMarkup(normalized.home)}">
+            <div class="game-win-probability__header">
+                <span>Win probability</span>
+                <strong>${escapeMarkup(probability.label)}</strong>
+            </div>
+            <div class="game-win-probability__meter" aria-hidden="true">
+                <span class="game-win-probability__segment is-away" style="flex:${probability.away};"></span>
+                <span class="game-win-probability__segment is-home" style="flex:${probability.home};"></span>
+            </div>
+            <div class="game-win-probability__labels">
+                <span>${escapeMarkup(normalized.away)} ${escapeMarkup(probability.away)}%</span>
+                <span>${escapeMarkup(normalized.home)} ${escapeMarkup(probability.home)}%</span>
+            </div>
+        </div>
+    `;
+}
+
+const NBA_TEAM_INFO = {
+    "Atlanta Hawks": { code: "atl", logo: "https://a.espncdn.com/i/teamlogos/nba/500/atl.png" },
+    "Boston Celtics": { code: "bos", logo: "https://a.espncdn.com/i/teamlogos/nba/500/bos.png" },
+    "Brooklyn Nets": { code: "bkn", logo: "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png" },
+    "Charlotte Hornets": { code: "cha", logo: "https://a.espncdn.com/i/teamlogos/nba/500/cha.png" },
+    "Chicago Bulls": { code: "chi", logo: "https://a.espncdn.com/i/teamlogos/nba/500/chi.png" },
+    "Cleveland Cavaliers": { code: "cle", logo: "https://a.espncdn.com/i/teamlogos/nba/500/cle.png" },
+    "Dallas Mavericks": { code: "dal", logo: "https://a.espncdn.com/i/teamlogos/nba/500/dal.png" },
+    "Denver Nuggets": { code: "den", logo: "https://a.espncdn.com/i/teamlogos/nba/500/den.png" },
+    "Detroit Pistons": { code: "det", logo: "https://a.espncdn.com/i/teamlogos/nba/500/det.png" },
+    "Golden State Warriors": { code: "gsw", logo: "https://a.espncdn.com/i/teamlogos/nba/500/gsw.png" },
+    "Houston Rockets": { code: "hou", logo: "https://a.espncdn.com/i/teamlogos/nba/500/hou.png" },
+    "Indiana Pacers": { code: "ind", logo: "https://a.espncdn.com/i/teamlogos/nba/500/ind.png" },
+    "Los Angeles Clippers": { code: "lac", logo: "https://a.espncdn.com/i/teamlogos/nba/500/lac.png" },
+    "Los Angeles Lakers": { code: "lal", logo: "https://a.espncdn.com/i/teamlogos/nba/500/lal.png" },
+    "Memphis Grizzlies": { code: "mem", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mem.png" },
+    "Miami Heat": { code: "mia", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mia.png" },
+    "Milwaukee Bucks": { code: "mil", logo: "https://a.espncdn.com/i/teamlogos/nba/500/mil.png" },
+    "Minnesota Timberwolves": { code: "min", logo: "https://a.espncdn.com/i/teamlogos/nba/500/min.png" },
+    "New Orleans Pelicans": { code: "nop", logo: "https://a.espncdn.com/i/teamlogos/nba/500/nop.png" },
+    "New York Knicks": { code: "nyk", logo: "https://a.espncdn.com/i/teamlogos/nba/500/nyk.png" },
+    "Oklahoma City Thunder": { code: "okc", logo: "https://a.espncdn.com/i/teamlogos/nba/500/okc.png" },
+    "Orlando Magic": { code: "orl", logo: "https://a.espncdn.com/i/teamlogos/nba/500/orl.png" },
+    "Philadelphia 76ers": { code: "phi", logo: "https://a.espncdn.com/i/teamlogos/nba/500/phi.png" },
+    "Phoenix Suns": { code: "phx", logo: "https://a.espncdn.com/i/teamlogos/nba/500/phx.png" },
+    "Portland Trail Blazers": { code: "por", logo: "https://a.espncdn.com/i/teamlogos/nba/500/por.png" },
+    "Sacramento Kings": { code: "sac", logo: "https://a.espncdn.com/i/teamlogos/nba/500/sac.png" },
+    "San Antonio Spurs": { code: "sa", logo: "https://a.espncdn.com/i/teamlogos/nba/500/sa.png" },
+    "Toronto Raptors": { code: "tor", logo: "https://a.espncdn.com/i/teamlogos/nba/500/tor.png" },
+    "Utah Jazz": { code: "utah", logo: "https://a.espncdn.com/i/teamlogos/nba/500/utah.png" },
+    "Washington Wizards": { code: "was", logo: "https://a.espncdn.com/i/teamlogos/nba/500/was.png" }
+};
+const ALL_NBA_TEAM_NAMES = Object.keys(NBA_TEAM_INFO);
+
+const INJURY_REPORT_CACHE = {
+    byTeam: {},
+    lastUpdated: 0
+};
+
+async function loadLiveInjuryReports({ background = false } = {}) {
+    const statusElement = document.getElementById("injuryReportStatus");
+    try {
+        const response = await fetch(`${API_URL}/api/v1/injuries`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`Injury report request failed (${response.status}).`);
+        const payload = await response.json();
+        const byTeam = {};
+        for (const teamName of ALL_NBA_TEAM_NAMES) {
+            byTeam[teamName] = [];
+        }
+        for (const teamEntry of Array.isArray(payload.teams) ? payload.teams : []) {
+            if (!teamEntry || typeof teamEntry.team !== "string") continue;
+            const teamName = teamEntry.team;
+            const players = Array.isArray(teamEntry.players)
+                ? teamEntry.players.map(player => ({
+                    player: String(player.player || player.name || "Player").trim(),
+                    status: String(player.status || "Unknown").trim() || "Unknown",
+                    note: String(player.note || player.details || player.shortComment || "No update available").trim() || "No update available",
+                    details: player.details || "",
+                    updatedAt: player.updatedAt || player.date || ""
+                })).filter(player => player.player)
+                : [];
+            byTeam[teamName] = players;
+        }
+        INJURY_REPORT_CACHE.byTeam = byTeam;
+        INJURY_REPORT_CACHE.lastUpdated = Date.now();
+        if (statusElement) {
+            const updatedAt = payload.last_updated ? new Date(payload.last_updated).toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+                timeZone: "Asia/Manila"
+            }) : "just now";
+            statusElement.textContent = `Updated ${updatedAt} · live from ESPN`;
+        }
+        renderInjuryReportSection();
+        return byTeam;
+    } catch (error) {
+        console.warn("Live NBA injury reports are unavailable.", error);
+        if (statusElement) {
+            statusElement.textContent = "Injury report is temporarily unavailable. Checking ESPN again shortly.";
+        }
+        renderInjuryReportSection();
+        return INJURY_REPORT_CACHE.byTeam;
+    }
+}
+
+function renderInjuryReportSection() {
+    const grid = document.getElementById("injuryReportGrid");
+    if (!grid) return;
+
+    const teams = ALL_NBA_TEAM_NAMES.map(team => {
+        const players = Array.isArray(INJURY_REPORT_CACHE.byTeam?.[team]) ? INJURY_REPORT_CACHE.byTeam[team] : [];
+        return {
+            team,
+            players: players.slice(0, 4),
+            logo: NBA_TEAM_INFO[team]?.logo || "https://cdn.nba.com/logos/leagues/logo-nba.svg"
+        };
+    });
+
+    if (!teams.length) {
+        grid.innerHTML = '<div class="injury-report-empty">Loading live ESPN injury updates…</div>';
+        return;
+    }
+
+    grid.innerHTML = teams.map(team => {
+        const listItems = team.players.length
+            ? team.players.map(player => `
+                <li class="injury-report-card__item">
+                    <div class="injury-report-card__player">
+                        <span>${escapeMarkup(player.player)}</span>
+                        <strong class="injury-report-card__status status-${escapeMarkup(String(player.status || "unknown").trim().toLowerCase().replace(/\s+/g, "-"))}">${escapeMarkup(player.status || "Updated")}</strong>
+                    </div>
+                    <p class="injury-report-card__note">${escapeMarkup(player.note || "No update available.")}</p>
+                </li>
+            `).join("")
+            : `
+                <li class="injury-report-card__item is-empty">
+                    <span class="injury-report-card__empty-label">No active report</span>
+                    <p class="injury-report-card__note">No current injury updates for this team.</p>
+                </li>
+            `;
+
+        return `
+            <article class="injury-report-card">
+                <div class="injury-report-card__teamline">
+                    <img src="${team.logo}" alt="${escapeMarkup(team.team)} logo" class="injury-report-card__logo" loading="lazy" />
+                    <div class="injury-report-card__meta">
+                        <h3>${escapeMarkup(team.team)}</h3>
+                        <span class="injury-report-card__count">${team.players.length} active</span>
+                    </div>
+                </div>
+                <ul class="injury-report-card__list">
+                    ${listItems}
+                </ul>
+            </article>
+        `;
+    }).join("");
+}
+
+function normalizeGameTeamNames(game) {
+    const awayName = typeof game?.away === "string"
+        ? game.away
+        : game?.away?.name || game?.awayTeam?.teamTricode || "Away";
+    const homeName = typeof game?.home === "string"
+        ? game.home
+        : game?.home?.name || game?.homeTeam?.teamTricode || "Home";
+    return { away: awayName, home: homeName };
+}
+
+function getGameInjuryReport(game) {
+    if (!game || typeof game !== "object") return [];
+    const teamNames = normalizeGameTeamNames(game);
+    const awayTeam = INJURY_REPORT_CACHE.byTeam[teamNames.away] || [];
+    const homeTeam = INJURY_REPORT_CACHE.byTeam[teamNames.home] || [];
+    return [
+        { team: teamNames.away, players: awayTeam },
+        { team: teamNames.home, players: homeTeam }
+    ].filter(teamEntry => Array.isArray(teamEntry.players) && teamEntry.players.length);
+}
+
+function renderGameInjuryReport(game) {
+    const report = getGameInjuryReport(game);
+    if (!report.length) {
+        return `
+            <section class="game-injury-report">
+                <div class="game-injury-report__header">
+                    <span>Injury report</span>
+                    <strong>Not available</strong>
+                </div>
+                <p class="game-injury-report__empty">No injury notes are available for this matchup.</p>
+            </section>
+        `;
+    }
+    const injuryCount = report.reduce((count, teamEntry) => count + teamEntry.players.length, 0);
+    return `
+        <section class="game-injury-report">
+            <div class="game-injury-report__header">
+                <span>Injury report</span>
+                <strong>${escapeMarkup(injuryCount)} active</strong>
+            </div>
+            <div class="game-injury-report__teams">
+                ${report.map(teamEntry => `
+                    <div class="game-injury-report__team">
+                        <h4>${escapeMarkup(teamEntry.team)}</h4>
+                        <ul>
+                            ${teamEntry.players.map(player => `
+                                <li>
+                                    <span>${escapeMarkup(player.player)}</span>
+                                    <strong class="severity-${String(player.status).toLowerCase().replace(/[^a-z]+/g, "-") || "status"}">${escapeMarkup(player.status)}</strong>
+                                    <small>${escapeMarkup(player.note)}</small>
+                                </li>
+                            `).join("")}
+                        </ul>
+                    </div>
+                `).join("")}
+            </div>
+        </section>
+    `;
+}
+
 function playoffSeriesGameNumber(game, season = selectedScheduleSeason) {
     if (
         schedulePhaseForGame(game) !== "playoffs"
@@ -2577,6 +2831,7 @@ function renderSchedule() {
                     </span>
                 </div>
             </div>
+            ${renderGameWinProbability(game)}
             <div class="game-card-footer">
                 <div class="game-live-status is-${liveState}">${escapeMarkup(statusText)}</div>
                 <div class="game-time-label">${escapeMarkup(game.time || "Time TBD")}</div>
@@ -3513,6 +3768,7 @@ function renderBoxScoreScoreboard(payload) {
         </div>
     ` : "";
 
+    const matchup = activeBoxScoreGame || payload;
     return `
         <section class="box-score-scoreboard${isLive ? " is-live" : ""}" aria-label="Game score summary">
             <div class="box-score-scoreboard__topline">
@@ -3539,7 +3795,9 @@ function renderBoxScoreScoreboard(payload) {
                 </div>
             </div>
             ${payload.series_game ? `<p class="box-score-scoreboard__series">Game ${escapeMarkup(payload.series_game)}</p>` : ""}
+            ${renderGameWinProbability(matchup)}
             ${periodTable}
+            ${renderGameInjuryReport(matchup)}
         </section>
     `;
 }
@@ -4282,20 +4540,51 @@ async function loadHeadlines({ background = false } = {}) {
     isRefreshingNews = true;
     const statusElement = document.getElementById("newsFeedStatus");
     try {
-        newsItems = DEFAULT_HEADLINE_STORIES.map((story, index) => ({
-            ...story,
-            id: `default-story-${index}`,
-            category: story.category || "NBA NEWS",
-            kind: story.kind || "news"
-        }));
+        const response = await fetch(`${API_URL}/api/v1/news`, {
+            headers: { "x-api-key": API_KEY }
+        });
+        if (!response.ok) throw new Error(`NBA news request failed (${response.status}).`);
+        const payload = await response.json();
+        if (!Array.isArray(payload.items) || !payload.items.length) {
+            throw new Error(payload.message || "The NBA news feed is empty.");
+        }
+
+        newsItems = payload.items;
         lastNewsRefreshAt = Date.now();
         refreshHeadlineSlides();
-        statusElement.textContent = "NBA headlines · rotating daily stories";
-        statusElement.classList.remove("is-warning");
+
+        const refreshedAt = payload.last_updated
+            ? new Date(payload.last_updated).toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+                timeZone: "Asia/Manila"
+            })
+            : "";
+
+        statusElement.textContent = payload.status === "stale"
+            ? "ESPN refresh is delayed · showing the last available NBA headlines"
+            : `NBA news from ESPN · updated ${refreshedAt} · refreshes automatically`;
+        statusElement.classList.toggle("is-warning", payload.status === "stale");
     } catch (error) {
-        console.error("NBA headlines could not be loaded:", error);
-        statusElement.textContent = "NBA headlines are temporarily unavailable.";
-        statusElement.classList.add("is-warning");
+        console.error("NBA headlines could not be refreshed:", error);
+        if (!background || !newsItems.length) {
+            const message = error instanceof Error ? error.message : String(error);
+            statusElement.textContent = message.includes("(404)")
+                ? "The live news API is not deployed yet. Publish the updated api/index.py to enable current headlines."
+                : newsItems.length
+                    ? "Could not refresh NBA news · showing the last available headlines"
+                    : "NBA headlines are temporarily unavailable. Live scores and standings remain available below.";
+            statusElement.classList.add("is-warning");
+        }
+        if (!newsItems.length) {
+            newsItems = DEFAULT_HEADLINE_STORIES.map((story, index) => ({
+                ...story,
+                id: `default-story-${index}`,
+                category: story.category || "NBA NEWS",
+                kind: story.kind || "news"
+            }));
+            refreshHeadlineSlides();
+        }
     } finally {
         isRefreshingNews = false;
     }
@@ -4843,6 +5132,7 @@ document.querySelector("#scheduleSection .section-heading").textContent =
 document.querySelector("#standingsSection .section-heading").textContent =
     `${selectedStandingsSeason.replace("-", "–")} NBA STANDINGS`;
 loadHeadlines();
+loadLiveInjuryReports({ background: true });
 filterTransactions();
 updateScheduleDateBounds(true);
 renderSchedule();
@@ -4952,6 +5242,7 @@ window.setInterval(() => loadLiveScores({ background: true }), 30 * 1000);
 window.setInterval(() => loadTransactions({ background: true }), 60 * 60 * 1000);
 window.setInterval(() => loadStandings({ background: true }), 5 * 60 * 1000);
 window.setInterval(() => loadHeadlines({ background: true }), 15 * 60 * 1000);
+window.setInterval(() => loadLiveInjuryReports({ background: true }), 15 * 60 * 1000);
 document.addEventListener("visibilitychange", () => {
     if (!document.hidden && Date.now() - lastTeamsRefreshAt >= 15 * 60 * 1000) loadTeams();
 });
@@ -4961,12 +5252,14 @@ document.addEventListener("visibilitychange", () => {
     if (Date.now() - lastStandingsRefreshAt >= 5 * 60 * 1000) loadStandings({ background: true });
     if (Date.now() - lastGamePicksOddsRefreshAt >= 5 * 60 * 1000) loadGamePicksOdds();
     if (Date.now() - lastNewsRefreshAt >= 15 * 60 * 1000) loadHeadlines({ background: true });
+    if (Date.now() - INJURY_REPORT_CACHE.lastUpdated >= 15 * 60 * 1000) loadLiveInjuryReports({ background: true });
     loadLiveScores({ background: true });
     if (activeBoxScoreGameId) loadBoxScore(activeBoxScoreGameId, { background: true });
 });
 window.addEventListener("focus", () => {
     if (Date.now() - lastStandingsRefreshAt >= 5 * 60 * 1000) loadStandings({ background: true });
     if (Date.now() - lastNewsRefreshAt >= 15 * 60 * 1000) loadHeadlines({ background: true });
+    if (Date.now() - INJURY_REPORT_CACHE.lastUpdated >= 15 * 60 * 1000) loadLiveInjuryReports({ background: true });
     loadLiveScores({ background: true });
     if (activeBoxScoreGameId) loadBoxScore(activeBoxScoreGameId, { background: true });
     if (Date.now() - lastTransactionsRefreshAt >= 60 * 60 * 1000) loadTransactions({ background: true });

@@ -9347,6 +9347,107 @@ def get_nba_news():
             }],
         }
 
+NBA_INJURY_TEAM_NAMES = [
+    "Atlanta Hawks",
+    "Boston Celtics",
+    "Brooklyn Nets",
+    "Charlotte Hornets",
+    "Chicago Bulls",
+    "Cleveland Cavaliers",
+    "Dallas Mavericks",
+    "Denver Nuggets",
+    "Detroit Pistons",
+    "Golden State Warriors",
+    "Houston Rockets",
+    "Indiana Pacers",
+    "Los Angeles Clippers",
+    "Los Angeles Lakers",
+    "Memphis Grizzlies",
+    "Miami Heat",
+    "Milwaukee Bucks",
+    "Minnesota Timberwolves",
+    "New Orleans Pelicans",
+    "New York Knicks",
+    "Oklahoma City Thunder",
+    "Orlando Magic",
+    "Philadelphia 76ers",
+    "Phoenix Suns",
+    "Portland Trail Blazers",
+    "Sacramento Kings",
+    "San Antonio Spurs",
+    "Toronto Raptors",
+    "Utah Jazz",
+    "Washington Wizards",
+]
+
+
+@app.get("/api/v1/injuries", dependencies=[Depends(verify_api_key)])
+def get_nba_injuries():
+    now_iso = datetime.now(timezone.utc).isoformat()
+    all_teams = {team_name: [] for team_name in NBA_INJURY_TEAM_NAMES}
+    try:
+        endpoint = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
+        request = Request(
+            endpoint,
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; NBA Hub/1.0; +https://github.com/)",
+                "Accept": "application/json",
+            },
+        )
+        with urlopen(request, timeout=15) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+
+        for team_entry in payload.get("injuries") or []:
+            if not isinstance(team_entry, dict):
+                continue
+            team_name = str(team_entry.get("displayName") or "").strip()
+            if not team_name:
+                continue
+            players = []
+            for item in team_entry.get("injuries") or []:
+                if not isinstance(item, dict):
+                    continue
+                athlete = item.get("athlete") or {}
+                name = str(
+                    athlete.get("displayName")
+                    or athlete.get("fullName")
+                    or athlete.get("shortName")
+                    or "Player"
+                ).strip()
+                if not name:
+                    continue
+                status = str(item.get("status") or "Unknown").strip() or "Unknown"
+                note = str(item.get("shortComment") or item.get("longComment") or status).strip() or status
+                players.append({
+                    "player": name,
+                    "status": status,
+                    "note": note,
+                    "date": item.get("date") or now_iso,
+                })
+            if team_name in all_teams:
+                all_teams[team_name] = players
+            else:
+                all_teams[team_name] = players
+
+        team_rows = [{"team": team_name, "players": all_teams[team_name]} for team_name in NBA_INJURY_TEAM_NAMES]
+        return {
+            "status": "fresh",
+            "source": "ESPN",
+            "last_updated": payload.get("timestamp") or now_iso,
+            "message": "Live NBA injury notes are provided by ESPN.",
+            "teams": team_rows,
+        }
+    except Exception as exc:  # pragma: no cover - live injury fallback when ESPN is unavailable
+        logger.warning("ESPN NBA injury feed failed; returning all teams without live injuries: %s", exc)
+
+    return {
+        "status": "stale",
+        "source": "ESPN",
+        "last_updated": now_iso,
+        "message": "The ESPN injury report is temporarily unavailable. Check back shortly for the latest availability updates.",
+        "teams": [{"team": team_name, "players": []} for team_name in NBA_INJURY_TEAM_NAMES],
+    }
+
 @app.get("/api/v1/odds", dependencies=[Depends(verify_api_key)])
 def get_nba_odds():
     return fetch_current_nba_odds()
