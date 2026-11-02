@@ -1,6 +1,8 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import logging
+import math
 import os
 import re
 import time
@@ -9,11 +11,18 @@ from pathlib import Path
 from threading import Lock
 from typing import List, Optional, Literal
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
 from fastapi import FastAPI, HTTPException, Header, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+
+try:
+    from supabase import create_client, Client
+except ImportError:  # pragma: no cover - optional dependency for community-challenge endpoints
+    create_client = None
+    Client = None
 
 
 
@@ -5676,7 +5685,7 @@ def verify_api_key(x_api_key: Optional[str] = Header(default=None)):
 
 def supabase_rest_request(path: str, method: str = "GET", payload: Optional[dict] = None):
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
-    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
     if not supabase_url or not service_key:
         raise HTTPException(
             status_code=503,
@@ -5709,6 +5718,162 @@ def supabase_rest_request(path: str, method: str = "GET", payload: Optional[dict
         logger.error("Supabase returned invalid JSON for community challenge request.")
         raise HTTPException(status_code=502, detail="Community challenge storage returned an invalid response.") from error
 
+
+def supabase_cache_available() -> bool:
+    return bool(
+        os.environ.get("SUPABASE_URL", "").strip()
+        and os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    )
+
+
+def _supabase_team_abbreviation(team_name: str) -> str:
+    abbreviation_map = {
+        "Atlanta Hawks": "ATL",
+        "Boston Celtics": "BOS",
+        "Brooklyn Nets": "BKN",
+        "Charlotte Hornets": "CHA",
+        "Chicago Bulls": "CHI",
+        "Cleveland Cavaliers": "CLE",
+        "Dallas Mavericks": "DAL",
+        "Denver Nuggets": "DEN",
+        "Detroit Pistons": "DET",
+        "Golden State Warriors": "GSW",
+        "Houston Rockets": "HOU",
+        "Indiana Pacers": "IND",
+        "Los Angeles Clippers": "LAC",
+        "Los Angeles Lakers": "LAL",
+        "Memphis Grizzlies": "MEM",
+        "Miami Heat": "MIA",
+        "Milwaukee Bucks": "MIL",
+        "Minnesota Timberwolves": "MIN",
+        "New Orleans Pelicans": "NOP",
+        "New York Knicks": "NYK",
+        "Oklahoma City Thunder": "OKC",
+        "Orlando Magic": "ORL",
+        "Philadelphia 76ers": "PHI",
+        "Phoenix Suns": "PHX",
+        "Portland Trail Blazers": "POR",
+        "Sacramento Kings": "SAC",
+        "San Antonio Spurs": "SAS",
+        "Toronto Raptors": "TOR",
+        "Utah Jazz": "UTA",
+        "Washington Wizards": "WAS",
+    }
+    return abbreviation_map.get(team_name, team_name[:3].upper())
+
+
+def sync_supabase_nba_catalog() -> None:
+    if not supabase_cache_available():
+        return
+
+    try:
+        team_rows = []
+        for team in teams:
+            team_rows.append({
+                "id": int(team["id"]),
+                "name": team["name"],
+                "abbreviation": _supabase_team_abbreviation(team["name"]),
+                "conference": team["conference"],
+                "division": team["division"],
+                "city": team["name"].split(" ", 1)[0] if " " in team["name"] else team["name"],
+                "is_active": True,
+                "metadata": {
+                    "featured_star": team.get("featured_star"),
+                    "logo": team.get("logo"),
+                    "tax_status": team.get("tax_status"),
+                    "last_season_record": team.get("last_season_record"),
+                    "championship_years": team.get("championship_years", []),
+                },
+            })
+        if team_rows:
+            supabase_rest_request("nba_teams?on_conflict=id", method="POST", payload=team_rows)
+
+        player_rows = []
+        for team in teams:
+            for player in team.get("starters_2026_27", []) + team.get("bench_2026_27", []):
+                player_rows.append({
+                    "id": f"{team['id']}:{normalize_player_name(player['name'])}",
+                    "team_id": int(team["id"]),
+                    "name": player["name"],
+                    "full_name": player["name"],
+                    "position": player.get("pos", ""),
+                    "jersey_number": "",
+                    "metadata": {
+                        "team_name": team["name"],
+                        "stats_season": player.get("stats_season"),
+                        "salary": player.get("salary"),
+                        "contract_type": player.get("contract_type"),
+                    },
+                })
+        if player_rows:
+            supabase_rest_request("nba_players?on_conflict=id", method="POST", payload=player_rows)
+    except Exception as exc:  # pragma: no cover - defensive sync for optional Supabase deployment
+        logger.warning("Supabase NBA catalog sync failed: %s", exc)
+
+
+def supabase_cache_read(resource_type: str, cache_key: str) -> Optional[dict]:
+    if not supabase_cache_available():
+        return None
+    try:
+        encoded_type = quote(resource_type, safe="")
+        encoded_key = quote(str(cache_key), safe="")
+        rows = supabase_rest_request(
+            f"api_cache?select=id,payload,expires_at&resource_type=eq.{encoded_type}&cache_key=eq.{encoded_key}"
+        )
+        if not isinstance(rows, list) or not rows:
+            return None
+        record = rows[0]
+        expires_at = record.get("expires_at")
+        if expires_at and isinstance(expires_at, str):
+            try:
+                expires_datetime = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            except ValueError:
+                expires_datetime = None
+            if expires_datetime is not None and expires_datetime <= datetime.now(timezone.utc):
+                return None
+        payload = record.get("payload")
+        return payload if isinstance(payload, dict) else {"value": payload}
+    except HTTPException:
+        return None
+    except Exception as exc:  # pragma: no cover - external service failure should be non-blocking
+        logger.warning("Supabase API cache read failed for %s/%s: %s", resource_type, cache_key, exc)
+        return None
+
+
+def supabase_cache_write(resource_type: str, cache_key: str, payload: dict, ttl_seconds: int = 1800) -> bool:
+    if not supabase_cache_available():
+        return False
+    try:
+        encoded_type = quote(resource_type, safe="")
+        encoded_key = quote(str(cache_key), safe="")
+        existing = supabase_rest_request(
+            f"api_cache?select=id&resource_type=eq.{encoded_type}&cache_key=eq.{encoded_key}"
+        )
+        expires_at = (datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)).isoformat().replace("+00:00", "Z")
+        record = {
+            "resource_type": resource_type,
+            "cache_key": cache_key,
+            "payload": payload,
+            "expires_at": expires_at,
+        }
+        if isinstance(existing, list) and existing:
+            record_id = existing[0].get("id")
+            if record_id:
+                supabase_rest_request(
+                    f"api_cache?id=eq.{record_id}",
+                    method="PATCH",
+                    payload=record,
+                )
+                return True
+        supabase_rest_request("api_cache", method="POST", payload=record)
+        return True
+    except HTTPException:
+        return False
+    except Exception as exc:  # pragma: no cover - external service failure should be non-blocking
+        logger.warning("Supabase API cache write failed for %s/%s: %s", resource_type, cache_key, exc)
+        return False
+
+
 NBA_STATS_CACHE_TTL_SECONDS = 900
 NBA_STATS_CACHE: dict = {}
 NBA_STATS_LOCK = Lock()
@@ -5729,9 +5894,14 @@ NBA_TRANSACTIONS_LOCK = Lock()
 NBA_STANDINGS_CACHE_TTL_SECONDS = 300
 NBA_STANDINGS_CACHE: dict = {}
 NBA_STANDINGS_LOCK = Lock()
+NBA_ODDS_CACHE_TTL_SECONDS = 300
+NBA_ODDS_CACHE: dict = {}
+NBA_ODDS_LOCK = Lock()
 NBA_BOX_SCORE_CACHE_TTL_SECONDS = 30
 NBA_BOX_SCORE_CACHE: dict = {}
 NBA_BOX_SCORE_LOCK = Lock()
+NBA_PLAY_BY_PLAY_CACHE: dict = {}
+NBA_PLAY_BY_PLAY_LOCK = Lock()
 NBA_TEAM_JERSEY_CACHE_TTL_SECONDS = 21600
 NBA_TEAM_JERSEY_CACHE: dict = {}
 NBA_TEAM_JERSEY_LOCK = Lock()
@@ -5742,6 +5912,25 @@ ESPN_TEAM_JERSEY_LOCK = Lock()
 def current_nba_season(now: Optional[datetime] = None) -> str:
     current = now or datetime.now(timezone.utc)
     season_start = current.year if current.month >= 7 else current.year - 1
+    return f"{season_start}-{str(season_start + 1)[-2:]}"
+
+
+def _validated_nba_season(season: Optional[str]) -> str:
+    selected = season or current_nba_season()
+    if not re.fullmatch(r"\d{4}-\d{2}", selected):
+        raise HTTPException(status_code=422, detail="Season must use the YYYY-YY format.")
+    start_year = int(selected[:4])
+    if start_year < 1999 or selected != f"{start_year}-{str(start_year + 1)[-2:]}":
+        raise HTTPException(status_code=422, detail="Season must be a valid NBA season from 1999 onward.")
+    if start_year > int(current_nba_season()[:4]):
+        raise HTTPException(status_code=422, detail="Future NBA seasons are not available.")
+    return selected
+
+
+def _nba_season_from_game_id(game_id: str) -> str:
+    if not re.fullmatch(r"\d{10}", game_id):
+        raise HTTPException(status_code=422, detail="Game ID must be a 10-digit NBA game ID.")
+    season_start = 2000 + int(game_id[3:5])
     return f"{season_start}-{str(season_start + 1)[-2:]}"
 
 
@@ -5807,12 +5996,19 @@ def _value_by_key(data: dict, *names: str):
 def _canonical_nba_tricode(value: object) -> str:
     tricode = str(value or "").strip().upper()
     aliases = {
+        "BRK": "BKN",
+        "NJ": "BKN",
+        "NJN": "BKN",
         "GS": "GSW",
         "NO": "NOP",
+        "NOH": "NOP",
+        "NOK": "NOP",
         "NY": "NYK",
         "PHO": "PHX",
         "SA": "SAS",
+        "SEA": "OKC",
         "UTAH": "UTA",
+        "VAN": "MEM",
         "WSH": "WAS",
     }
     return aliases.get(tricode, tricode)
@@ -6011,9 +6207,9 @@ def _normalize_nba_schedule(payload: dict, season: str) -> list:
     return normalized_games
 
 
-def _fetch_nba_schedule() -> dict:
+def _fetch_nba_schedule(season: Optional[str] = None) -> dict:
     now = time.monotonic()
-    season = current_nba_season()
+    season = _validated_nba_season(season)
     cached = NBA_SCHEDULE_CACHE.get(season)
     if cached and cached["expires_at"] > now:
         return cached["snapshot"]
@@ -6167,11 +6363,308 @@ def _fetch_nba_scoreboard() -> dict:
     return snapshot
 
 
-def fetch_current_nba_schedule() -> dict:
-    with NBA_SCHEDULE_LOCK:
-        schedule = _fetch_nba_schedule()
-    with NBA_SCOREBOARD_LOCK:
-        scoreboard = _fetch_nba_scoreboard()
+def _fetch_espn_archive_date_range(
+    season_type: int,
+    start_date: str,
+    end_date: str,
+) -> list[dict]:
+    date_range = f"{start_date}-{end_date}"
+    query = urlencode({
+        "dates": start_date if start_date == end_date else date_range,
+        "limit": "100",
+        "seasontype": str(season_type),
+    })
+    url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?{query}"
+    last_error = None
+    for attempt in range(2):
+        try:
+            return [_request_nba_json(url, 10)]
+        except HTTPError as error:
+            if error.code != 400 and not 500 <= error.code < 600:
+                raise
+            last_error = error
+            if error.code == 400:
+                break
+        except (URLError, TimeoutError, OSError) as error:
+            last_error = error
+        if attempt == 0:
+            logger.warning(
+                "ESPN archive request failed for season type %s range %s (%s); retrying.",
+                season_type,
+                date_range,
+                last_error,
+            )
+
+    if start_date == end_date:
+        if isinstance(last_error, HTTPError) and last_error.code == 400:
+            logger.warning(
+                "ESPN rejected season type %s archive date %s; treating it as an empty date.",
+                season_type,
+                start_date,
+            )
+            return [{"events": []}]
+        raise last_error
+
+    range_start = datetime.strptime(start_date, "%Y%m%d")
+    range_end = datetime.strptime(end_date, "%Y%m%d")
+    midpoint = range_start + (range_end - range_start) // 2
+    left_end = midpoint.strftime("%Y%m%d")
+    right_start = (midpoint + timedelta(days=1)).strftime("%Y%m%d")
+    logger.warning(
+        "ESPN archive request failed for season type %s range %s (%s); splitting range.",
+        season_type,
+        date_range,
+        last_error,
+    )
+    return (
+        _fetch_espn_archive_date_range(season_type, start_date, left_end)
+        + _fetch_espn_archive_date_range(season_type, right_start, end_date)
+    )
+
+
+def _fetch_espn_season_schedule(season: str) -> dict:
+    now = time.monotonic()
+    cached = NBA_SCHEDULE_CACHE.get(season)
+    if cached and cached["expires_at"] > now:
+        return cached["snapshot"]
+
+    season_start = int(season[:4])
+    season_end = season_start + 1
+
+    def month_range(year: int, month: int) -> tuple[str, str]:
+        following_month = (
+            datetime(year + 1, 1, 1)
+            if month == 12
+            else datetime(year, month + 1, 1)
+        )
+        month_end = (following_month - timedelta(days=1)).day
+        return f"{year}{month:02d}01", f"{year}{month:02d}{month_end:02d}"
+
+    def split_into_week_ranges(start_date: str, end_date: str) -> list[tuple[str, str]]:
+        range_start = datetime.strptime(start_date, "%Y%m%d")
+        range_end = datetime.strptime(end_date, "%Y%m%d")
+        date_ranges = []
+        while range_start <= range_end:
+            window_end = min(range_start + timedelta(days=6), range_end)
+            date_ranges.append((
+                range_start.strftime("%Y%m%d"),
+                window_end.strftime("%Y%m%d"),
+            ))
+            range_start = window_end + timedelta(days=1)
+        return date_ranges
+
+    regular_months = [(season_start, month) for month in range(10, 13)]
+    regular_months.extend((season_end, month) for month in range(1, 6))
+    preseason_months = [(season_start, month) for month in range(9, 13)]
+    playoff_months = [(season_end, month) for month in range(4, 8)]
+
+    # The 2019-20 season resumed in July 2020 and its playoffs ended in October.
+    if season_start == 2019:
+        regular_months.extend((season_end, month) for month in (7, 8))
+        playoff_months.extend((season_end, month) for month in range(8, 11))
+
+    ranges_by_type = {
+        1: [
+            window
+            for year, month in preseason_months
+            for window in split_into_week_ranges(*month_range(year, month))
+        ],
+        2: [
+            window
+            for year, month in regular_months
+            for window in split_into_week_ranges(*month_range(year, month))
+        ],
+        3: [
+            window
+            for year, month in playoff_months
+            for window in split_into_week_ranges(*month_range(year, month))
+        ],
+    }
+    event_records = {}
+
+    try:
+        archive_requests = []
+        for season_type, ranges in ranges_by_type.items():
+            for start_date, end_date in ranges:
+                archive_requests.append((season_type, start_date, end_date))
+
+        def add_archive_events(payload: dict, season_type: int) -> None:
+            events = payload.get("events")
+            if not isinstance(events, list):
+                raise ValueError("ESPN archive scoreboard response is missing events.")
+            for event in events:
+                if isinstance(event, dict) and event.get("id"):
+                    event_type = season_type
+                    season_data = event.get("season")
+                    if isinstance(season_data, dict):
+                        try:
+                            reported_type = int(season_data.get("type"))
+                        except (TypeError, ValueError):
+                            reported_type = season_type
+                        if reported_type in (1, 2, 3):
+                            event_type = reported_type
+                    event_records[str(event["id"])] = (event, event_type)
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {
+                executor.submit(
+                    _fetch_espn_archive_date_range,
+                    season_type,
+                    start_date,
+                    end_date,
+                ): season_type
+                for season_type, start_date, end_date in archive_requests
+            }
+            for future in as_completed(futures):
+                season_type = futures[future]
+                for payload in future.result():
+                    add_archive_events(payload, season_type)
+
+        normalized = []
+        teams_by_name = {
+            normalize_player_name(str(team.get("name") or "")): team
+            for team in teams
+            if team.get("name")
+        }
+        for event_id, (event, season_type) in event_records.items():
+            competitions = event.get("competitions")
+            if not isinstance(competitions, list) or not competitions or not isinstance(competitions[0], dict):
+                continue
+            competition = competitions[0]
+            competitors = competition.get("competitors")
+            if not isinstance(competitors, list):
+                continue
+            sides = {
+                str(competitor.get("homeAway") or "").casefold(): competitor
+                for competitor in competitors
+                if isinstance(competitor, dict)
+            }
+            home = sides.get("home", {})
+            away = sides.get("away", {})
+            home_data = home.get("team") if isinstance(home.get("team"), dict) else {}
+            away_data = away.get("team") if isinstance(away.get("team"), dict) else {}
+            home_tricode = _canonical_nba_tricode(home_data.get("abbreviation"))
+            away_tricode = _canonical_nba_tricode(away_data.get("abbreviation"))
+            if not home_tricode or not away_tricode:
+                continue
+            start = str(event.get("date") or competition.get("date") or "")
+            if not start:
+                continue
+            try:
+                utc_start = datetime.fromisoformat(start.replace("Z", "+00:00"))
+                if utc_start.tzinfo is None:
+                    utc_start = utc_start.replace(tzinfo=timezone.utc)
+                utc_start = utc_start.astimezone(timezone.utc)
+            except ValueError:
+                continue
+            competition_status = competition.get("status")
+            if not isinstance(competition_status, dict):
+                competition_status = {}
+            status = competition_status.get("type")
+            if not isinstance(status, dict):
+                status = {}
+            state = str(status.get("state") or "").casefold()
+            status_code = 3 if state == "post" else 2 if state == "in" else 1
+            stage = {1: "Preseason", 2: "Regular Season", 3: "Playoffs"}[season_type]
+            if season_type == 3:
+                notes = competition.get("notes")
+                note_text = " ".join(
+                    str(note.get(key) or "")
+                    for note in notes
+                    if isinstance(note, dict)
+                    for key in ("headline", "shortLinkText", "text")
+                ) if isinstance(notes, list) else ""
+                event_text = " ".join(
+                    str(event.get(key) or "")
+                    for key in ("name", "shortName")
+                )
+                if re.search(r"play[\s-]?in", f"{note_text} {event_text}", re.IGNORECASE):
+                    stage = "Play-In Tournament"
+            home_name = str(home_data.get("displayName") or home_data.get("name") or "NBA team")
+            away_name = str(away_data.get("displayName") or away_data.get("name") or "NBA team")
+            home_team = teams_by_name.get(normalize_player_name(home_name), {})
+            away_team = teams_by_name.get(normalize_player_name(away_name), {})
+            venue = competition.get("venue")
+            if not isinstance(venue, dict):
+                venue = {}
+            normalized.append({
+                "id": f"espn:{event_id}",
+                "date": utc_start.date().isoformat(),
+                "time": f"{utc_start.strftime('%I').lstrip('0')}:{utc_start.strftime('%M %p')} UTC",
+                "stage": stage,
+                "venue": str(venue.get("fullName") or "Venue TBD"),
+                "status": str(status.get("shortDetail") or status.get("description") or "Scheduled"),
+                "status_code": status_code,
+                "period": competition_status.get("period"),
+                "clock": competition_status.get("displayClock"),
+                "home": home_team.get("name") or home_name,
+                "home_tricode": home_tricode,
+                "home_logo": home_team.get("logo") or home_data.get("logo") or "",
+                "home_score": home.get("score"),
+                "away": away_team.get("name") or away_name,
+                "away_tricode": away_tricode,
+                "away_logo": away_team.get("logo") or away_data.get("logo") or "",
+                "away_score": away.get("score"),
+            })
+
+        regular_games = sum(game["stage"] == "Regular Season" for game in normalized)
+        if regular_games < 700:
+            raise ValueError(f"ESPN returned an incomplete regular-season archive ({regular_games} games).")
+        snapshot = {
+            "status": "fresh",
+            "source": "ESPN archived NBA schedule",
+            "season": season,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "message": "",
+            "regular_game_count": regular_games,
+            "games": sorted(normalized, key=lambda game: (game["date"], game["time"], game["id"])),
+        }
+        NBA_SCHEDULE_CACHE[season] = {
+            "expires_at": now + 86400,
+            "snapshot": snapshot,
+        }
+        return snapshot
+    except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+        logger.warning("ESPN archived schedule refresh failed for %s: %s", season, error)
+        snapshot = {
+            "status": "unavailable",
+            "source": "ESPN archived NBA schedule",
+            "season": season,
+            "last_updated": None,
+            "message": f"The {season} schedule could not be loaded from ESPN ({type(error).__name__}: {error}).",
+            "games": [],
+        }
+        NBA_SCHEDULE_CACHE[season] = {
+            "expires_at": now + 300,
+            "snapshot": snapshot,
+        }
+        return snapshot
+
+
+def fetch_current_nba_schedule(season: Optional[str] = None) -> dict:
+    selected_season = _validated_nba_season(season)
+    cache_key = f"schedule:{selected_season}"
+    cached_snapshot = supabase_cache_read("schedule", cache_key)
+    if cached_snapshot:
+        return cached_snapshot
+    if selected_season == current_nba_season():
+        with NBA_SCHEDULE_LOCK:
+            schedule = _fetch_nba_schedule(selected_season)
+    else:
+        with NBA_SCHEDULE_LOCK:
+            schedule = _fetch_espn_season_schedule(selected_season)
+    scoreboard = {"games": []}
+    if selected_season == current_nba_season():
+        with NBA_SCOREBOARD_LOCK:
+            scoreboard = _fetch_nba_scoreboard()
+    else:
+        scoreboard = {
+            "status": "archived",
+            "source": schedule["source"],
+            "last_updated": schedule["last_updated"],
+            "message": "Historical game scores are included in the archived season schedule.",
+            "games": [],
+        }
 
     live_games = {}
     for game in scoreboard["games"]:
@@ -6239,13 +6732,14 @@ def fetch_current_nba_schedule() -> dict:
             game["clock"] = _value_by_key(live, "gameClock")
         games.append(game)
 
-    return {
+    response = {
         "status": schedule["status"],
         "source": schedule["source"],
         "season": schedule["season"],
         "last_updated": schedule["last_updated"],
         "message": schedule["message"],
         "count": len(games),
+        "regular_game_count": schedule.get("regular_game_count"),
         "games": games,
         "scores": {
             "status": scoreboard["status"],
@@ -6254,6 +6748,8 @@ def fetch_current_nba_schedule() -> dict:
             "message": scoreboard.get("message", ""),
         },
     }
+    supabase_cache_write("schedule", cache_key, response, ttl_seconds=1800)
+    return response
 
 
 def fetch_current_nba_scores() -> dict:
@@ -6334,6 +6830,61 @@ def _standing_value(stats: dict[str, object], *keys: str) -> object:
     return None
 
 
+def _historical_standing_brand(team_name: str, season: str) -> dict[str, str | bool]:
+    start_year = int(season[:4])
+    historical_brands = {
+        "Toronto Raptors": (
+            1999,
+            2014,
+            "Toronto Raptors",
+            "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg",
+            False,
+        ),
+        "Brooklyn Nets": (
+            1999,
+            2011,
+            "New Jersey Nets",
+            "https://cdn.nba.com/logos/nba/1610612751/primary/L/logo.svg",
+            False,
+        ),
+        "Oklahoma City Thunder": (
+            1999,
+            2007,
+            "Seattle SuperSonics",
+            "https://upload.wikimedia.org/wikipedia/en/a/a4/Seattle_SuperSonics_logo.svg",
+            False,
+        ),
+        "Memphis Grizzlies": (
+            1999,
+            2000,
+            "Vancouver Grizzlies",
+            "https://upload.wikimedia.org/wikipedia/en/1/1e/Vancouver_Grizzlies_logo.svg",
+            False,
+        ),
+        "New Orleans Pelicans": (
+            2002,
+            2012,
+            "New Orleans Hornets",
+            "https://upload.wikimedia.org/wikipedia/en/2/2f/NOKC_Hornets_logo.gif",
+            False,
+        ),
+    }
+    brand = historical_brands.get(team_name)
+    if brand is None:
+        return {}
+    first_year, last_year, display_name, logo, wordmark = brand
+    if not first_year <= start_year <= last_year:
+        return {}
+    if team_name == "New Orleans Pelicans" and 2005 <= start_year <= 2006:
+        display_name = "New Orleans/Oklahoma City Hornets"
+    return {
+        "team": display_name,
+        "logo": logo,
+        "historical_logo": True,
+        "historical_logo_wordmark": wordmark,
+    }
+
+
 def _fetch_espn_standings_page(
     season: str, season_type: Literal["preseason", "regular"]
 ) -> dict:
@@ -6408,7 +6959,15 @@ def _normalize_espn_standings(
         normalize_player_name(str(team.get("name") or "")): team
         for team in teams
     }
-    team_aliases = {"losangelesclippers": "LA Clippers"}
+    team_aliases = {
+        "charlottebobcats": "Charlotte Hornets",
+        "losangelesclippers": "LA Clippers",
+        "newjerseynets": "Brooklyn Nets",
+        "neworleanshornets": "New Orleans Pelicans",
+        "nooklahomacityhornets": "New Orleans Pelicans",
+        "seattlesupersonics": "Oklahoma City Thunder",
+        "vancouvergrizzlies": "Memphis Grizzlies",
+    }
     entries = []
 
     def collect(node: object, conference_hint: str = "") -> None:
@@ -6484,15 +7043,34 @@ def _normalize_espn_standings(
             continue
         seen.add(team_key)
 
+        historical_brand = _historical_standing_brand(
+            configured_team["name"], season
+        )
         stats = _espn_standings_stats(entry)
         conference = configured_team.get("conference") or conference_hint
+        conference = conference_hint or conference
         normalized.append({
             "team_id": configured_team["id"],
-            "team": configured_team["name"],
-            "abbreviation": str(team_data.get("abbreviation") or ""),
+            "team": historical_brand.get("team", configured_team["name"]),
+            "conference_rank": None,
+            "abbreviation": _canonical_nba_tricode(
+                team_data.get("abbreviation")
+                or team_data.get("abbrev")
+                or team_data.get("shortName")
+            ),
             "conference": conference,
             "division": configured_team["division"],
-            "logo": configured_team["logo"],
+            "division_champion": (
+                str(stats.get("clinchery") or "").strip().casefold()
+                in {"y", "yes", "true"}
+                or str(stats.get("clincherz") or "").strip().casefold()
+                in {"z", "yes", "true"}
+            ),
+            "logo": historical_brand.get("logo", configured_team["logo"]),
+            "historical_logo": historical_brand.get("historical_logo", False),
+            "historical_logo_wordmark": historical_brand.get(
+                "historical_logo_wordmark", False
+            ),
             "wins": _standing_value(stats, "wins", "w"),
             "losses": _standing_value(stats, "losses", "l"),
             "win_pct": _standing_value(stats, "winpercent", "win_pct", "pct", "winningpercentage"),
@@ -6511,31 +7089,77 @@ def _normalize_espn_standings(
         })
     if not normalized:
         raise ValueError("ESPN standings response did not contain recognizable NBA teams.")
+
+    def numeric_standing(value: object, fallback: float = float("-inf")) -> float:
+        try:
+            return float(str(value).replace(",", "").strip())
+        except (TypeError, ValueError):
+            return fallback
+
+    def record_percentage(value: object) -> float:
+        match = re.fullmatch(r"\s*(\d+)\s*-\s*(\d+)\s*", str(value or ""))
+        if not match:
+            return float("-inf")
+        wins, losses = (int(part) for part in match.groups())
+        return wins / (wins + losses) if wins + losses else float("-inf")
+
+    for conference in ("Eastern", "Western"):
+        conference_teams = [
+            team for team in normalized if team["conference"] == conference
+        ]
+        # ESPN's table is grouped rather than conference-ranked; don't mistake
+        # its concatenated row index for a seed or standings position.
+        conference_teams.sort(
+            key=lambda team: (
+                numeric_standing(team["win_pct"]),
+                numeric_standing(team["wins"]),
+                record_percentage(team["conference_record"]),
+                numeric_standing(team["point_differential"]),
+            ),
+            reverse=True,
+        )
+        for rank, team in enumerate(conference_teams, start=1):
+            team["conference_rank"] = rank
+
+    conference_order = {"Eastern": 0, "Western": 1}
+    normalized.sort(
+        key=lambda team: (
+            conference_order.get(team["conference"], 2),
+            team["conference_rank"] or float("inf"),
+        )
+    )
     return normalized
 
 
 def fetch_current_nba_standings(
     season_type: Literal["preseason", "regular"] = "regular",
+    season: Optional[str] = None,
 ) -> dict:
+    selected_season = _validated_nba_season(season)
+    cache_key = f"standings:{selected_season}:{season_type}"
+    cached_snapshot = supabase_cache_read("standings", cache_key)
+    if cached_snapshot:
+        return cached_snapshot
     with NBA_STANDINGS_LOCK:
         now = time.monotonic()
-        cache_key = f"{current_nba_season()}:{season_type}"
+        cache_key = f"{selected_season}:{season_type}"
         cached = NBA_STANDINGS_CACHE.get(cache_key)
         if cached and cached["expires_at"] > now:
             return cached["snapshot"]
 
-        season = current_nba_season()
         try:
-            payload = _fetch_espn_standings_page(season, season_type)
-            standings = _normalize_espn_standings(payload, season, season_type)
-            if len(standings) != 30:
+            payload = _fetch_espn_standings_page(selected_season, season_type)
+            standings = _normalize_espn_standings(payload, selected_season, season_type)
+            expected_team_count = 29 if int(selected_season[:4]) < 2004 else 30
+            if len(standings) != expected_team_count:
                 raise ValueError(
-                    f"ESPN standings returned {len(standings)} of 30 NBA teams."
+                    f"ESPN standings returned {len(standings)} of "
+                    f"{expected_team_count} NBA teams."
                 )
             snapshot = {
                 "status": "fresh",
                 "source": "ESPN NBA standings",
-                "season": season,
+                "season": selected_season,
                 "season_type": season_type,
                 "last_updated": datetime.now(timezone.utc).isoformat(),
                 "message": "",
@@ -6545,6 +7169,7 @@ def fetch_current_nba_standings(
                 "expires_at": now + NBA_STANDINGS_CACHE_TTL_SECONDS,
                 "snapshot": snapshot,
             }
+            supabase_cache_write("standings", f"standings:{selected_season}:{season_type}", snapshot, ttl_seconds=900)
             return snapshot
         except (
             HTTPError,
@@ -6566,7 +7191,7 @@ def fetch_current_nba_standings(
                 snapshot = {
                     "status": "unavailable",
                     "source": "ESPN NBA standings",
-                    "season": season,
+                    "season": selected_season,
                     "season_type": season_type,
                     "last_updated": None,
                     "message": "Current NBA standings are temporarily unavailable.",
@@ -6576,6 +7201,7 @@ def fetch_current_nba_standings(
                 "expires_at": now + 60,
                 "snapshot": snapshot,
             }
+            supabase_cache_write("standings", f"standings:{selected_season}:{season_type}", snapshot, ttl_seconds=300)
             return snapshot
 
 
@@ -6629,6 +7255,7 @@ def _normalize_box_score_team(team_data: dict, nba_team_names: dict, nba_team_lo
         normalized_players.append({
             "id": _value_by_key(player, "personId", "playerId"),
             "name": str(name),
+            "headshot_url": str(_value_by_key(player, "headshot_url") or ""),
             "jersey_number": _jersey_number_string(
                 _value_by_key(player, "jerseyNum", "jerseyNumber", "jersey")
             ),
@@ -6958,9 +7585,18 @@ def _apply_team_jersey_numbers(
             player["jersey_number"] = jersey_number
 
 
-def _resolve_espn_event_id(game_id: str, timeout: float = 12) -> str:
+def _resolve_espn_event_id(
+    game_id: str, timeout: float = 12, season: Optional[str] = None
+) -> str:
+    if re.fullmatch(r"espn:\d+", game_id):
+        return game_id.partition(":")[2]
+    selected_season = _validated_nba_season(season or _nba_season_from_game_id(game_id))
     with NBA_SCHEDULE_LOCK:
-        schedule = _fetch_nba_schedule()
+        schedule = (
+            _fetch_espn_season_schedule(selected_season)
+            if selected_season != current_nba_season()
+            else _fetch_nba_schedule(selected_season)
+        )
     scheduled_game = next(
         (game for game in schedule["games"] if game["id"] == game_id),
         None,
@@ -7139,9 +7775,23 @@ def _normalize_espn_box_score(payload: dict, game_id: str) -> dict:
         def add_player(entry: dict, keys: list, values: object) -> None:
             athlete = entry.get("athlete") if isinstance(entry.get("athlete"), dict) else entry
             athlete_id = str(athlete.get("id") or athlete.get("displayName") or len(players_by_id))
+            headshot = athlete.get("headshot") or athlete.get("image")
+            if isinstance(headshot, dict):
+                headshot = headshot.get("href") or headshot.get("url")
+            headshot_url = (
+                headshot.strip()
+                if isinstance(headshot, str) and headshot.strip().startswith("https://")
+                else ""
+            )
+            if not headshot_url and re.fullmatch(r"\d+", str(athlete.get("id") or "")):
+                headshot_url = (
+                    "https://a.espncdn.com/i/headshots/nba/players/full/"
+                    f"{athlete['id']}.png"
+                )
             row = players_by_id.setdefault(athlete_id, {
                 "personId": athlete.get("id"),
                 "name": athlete.get("displayName") or athlete.get("fullName") or "Unknown player",
+                "headshot_url": headshot_url,
                 "jersey_number": _jersey_number_string(
                     athlete.get("jersey"),
                     athlete.get("jerseyNumber"),
@@ -7256,10 +7906,18 @@ def _normalize_espn_box_score(payload: dict, game_id: str) -> dict:
 
 
 def _fetch_espn_period_scores(
-    game_id: str, event_id: str, timeout: float = 12
+    game_id: str,
+    event_id: str,
+    timeout: float = 12,
+    season: Optional[str] = None,
 ) -> dict[str, list]:
+    selected_season = _validated_nba_season(season or _nba_season_from_game_id(game_id))
     with NBA_SCHEDULE_LOCK:
-        schedule = _fetch_nba_schedule()
+        schedule = (
+            _fetch_espn_season_schedule(selected_season)
+            if selected_season != current_nba_season()
+            else _fetch_nba_schedule(selected_season)
+        )
     scheduled_game = next(
         (game for game in schedule["games"] if game["id"] == game_id),
         None,
@@ -7309,9 +7967,18 @@ def _fetch_espn_period_scores(
     return period_scores
 
 
-def fetch_nba_box_score(game_id: str) -> dict:
-    if not re.fullmatch(r"\d{10}", game_id):
-        raise HTTPException(status_code=422, detail="Game ID must be a 10-digit NBA game ID.")
+def fetch_nba_box_score(game_id: str, season: Optional[str] = None) -> dict:
+    if re.fullmatch(r"\d{10}", game_id):
+        selected_season = _validated_nba_season(season or _nba_season_from_game_id(game_id))
+    elif re.fullmatch(r"espn:\d+", game_id) and season:
+        selected_season = _validated_nba_season(season)
+    else:
+        raise HTTPException(status_code=422, detail="Game ID must be a 10-digit NBA ID or an ESPN archive ID with a season.")
+
+    cache_key = f"boxscore:{selected_season}:{game_id}"
+    cached_snapshot = supabase_cache_read("boxscore", cache_key)
+    if cached_snapshot:
+        return cached_snapshot
 
     with NBA_BOX_SCORE_LOCK:
         now = time.monotonic()
@@ -7322,17 +7989,25 @@ def fetch_nba_box_score(game_id: str) -> dict:
         nba_error = None
         espn_event_id = ""
         try:
-            payload = _request_nba_json(
-                f"https://cdn.nba.com/static/json/liveData/boxscore/boxscore_{game_id}.json",
-                timeout=4,
-            )
-            game = payload.get("game") or payload.get("boxScore")
-            if not isinstance(game, dict):
-                raise ValueError("NBA box-score response is missing game data.")
+            if game_id.startswith("espn:"):
+                espn_event_id = _resolve_espn_event_id(game_id, timeout=3, season=selected_season)
+                payload = _request_nba_json(
+                    f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event={espn_event_id}",
+                    timeout=5,
+                )
+                game = _normalize_espn_box_score(payload, game_id)
+            else:
+                payload = _request_nba_json(
+                    f"https://cdn.nba.com/static/json/liveData/boxscore/boxscore_{game_id}.json",
+                    timeout=4,
+                )
+                game = payload.get("game") or payload.get("boxScore")
+                if not isinstance(game, dict):
+                    raise ValueError("NBA box-score response is missing game data.")
         except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
             nba_error = error
             try:
-                espn_event_id = _resolve_espn_event_id(game_id, timeout=3)
+                espn_event_id = _resolve_espn_event_id(game_id, timeout=3, season=selected_season)
                 payload = _request_nba_json(
                     f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event={espn_event_id}",
                     timeout=4,
@@ -7397,9 +8072,9 @@ def fetch_nba_box_score(game_id: str) -> dict:
             if teams_missing_period_scores:
                 try:
                     if not espn_event_id:
-                        espn_event_id = _resolve_espn_event_id(game_id, timeout=3)
+                        espn_event_id = _resolve_espn_event_id(game_id, timeout=3, season=selected_season)
                     scoreboard_periods = _fetch_espn_period_scores(
-                        game_id, espn_event_id, timeout=3
+                        game_id, espn_event_id, timeout=3, season=selected_season
                     )
                 except (
                     HTTPError,
@@ -7444,7 +8119,13 @@ def fetch_nba_box_score(game_id: str) -> dict:
             )
             snapshot = {
                 "status": "fresh",
-                "source": "NBA.com live box score" if nba_error is None else "ESPN box score fallback",
+                "source": (
+                    "ESPN archived box score"
+                    if game_id.startswith("espn:")
+                    else "NBA.com live box score"
+                    if nba_error is None
+                    else "ESPN box score fallback"
+                ),
                 "last_updated": _value_by_key(payload.get("meta", {}), "time")
                 or datetime.now(timezone.utc).isoformat(),
                 "game_id": game_id,
@@ -7459,6 +8140,7 @@ def fetch_nba_box_score(game_id: str) -> dict:
                 "expires_at": now + NBA_BOX_SCORE_CACHE_TTL_SECONDS,
                 "snapshot": snapshot,
             }
+            supabase_cache_write("boxscore", cache_key, snapshot, ttl_seconds=900)
             return snapshot
         except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
             logger.warning("NBA box-score refresh failed for game %s: %s", game_id, error)
@@ -7483,18 +8165,256 @@ def fetch_nba_box_score(game_id: str) -> dict:
                 "expires_at": now + 15,
                 "snapshot": snapshot,
             }
+            supabase_cache_write("boxscore", cache_key, snapshot, ttl_seconds=300)
             return snapshot
 
 
-def fetch_nba_box_score_jersey_numbers(game_id: str) -> dict:
-    snapshot = fetch_nba_box_score(game_id)
+def _period_label(period_number: int) -> str:
+    if period_number <= 4:
+        return f"Q{period_number}"
+    return f"OT{period_number - 4}"
+
+
+def _normalize_espn_play_by_play(payload: dict, game_id: str) -> dict:
+    plays = payload.get("plays")
+    if not isinstance(plays, list):
+        raise ValueError("ESPN play-by-play response is missing plays.")
+
+    normalized_plays = []
+    for index, play in enumerate(plays):
+        if not isinstance(play, dict):
+            continue
+        period = play.get("period")
+        if isinstance(period, dict):
+            period_number = period.get("number")
+            period_label = str(period.get("displayValue") or "")
+        else:
+            period_number = period
+            period_label = ""
+        try:
+            period_number = int(period_number)
+        except (TypeError, ValueError):
+            period_number = 0
+        clock = play.get("clock")
+        if isinstance(clock, dict):
+            clock = clock.get("displayValue")
+        play_type = play.get("type")
+        if isinstance(play_type, dict):
+            play_type = play_type.get("text") or play_type.get("abbreviation")
+        team = play.get("team")
+        if not isinstance(team, dict):
+            team = {}
+        participants = play.get("participants")
+        player_names = []
+        if isinstance(participants, list):
+            for participant in participants:
+                if not isinstance(participant, dict):
+                    continue
+                athlete = participant.get("athlete")
+                if isinstance(athlete, dict):
+                    player_name = athlete.get("displayName") or athlete.get("fullName")
+                else:
+                    player_name = participant.get("name")
+                if player_name:
+                    player_names.append(str(player_name))
+        text = str(play.get("text") or play.get("description") or "").strip()
+        if not text and player_names:
+            text = ", ".join(player_names)
+        if not text:
+            continue
+        normalized_plays.append({
+            "id": str(play.get("id") or play.get("sequenceNumber") or index),
+            "period": period_number,
+            "period_label": period_label or _period_label(period_number),
+            "clock": str(clock or ""),
+            "type": str(play_type or "Play"),
+            "text": text,
+            "team_tricode": _canonical_nba_tricode(
+                team.get("abbreviation") or team.get("shortDisplayName")
+            ),
+            "home_score": play.get("homeScore"),
+            "away_score": play.get("awayScore"),
+        })
+
+    header = payload.get("header")
+    competitions = header.get("competitions") if isinstance(header, dict) else None
+    competition = competitions[0] if isinstance(competitions, list) and competitions else {}
+    status = competition.get("status") if isinstance(competition, dict) else {}
+    status_type = status.get("type") if isinstance(status, dict) else {}
+    state = str(status_type.get("state") or "").casefold() if isinstance(status_type, dict) else ""
+    return {
+        "game_id": game_id,
+        "status": "fresh",
+        "source": "ESPN play-by-play",
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "status_code": {"pre": 1, "in": 2, "post": 3}.get(state),
+        "game_status": str(
+            status_type.get("shortDetail") or status_type.get("description") or ""
+        ) if isinstance(status_type, dict) else "",
+        "count": len(normalized_plays),
+        "plays": normalized_plays,
+    }
+
+
+def _normalize_nba_play_by_play(payload: dict, game_id: str) -> dict:
+    game = payload.get("game")
+    if not isinstance(game, dict):
+        game = payload
+    actions = game.get("actions")
+    if not isinstance(actions, list):
+        raise ValueError("NBA play-by-play response is missing actions.")
+    normalized_plays = []
+    for index, action in enumerate(actions):
+        if not isinstance(action, dict):
+            continue
+        try:
+            period_number = int(action.get("period") or 0)
+        except (TypeError, ValueError):
+            period_number = 0
+        raw_clock = str(action.get("clock") or "")
+        clock_match = re.fullmatch(r"PT(?:(\d+)M)?([\d.]+)S", raw_clock)
+        clock = (
+            f"{int(clock_match.group(1) or 0):02d}:{int(float(clock_match.group(2))):02d}"
+            if clock_match else raw_clock
+        )
+        text = str(action.get("description") or "").strip()
+        if not text:
+            text = " ".join(
+                str(action.get(field) or "").strip()
+                for field in ("playerNameI", "subType")
+                if action.get(field)
+            )
+        if not text:
+            continue
+        normalized_plays.append({
+            "id": str(action.get("actionNumber") or action.get("actionId") or index),
+            "period": period_number,
+            "period_label": _period_label(period_number),
+            "clock": clock,
+            "type": str(action.get("actionType") or "Play").replace("_", " ").title(),
+            "text": text,
+            "team_tricode": _canonical_nba_tricode(action.get("teamTricode")),
+            "home_score": action.get("scoreHome"),
+            "away_score": action.get("scoreAway"),
+        })
+    status_code = game.get("gameStatus")
+    try:
+        status_code = int(status_code) if status_code is not None else None
+    except (TypeError, ValueError):
+        status_code = None
+    return {
+        "game_id": game_id,
+        "status": "fresh",
+        "source": "NBA.com play-by-play",
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "status_code": status_code,
+        "game_status": str(game.get("gameStatusText") or ""),
+        "count": len(normalized_plays),
+        "plays": normalized_plays,
+    }
+
+
+def fetch_nba_play_by_play(game_id: str, season: Optional[str] = None) -> dict:
+    if re.fullmatch(r"\d{10}", game_id):
+        selected_season = _validated_nba_season(
+            season or _nba_season_from_game_id(game_id)
+        )
+    elif re.fullmatch(r"espn:\d+", game_id) and season:
+        selected_season = _validated_nba_season(season)
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Game ID must be a 10-digit NBA ID or an ESPN archive ID with a season.",
+        )
+
+    cache_key = (game_id, selected_season)
+    now = time.monotonic()
+    with NBA_PLAY_BY_PLAY_LOCK:
+        cached = NBA_PLAY_BY_PLAY_CACHE.get(cache_key)
+        if cached and cached["expires_at"] > now:
+            return cached["snapshot"]
+
+    errors = []
+    snapshot = None
+    if re.fullmatch(r"\d{10}", game_id):
+        try:
+            nba_payload = _request_nba_json(
+                f"https://cdn.nba.com/static/json/liveData/playbyplay/playbyplay_{game_id}.json",
+                timeout=5,
+            )
+            snapshot = _normalize_nba_play_by_play(nba_payload, game_id)
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+            errors.append(error)
+
+    if snapshot is None or not snapshot["plays"]:
+        try:
+            event_id = _resolve_espn_event_id(game_id, timeout=4, season=selected_season)
+            espn_payload = _request_nba_json(
+                f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event={event_id}",
+                timeout=6,
+            )
+            espn_snapshot = _normalize_espn_play_by_play(espn_payload, game_id)
+            if espn_snapshot["plays"] or snapshot is None:
+                snapshot = espn_snapshot
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
+            errors.append(error)
+
+    if snapshot is None:
+        logger.warning(
+            "Play-by-play refresh failed for game %s: %s",
+            game_id,
+            "; ".join(str(error) for error in errors),
+        )
+        with NBA_PLAY_BY_PLAY_LOCK:
+            cached = NBA_PLAY_BY_PLAY_CACHE.get(cache_key)
+        if cached and cached["snapshot"].get("plays"):
+            snapshot = {
+                **cached["snapshot"],
+                "status": "stale",
+                "message": "Play-by-play refresh failed; showing the last successful update.",
+            }
+        else:
+            snapshot = {
+                "game_id": game_id,
+                "status": "unavailable",
+                "source": None,
+                "last_updated": None,
+                "status_code": None,
+                "game_status": "",
+                "count": 0,
+                "plays": [],
+                "message": "Play-by-play is unavailable for this game right now.",
+            }
+
+    ttl = 15 if selected_season == current_nba_season() else 3600
+    with NBA_PLAY_BY_PLAY_LOCK:
+        NBA_PLAY_BY_PLAY_CACHE[cache_key] = {
+            "expires_at": time.monotonic() + ttl,
+            "snapshot": snapshot,
+        }
+    return snapshot
+
+
+def fetch_nba_box_score_jersey_numbers(
+    game_id: str, season: Optional[str] = None
+) -> dict:
+    if re.fullmatch(r"\d{10}", game_id):
+        selected_season = _validated_nba_season(
+            season or _nba_season_from_game_id(game_id)
+        )
+    elif re.fullmatch(r"espn:\d+", game_id) and season:
+        selected_season = _validated_nba_season(season)
+    else:
+        raise HTTPException(status_code=422, detail="Game ID must be a 10-digit NBA ID or an ESPN archive ID with a season.")
+    snapshot = fetch_nba_box_score(game_id, season)
     if not snapshot.get("home") or not snapshot.get("away"):
         return {"home": [], "away": []}
 
     home = snapshot["home"]
     away = snapshot["away"]
-    _apply_team_jersey_numbers(home, game_id, "")
-    _apply_team_jersey_numbers(away, game_id, "")
+    if selected_season == current_nba_season():
+        _apply_team_jersey_numbers(home, game_id, "")
+        _apply_team_jersey_numbers(away, game_id, "")
 
     def player_jerseys(team: dict) -> list[dict]:
         return [
@@ -7780,12 +8700,32 @@ def _fetch_current_nba_rosters() -> dict:
                     player["salary"] = salary_override
                 roster_players.append(player)
 
-            current_names = {normalize_player_name(player["name"]) for player in roster_players}
-            starters = [
-                player for player in team["starters_2026_27"]
-                if normalize_player_name(player["name"]) in current_names
-            ]
-            starter_names = {normalize_player_name(player["name"]) for player in starters}
+            active_players_by_name = {
+                normalize_player_name(player["name"]): player
+                for player in roster_players
+            }
+            preferred_order = team["starters_2026_27"] + team["bench_2026_27"]
+            starters = []
+            starter_names = set()
+            for preferred_player in preferred_order:
+                player_key = normalize_player_name(preferred_player["name"])
+                active_player = active_players_by_name.get(player_key)
+                if active_player and player_key not in starter_names:
+                    starters.append(active_player)
+                    starter_names.add(player_key)
+                if len(starters) == 5:
+                    break
+            if len(starters) < 5:
+                for player in roster_players:
+                    player_key = normalize_player_name(player["name"])
+                    if player_key not in starter_names:
+                        starters.append(player)
+                        starter_names.add(player_key)
+                    if len(starters) == 5:
+                        break
+            if len(starters) != 5:
+                raise ValueError(f"Could not build five unique projected starters for {team['name']}.")
+            team["roster_2026_27"] = roster_players
             team["starters_2026_27"] = starters
             team["bench_2026_27"] = [
                 player for player in roster_players
@@ -7798,8 +8738,10 @@ def _fetch_current_nba_rosters() -> dict:
             "season": season,
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "message": (
-                "Roster membership refreshed from NBA.com Stats. Its active-player feed does not identify "
-                "two-way contract status; unmatched players have no verified position or salary. "
+                "Roster membership refreshed from NBA.com Stats. The feed does not publish game-day starting "
+                "lineups; projected starters follow saved team depth order and may not match the next game. "
+                "Its active-player feed does not identify two-way contract status; unmatched players have no "
+                "verified position or salary. "
                 "User-configured team assignments are retained."
             ),
             "teams": response_teams,
@@ -7978,7 +8920,167 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
 
+
+def _canonical_odds_team_name(name: object) -> str:
+    normalized_name = normalize_player_name(str(name or ""))
+    aliases = {
+        "losangelesclippers": "LA Clippers",
+        "lalakers": "Los Angeles Lakers",
+    }
+    configured_teams = {
+        normalize_player_name(str(team.get("name") or "")): str(team["name"])
+        for team in teams
+    }
+    if normalized_name in aliases:
+        return aliases[normalized_name]
+    return configured_teams.get(normalized_name, str(name or "").strip())
+
+
+def _american_odds_to_decimal(value: object) -> Optional[float]:
+    try:
+        price = float(value)
+    except (TypeError, ValueError):
+        return None
+    if price == 0 or not math.isfinite(price):
+        return None
+    return 1 + (price / 100 if price > 0 else 100 / abs(price))
+
+
+def _normalize_odds_events(payload: object) -> list[dict]:
+    if not isinstance(payload, list):
+        raise ValueError("The Odds API returned an invalid event list.")
+
+    normalized_events = []
+    for event in payload:
+        if not isinstance(event, dict):
+            continue
+        event_id = str(event.get("id") or "").strip()
+        home = _canonical_odds_team_name(event.get("home_team"))
+        away = _canonical_odds_team_name(event.get("away_team"))
+        commence_time = str(event.get("commence_time") or "").strip()
+        if not event_id or not home or not away or not commence_time:
+            continue
+
+        best_prices = {home: None, away: None}
+        for bookmaker in event.get("bookmakers") or []:
+            if not isinstance(bookmaker, dict):
+                continue
+            bookmaker_title = str(bookmaker.get("title") or bookmaker.get("key") or "Sportsbook")
+            for market in bookmaker.get("markets") or []:
+                if not isinstance(market, dict) or market.get("key") != "h2h":
+                    continue
+                last_updated = market.get("last_update")
+                for outcome in market.get("outcomes") or []:
+                    if not isinstance(outcome, dict):
+                        continue
+                    outcome_team = _canonical_odds_team_name(outcome.get("name"))
+                    if outcome_team not in best_prices:
+                        continue
+                    try:
+                        american_price = float(outcome.get("price"))
+                    except (TypeError, ValueError):
+                        continue
+                    decimal_price = _american_odds_to_decimal(american_price)
+                    if decimal_price is None:
+                        continue
+                    current_best = best_prices[outcome_team]
+                    if current_best is None or decimal_price > current_best["decimal"]:
+                        best_prices[outcome_team] = {
+                            "american": int(american_price),
+                            "decimal": decimal_price,
+                            "bookmaker": bookmaker_title,
+                            "last_updated": last_updated,
+                        }
+
+        normalized_events.append({
+            "id": event_id,
+            "commence_time": commence_time,
+            "home": home,
+            "away": away,
+            "home_odds": best_prices[home],
+            "away_odds": best_prices[away],
+        })
+    return normalized_events
+
+
+def fetch_current_nba_odds() -> dict:
+    with NBA_ODDS_LOCK:
+        now = time.monotonic()
+        cached = NBA_ODDS_CACHE.get("latest")
+        if cached and cached["expires_at"] > now:
+            return cached["snapshot"]
+
+        api_key = os.environ.get("THE_ODDS_API_KEY", "").strip()
+        if not api_key:
+            return {
+                "status": "unavailable",
+                "source": "The Odds API",
+                "last_updated": None,
+                "message": "Live odds are not configured. Add THE_ODDS_API_KEY to the API deployment environment.",
+                "events": [],
+            }
+
+        query = urlencode({
+            "apiKey": api_key,
+            "regions": "us",
+            "markets": "h2h",
+            "oddsFormat": "american",
+            "dateFormat": "iso",
+        })
+        request = Request(
+            f"https://api.the-odds-api.com/v4/sports/basketball_nba/odds?{query}",
+            headers={"Accept": "application/json", "User-Agent": "NBAHubOdds/1.0"},
+        )
+        try:
+            with urlopen(request, timeout=10) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+                events = _normalize_odds_events(payload)
+                snapshot = {
+                    "status": "fresh",
+                    "source": "The Odds API",
+                    "last_updated": datetime.now(timezone.utc).isoformat(),
+                    "requests_remaining": response.headers.get("x-requests-remaining"),
+                    "message": (
+                        "No upcoming NBA moneyline odds have been published yet."
+                        if not events
+                        else ""
+                    ),
+                    "events": events,
+                }
+                NBA_ODDS_CACHE["latest"] = {
+                    "expires_at": now + NBA_ODDS_CACHE_TTL_SECONDS,
+                    "snapshot": snapshot,
+                }
+                return snapshot
+        except (HTTPError, URLError, TimeoutError, OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+            if isinstance(error, HTTPError):
+                logger.warning("The Odds API request failed with HTTP %s.", error.code)
+                failure_message = f"The Odds API request failed (HTTP {error.code})."
+            else:
+                logger.warning("The Odds API request could not be completed (%s).", type(error).__name__)
+                failure_message = "The Odds API could not be reached or returned invalid data."
+            previous = cached["snapshot"] if cached else None
+            if previous and previous.get("events"):
+                return {
+                    **previous,
+                    "status": "stale",
+                    "message": f"{failure_message} Showing the last successful odds snapshot.",
+                }
+            return {
+                "status": "unavailable",
+                "source": "The Odds API",
+                "last_updated": None,
+                "message": failure_message,
+                "events": [],
+            }
+
+
 def build_teams_response() -> dict:
+    try:
+        sync_supabase_nba_catalog()
+    except Exception as exc:  # pragma: no cover - catalog sync is optional
+        logger.warning("Optional Supabase catalog sync failed during teams response build: %s", exc)
+
     stats_snapshot = fetch_current_nba_player_stats()
     roster_snapshot = fetch_current_nba_rosters()
     response_teams = json.loads(json.dumps(roster_snapshot["teams"] or teams))
@@ -8033,6 +9135,25 @@ def build_teams_response() -> dict:
     }
 
 
+@app.get("/api/v1/database/catalog", dependencies=[Depends(verify_api_key)])
+def get_database_catalog():
+    if not supabase_cache_available():
+        raise HTTPException(status_code=503, detail="Supabase is not configured for NBA catalog storage.")
+    try:
+        teams_rows = supabase_rest_request("nba_teams?select=id,name,abbreviation,conference,division,metadata")
+        players_rows = supabase_rest_request("nba_players?select=id,team_id,name,position,metadata")
+        return {
+            "status": "fresh",
+            "teams": teams_rows if isinstance(teams_rows, list) else [],
+            "players": players_rows if isinstance(players_rows, list) else [],
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:  # pragma: no cover - database read failure is surfaced to caller
+        logger.warning("Supabase NBA catalog read failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Supabase could not load the NBA catalog.") from exc
+
+
 @app.get("/api/v1/teams/search", dependencies=[Depends(verify_api_key)])
 def search_teams(q: str = Query(..., min_length=1)):
     query = q.lower()
@@ -8062,26 +9183,194 @@ def get_teams():
     return build_teams_response()
 
 @app.get("/api/v1/schedule", dependencies=[Depends(verify_api_key)])
-def get_schedule():
-    return fetch_current_nba_schedule()
+def get_schedule(season: Optional[str] = Query(default=None)):
+    return fetch_current_nba_schedule(season)
 
 @app.get("/api/v1/schedule/scores", dependencies=[Depends(verify_api_key)])
 def get_schedule_scores():
     return fetch_current_nba_scores()
 
+def _normalize_espn_nba_news_item(article: dict, fallback_now_iso: str):
+    if not isinstance(article, dict):
+        return None
+    headline = str(article.get("headline") or "").strip()
+    description = str(article.get("description") or "").strip()
+    if not headline:
+        return None
+    story = description or headline
+    if not story:
+        return None
+    image_url = ""
+    for image in article.get("images") or []:
+        if isinstance(image, dict) and image.get("url"):
+            image_url = str(image["url"])
+            break
+    link_payload = article.get("links") or {}
+    href = ""
+    if isinstance(link_payload, dict):
+        href = str((link_payload.get("web") or {}).get("href") or (link_payload.get("mobile") or {}).get("href") or "")
+    category = "NBA NEWS"
+    categories = article.get("categories") or []
+    if isinstance(categories, list):
+        for category_data in categories:
+            if isinstance(category_data, dict) and category_data.get("description"):
+                category = str(category_data["description"]).strip() or category
+                break
+    return {
+        "headline": headline,
+        "story": story,
+        "source": "ESPN",
+        "category": category,
+        "url": href or "https://www.espn.com/nba/",
+        "published": article.get("published") or article.get("lastModified") or fallback_now_iso,
+        "kind": "story",
+        "teamName": article.get("teamName") or "NBA",
+        "teamLogo": image_url,
+    }
+
+
+def fetch_live_espn_nba_news(limit: int = 6):
+    endpoint = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news"
+    request = Request(
+        endpoint,
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; NBA Hub/1.0; +https://github.com/)",
+            "Accept": "application/json",
+        },
+    )
+    with urlopen(request, timeout=15) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    articles = payload.get("articles") or []
+    normalized = []
+    fallback_now_iso = datetime.now(timezone.utc).isoformat()
+    for article in articles:
+        item = _normalize_espn_nba_news_item(article, fallback_now_iso)
+        if item:
+            normalized.append(item)
+        if len(normalized) >= limit:
+            break
+    if not normalized:
+        return []
+    daily_offset = int(datetime.now(timezone.utc).strftime("%Y%m%d")) % len(normalized)
+    if len(normalized) > 1:
+        normalized = normalized[daily_offset:] + normalized[:daily_offset]
+    return normalized
+
+
+@app.get("/api/v1/news", dependencies=[Depends(verify_api_key)])
+def get_nba_news():
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        items = fetch_live_espn_nba_news(limit=6)
+        if items:
+            last_updated = max(item.get("published") or now_iso for item in items)
+            return {
+                "status": "fresh",
+                "source": "ESPN",
+                "last_updated": last_updated,
+                "message": "NBA live headlines are provided by ESPN and rotate with the current daily feed.",
+                "items": items,
+            }
+    except Exception as exc:  # pragma: no cover - fallback when live fetch fails
+        logger.warning("ESPN NBA news fetch failed; using scoreboard fallback: %s", exc)
+
+    try:
+        scoreboard = fetch_current_nba_scores()
+        games = scoreboard.get("games") or []
+        items = []
+        for game in games[:6]:
+            if not isinstance(game, dict):
+                continue
+            home_tricode = str(game.get("home_tricode") or "").strip()
+            away_tricode = str(game.get("away_tricode") or "").strip()
+            home_score = game.get("home_score")
+            away_score = game.get("away_score")
+            status = str(game.get("status") or "").strip() or "NBA game"
+            if not home_tricode or not away_tricode:
+                continue
+            if status.lower() == "scheduled":
+                headline = f"{away_tricode} at {home_tricode} · {status}"
+                story = f"{away_tricode} visits {home_tricode} on the next NBA slate. Follow the live box score and team notes throughout the night."
+                kind = "story"
+            elif status.lower() == "final":
+                home_int = home_score if isinstance(home_score, (int, float)) else 0
+                away_int = away_score if isinstance(away_score, (int, float)) else 0
+                headline = f"{home_tricode} {int(home_int)}-{int(away_int)} {away_tricode}"
+                story = f"{home_tricode} closed out against {away_tricode} in the latest NBA result. Check the full scoreboard for the night’s key storylines."
+                kind = "score"
+            else:
+                headline = f"{home_tricode} lead {away_tricode} · {status}"
+                story = f"{home_tricode} and {away_tricode} are battling live. Keep an eye on the scoreboard for momentum swings and late-game adjustments."
+                kind = "score"
+            items.append({
+                "headline": headline,
+                "story": story,
+                "source": "ESPN",
+                "category": "Game day",
+                "url": "https://www.espn.com/nba/",
+                "published": scoreboard.get("last_updated") or now_iso,
+                "kind": kind,
+                "teamName": home_tricode,
+            })
+        if not items:
+            items.append({
+                "headline": "NBA scores and storylines are updating live",
+                "story": "Check the scoreboard, standings, and team pages for the latest league updates.",
+                "source": "NBA Hub",
+                "category": "League",
+                "url": "https://www.espn.com/nba/",
+                "published": now_iso,
+                "kind": "story",
+            })
+        return {
+            "status": "fresh" if items else "stale",
+            "source": "ESPN",
+            "last_updated": scoreboard.get("last_updated") or now_iso,
+            "message": scoreboard.get("message") or "NBA live headlines and score highlights are available.",
+            "items": items,
+        }
+    except Exception as exc:  # pragma: no cover - fallback when live fetch fails
+        logger.warning("NBA news fallback triggered: %s", exc)
+        return {
+            "status": "stale",
+            "source": "NBA Hub",
+            "last_updated": now_iso,
+            "message": "Live headlines are unavailable. Showing the latest NBA Hub fallback feed.",
+            "items": [{
+                "headline": "NBA headlines are temporarily unavailable",
+                "story": "Live scores and standings remain available below while the league feed refreshes.",
+                "source": "NBA Hub",
+                "category": "League",
+                "url": "https://www.espn.com/nba/",
+                "published": now_iso,
+                "kind": "story",
+            }],
+        }
+
+@app.get("/api/v1/odds", dependencies=[Depends(verify_api_key)])
+def get_nba_odds():
+    return fetch_current_nba_odds()
+
 @app.get("/api/v1/standings", dependencies=[Depends(verify_api_key)])
 def get_standings(
     season_type: Literal["preseason", "regular"] = Query(default="regular"),
+    season: Optional[str] = Query(default=None),
 ):
-    return fetch_current_nba_standings(season_type)
+    return fetch_current_nba_standings(season_type, season)
 
 @app.get("/api/v1/games/{game_id}/boxscore", dependencies=[Depends(verify_api_key)])
-def get_game_box_score(game_id: str):
-    return fetch_nba_box_score(game_id)
+def get_game_box_score(game_id: str, season: Optional[str] = Query(default=None)):
+    return fetch_nba_box_score(game_id, season)
+
+@app.get("/api/v1/games/{game_id}/play-by-play", dependencies=[Depends(verify_api_key)])
+def get_game_play_by_play(game_id: str, season: Optional[str] = Query(default=None)):
+    return fetch_nba_play_by_play(game_id, season)
 
 @app.get("/api/v1/games/{game_id}/jerseys", dependencies=[Depends(verify_api_key)])
-def get_game_box_score_jersey_numbers(game_id: str):
-    return fetch_nba_box_score_jersey_numbers(game_id)
+def get_game_box_score_jersey_numbers(
+    game_id: str, season: Optional[str] = Query(default=None)
+):
+    return fetch_nba_box_score_jersey_numbers(game_id, season)
 
 @app.get("/api/v1/transactions", dependencies=[Depends(verify_api_key)])
 def get_transactions():
@@ -8135,3 +9424,66 @@ def get_teams_legacy():
 @app.get("/api/v1/health")
 def health_check_v1():
     return health_check()
+
+@app.post("/api/community-challenges")
+def create_challenge(payload: CommunityChallengeCreate, authorized: bool = Depends(verify_api_key)):
+    try:
+        result = supabase_rest_request(
+            "community_challenges",
+            method="POST",
+            payload=payload.model_dump(),
+        )
+        if not isinstance(result, list) or not result:
+            raise HTTPException(status_code=502, detail="Community challenge was not saved.")
+        return {"status": "success", "data": result[0]}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Supabase insert failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Database insert error") from exc
+
+@app.get("/api/community-challenges")
+def list_challenges(authorized: bool = Depends(verify_api_key)):
+    try:
+        result = supabase_rest_request(
+            "community_challenges?select=id,title,description,creator,rule_type,selected_player_ids,created_at&order=created_at.desc&limit=20"
+        )
+        if not isinstance(result, list):
+            raise HTTPException(status_code=502, detail="Community challenge storage returned an unexpected response.")
+        return {"status": "success", "challenges": result}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Supabase query failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Database query error") from exc
+
+FRONTEND_ROOT = Path(__file__).resolve().parent.parent
+FRONTEND_ASSETS = {
+    filename: FRONTEND_ROOT / filename
+    for filename in (
+        "app.js",
+        "cap-space-manager.css",
+        "cap-space-manager.html",
+        "cap-space-manager.js",
+        "index.html",
+        "nba-player-ids.js",
+        "player-headshots.js",
+        "style.css",
+        "trade-machine.css",
+        "trade-machine.html",
+        "trade-machine.js",
+    )
+}
+
+
+@app.get("/", include_in_schema=False)
+def serve_frontend():
+    return FileResponse(FRONTEND_ASSETS["index.html"])
+
+
+@app.get("/{asset_name}", include_in_schema=False)
+def serve_frontend_asset(asset_name: str):
+    asset_path = FRONTEND_ASSETS.get(asset_name)
+    if asset_path is None or not asset_path.is_file():
+        raise HTTPException(status_code=404, detail="Not Found")
+    return FileResponse(asset_path)
