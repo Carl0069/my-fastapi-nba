@@ -1,7 +1,35 @@
 const API_URL = "https://my-fastapi-nba.vercel.app";
 const API_KEY = "lebron2369";
 const GAME_PICKS_STORAGE_KEY = "nba-hub-game-picks-v1";
+const STANDINGS_PREDICTION_STORAGE_KEY = "nba-hub-standings-prediction-v1";
 const DAILY_GAME_TOKEN_CLAIM = 1000;
+const DAILY_GAME_TOKEN_BOOST = 2000;
+const GAME_PICKS_ARENA_STYLES = ["hardwood", "franchise", "neon", "courtside", "retro", "playoffs"];
+const GAME_PICKS_STAT_CARD_STYLES = ["classic", "broadcast", "spotlight"];
+const GAME_PICKS_PROFILE_TITLES = ["Sixth Player", "Stat Head", "Franchise Voice", "League Historian"];
+const GAME_PICKS_PROFILE_BANNERS = ["classic", "midnight", "gold", "court"];
+const GAME_PICKS_REWARDS = [
+    { id: "parlay-insurance", title: "Parlay Safety Net", kind: "consumable", inventoryKey: "parlayInsuranceCount", inventoryLabel: "Safety Nets", purchaseLabel: "Buy Safety Net", cost: 20000, category: "One-use protection", style: "", description: "Use on a parlay. If exactly one leg loses and the others win or push, your full stake is returned." },
+    { id: "payout-boost", title: "2× Payout Boost", kind: "consumable", inventoryKey: "payoutBoostCount", inventoryLabel: "boosts", purchaseLabel: "Buy 2× Boost", cost: 50000, category: "One-use power-up", style: "", description: "Double the return on one winning pick or parlay. Choose it on your slip before placing." },
+    { id: "daily-boost", title: "7-Day Daily Boost", kind: "consumable", inventoryKey: "dailyBoostClaims", inventoryLabel: "boosted claims", inventoryAmount: 7, purchaseLabel: "Buy 7-Day Boost", cost: 10000, category: "7-day token boost", style: "", description: "Your next seven daily claims each add 2,000 bonus tokens (3,000 tokens total per claim)." },
+    { id: "team-colors", title: "Franchise Challenge Pass", category: "Team challenge mode", cost: 100000, style: "team-colors", description: "Choose a franchise, predict its game results for streak rewards, and apply its team colors across the NBA Hub." },
+    { id: "arena-neon", title: "Neon Arena", kind: "arena-theme", arenaStyle: "neon", category: "Site-wide theme", cost: 20000, style: "", description: "Turn the whole NBA Hub into a bright, electric night-game arena." },
+    { id: "arena-courtside", title: "Courtside After Dark", kind: "arena-theme", arenaStyle: "courtside", category: "Site-wide theme", cost: 35000, style: "", description: "Give every section a dramatic, late-night courtside look." },
+    { id: "arena-retro", title: "Hardwood Throwback", kind: "arena-theme", arenaStyle: "retro", category: "Site-wide theme", cost: 45000, style: "", description: "Restyle the whole hub with classic hardwood and vintage scoreboard colors." },
+    { id: "arena-playoffs", title: "Playoff Spotlight", kind: "arena-theme", arenaStyle: "playoffs", category: "Site-wide theme", cost: 75000, style: "", description: "Bring postseason spotlight colors to every page section." },
+    { id: "player-spotlight", title: "Player Spotlight", kind: "feature", category: "Hub feature", cost: 25000, style: "", description: "Pin a player from the live NBA roster API to a stat panel on the NBA Today page." },
+    { id: "player-collectibles", title: "Player Card Collection", kind: "feature", category: "Collectibles", cost: 15000, style: "", description: "Collect API-backed player stat cards. Choose players from current NBA team rosters." },
+    { id: "stat-card-studio", title: "Stat Card Studio", kind: "feature", category: "Layout studio", cost: 20000, style: "", description: "Choose a broadcast, classic, or spotlight layout for player stat cards across the site." },
+    { id: "franchise-history", title: "Franchise History Gallery", kind: "feature", category: "History gallery", cost: 30000, style: "", description: "Browse each team's API-backed records, championship totals, and title years." },
+    { id: "profile-studio", title: "Hub Profile Studio", kind: "feature", category: "Profile customization", cost: 20000, style: "", description: "Pick a fan title and profile banner shown across the NBA Hub." },
+    { id: "rising-star", title: "Rising Star", category: "Collector badge", cost: 25000, style: "rising-star", description: "Add a Rising Star badge to your Game Picks header.", available: false },
+    { id: "court-lights", title: "Court Lights", category: "Slip theme", cost: 40000, style: "court-lights", description: "Make your pick slip shine with a premium court-light trim.", available: false },
+    { id: "hot-streak", title: "Hot Streak", category: "Collector badge", cost: 65000, style: "hot-streak", description: "Show off a fiery Hot Streak badge and glowing section accent.", available: false },
+    { id: "franchise-banner", title: "Franchise Banner", category: "Header banner", cost: 100000, style: "franchise-banner", description: "Add a bold banner above your Game Picks title.", available: false },
+    { id: "all-star", title: "All-Star", category: "Profile title", cost: 150000, style: "all-star", description: "Display the All-Star title across your Game Picks hub.", available: false },
+    { id: "home-court", title: "Home Court", category: "Background theme", cost: 225000, style: "home-court", description: "Unlock a deeper arena-inspired background and gold court lines.", available: false },
+    { id: "hall-of-fame", title: "Hall of Fame", category: "Elite frame", cost: 350000, style: "hall-of-fame", description: "Frame Game Picks with a Hall of Fame gold finish.", available: false }
+];
 
 let allTeams = [];
 let currentHeadlineIndex = 0;
@@ -9,16 +37,81 @@ let headlineAutoTimer = null;
 let headlineItems = [];
 let newsItems = [];
 let headlineScoreItems = [];
+const DEFAULT_HEADLINE_STORIES = [
+    {
+        headline: "Boston storms back in the fourth",
+        story: "The Celtics turned a sober midway-game deficit into a decisive late run with pace, rim pressure, and sharp shooting.",
+        source: "ESPN",
+        url: "https://www.espn.com/nba/",
+        published: new Date().toISOString(),
+        kind: "news",
+        teamName: "Boston Celtics",
+        teamLogo: "https://cdn.nba.com/logos/leagues/logo-nba.svg"
+    },
+    {
+        headline: "The West race keeps tightening",
+        story: "A handful of teams are stacking wins and losses at the exact same pace, setting up a late-season scramble for seeding.",
+        source: "NBA",
+        url: "https://www.nba.com/",
+        published: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+        kind: "news",
+        teamName: "Western Conference",
+        teamLogo: "https://cdn.nba.com/logos/leagues/logo-nba.svg"
+    },
+    {
+        headline: "Rising stars are taking over the spotlight",
+        story: "Young wings and high-leverage guards are creating a new wave of matchup problems every night across the league.",
+        source: "NBA",
+        url: "https://www.nba.com/news",
+        published: new Date(Date.now() - 1000 * 60 * 95).toISOString(),
+        kind: "news",
+        teamName: "NBA News",
+        teamLogo: "https://cdn.nba.com/logos/leagues/logo-nba.svg"
+    },
+    {
+        headline: "Trade chatter is heating up again",
+        story: "Front offices are checking the market, with bench depth, cap flexibility, and playoff fit becoming the biggest priorities.",
+        source: "NBA",
+        url: "https://www.nba.com/transactions",
+        published: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+        kind: "news",
+        teamName: "NBA Transactions",
+        teamLogo: "https://cdn.nba.com/logos/leagues/logo-nba.svg"
+    }
+];
 let lastNewsRefreshAt = 0;
 let isRefreshingNews = false;
 let selectedDivision = "";
 let selectedConference = "ALL";
 let selectedStandingsConference = "Western";
-let selectedStandingsPhase = "preseason";
+let selectedStandingsPhase = "regular";
 let selectedStandingsSeason = "";
 let currentStandings = [];
 const standingsByPhase = new Map();
-let gamePicksState = { balance: 0, lastClaimDate: "", slip: [], bets: [] };
+const playoffScheduleBySeason = new Map();
+let playoffBracketRequestSequence = 0;
+let standingsPrediction = null;
+let gamePicksState = {
+    balance: 0,
+    lastClaimDate: "",
+    slip: [],
+    bets: [],
+    ownedRewards: [],
+    equippedRewardId: "",
+    teamColorsTeam: "",
+    arenaStyle: "hardwood",
+    spotlightPlayerKey: "",
+    playerCollection: [],
+    statCardStyle: "classic",
+    historyTeamName: "",
+    profileTitle: "Sixth Player",
+    profileBanner: "classic",
+    franchiseChallengePicks: [],
+    franchiseChallengeStreak: 0,
+    parlayInsuranceCount: 0,
+    payoutBoostCount: 0,
+    dailyBoostClaims: 0
+};
 let gamePicksStorageMessage = "";
 let gamePicksOddsSnapshot = null;
 let gamePicksScheduleGames = [];
@@ -184,6 +277,8 @@ async function loadTeams() {
             throw new Error("The API returned no NBA teams.");
         }
         allTeams = data.teams;
+        renderHubRewards();
+        renderStandingsPrediction();
         hydrateScoreHeadlineTeams();
         if (headlineItems.length) updateHeadline(currentHeadlineIndex);
         lastTeamsRefreshAt = Date.now();
@@ -221,8 +316,8 @@ function renderStatsUpdateStatus(stats, roster) {
         : "";
     const season = stats?.season || "current-season";
     const rosterLabel = roster?.status === "fresh"
-        ? "Current roster membership · projected starters"
-        : "Roster snapshot may be outdated · projected starters";
+        ? "Current roster membership"
+        : "Roster snapshot may be outdated";
     status.title = [roster?.message, stats?.message].filter(Boolean).join(" ");
     if (stats?.status === "fresh") {
         status.textContent = `${rosterLabel} · ${season} stats refreshed ${updatedAt} · auto-refresh every 15 minutes`;
@@ -268,9 +363,14 @@ function currentNbaSeason() {
     return `${seasonStart}-${String(seasonStart + 1).slice(-2)}`;
 }
 
+function minimumScheduleRegularGames(season) {
+    if (season === currentNbaSeason()) return 1230;
+    return season === "1999-00" ? 700 : 900;
+}
+
 function initializeSeasonPickers() {
     const currentStartYear = Number(currentNbaSeason().slice(0, 4));
-    const seasons = Array.from({ length: currentStartYear - 1999 }, (_, index) => {
+    const seasons = Array.from({ length: currentStartYear - 1998 }, (_, index) => {
         const startYear = currentStartYear - index;
         return `${startYear}-${String(startYear + 1).slice(-2)}`;
     });
@@ -310,12 +410,19 @@ function dateKeyInPhilippines(date) {
 function canonicalNbaTricode(value) {
     const tricode = String(value || "").trim().toUpperCase();
     const aliases = {
+        BRK: "BKN",
         GS: "GSW",
         NO: "NOP",
+        NJ: "BKN",
+        NJN: "BKN",
+        NOH: "NOP",
+        NOK: "NOP",
         NY: "NYK",
         PHO: "PHX",
         SA: "SAS",
+        SEA: "OKC",
         UTAH: "UTA",
+        VAN: "MEM",
         WSH: "WAS"
     };
     return aliases[tricode] || tricode;
@@ -435,9 +542,7 @@ async function loadSchedule() {
                 `The deployed API returned the ${schedulePayload.season || "current"} season instead of ${selectedScheduleSeason.replace("-", "–")}. Publish the latest api/index.py to enable historical schedules and playoff games.`
             );
         }
-        const minimumRegularGames = selectedScheduleSeason === currentNbaSeason()
-            ? 1230
-            : 900;
+        const minimumRegularGames = minimumScheduleRegularGames(selectedScheduleSeason);
         const regularGameCount = Number(schedulePayload.regular_game_count ?? schedulePayload.games?.length ?? 0);
         if (!Array.isArray(schedulePayload.games) || regularGameCount < minimumRegularGames) {
             throw new Error(schedulePayload.message || `The API did not return the full ${selectedScheduleSeason} schedule.`);
@@ -446,10 +551,14 @@ async function loadSchedule() {
         scheduleLoadMessage = "";
         scheduleRouteMissing = false;
         scheduleGames = schedulePayload.games.map(scheduleGameInPhilippines);
+        playoffScheduleBySeason.set(selectedScheduleSeason, scheduleGames);
+        refreshPlayoffBracketFromCache(selectedScheduleSeason);
         if (selectedScheduleSeason === currentNbaSeason()) {
             gamePicksScheduleGames = scheduleGames;
             gamePicksScheduleMessage = "";
+            settleFranchiseChallenges();
             settleGamePicksBets();
+            renderFranchiseChallenge();
             renderGamePicks();
         }
         hydrateScoreHeadlineTeams();
@@ -563,7 +672,7 @@ function teamRecordForGame(teamName, game) {
     return { text: `${wins}-${losses}`, label };
 }
 
-function playoffSeriesGameNumber(game) {
+function playoffSeriesGameNumber(game, season = selectedScheduleSeason) {
     if (
         schedulePhaseForGame(game) !== "playoffs"
         || /play.?in/i.test(String(game.stage || ""))
@@ -571,10 +680,12 @@ function playoffSeriesGameNumber(game) {
     ) return null;
 
     const matchup = [game.home_tricode || game.home, game.away_tricode || game.away]
-        .map(team => String(team || "").trim().toLocaleLowerCase())
+        .map(team => canonicalNbaTricode(team))
         .sort()
         .join(":");
-    const seriesGames = scheduleGames
+    const seasonGames = playoffScheduleBySeason.get(season)
+        || (season === selectedScheduleSeason ? scheduleGames : []);
+    const seriesGames = seasonGames
         .filter(candidate => {
             if (
                 schedulePhaseForGame(candidate) !== "playoffs"
@@ -585,7 +696,7 @@ function playoffSeriesGameNumber(game) {
                 candidate.home_tricode || candidate.home,
                 candidate.away_tricode || candidate.away
             ]
-                .map(team => String(team || "").trim().toLocaleLowerCase())
+                .map(team => canonicalNbaTricode(team))
                 .sort()
                 .join(":");
             return candidateMatchup === matchup;
@@ -609,17 +720,9 @@ function gamePicksMatchupKey(home, away) {
     return `${gamePicksTeamKey(home)}:${gamePicksTeamKey(away)}`;
 }
 
-function formatGamePicksAmericanOdds(price) {
-    const value = Number(price);
-    if (!Number.isFinite(value) || value === 0) return "—";
-    return value > 0 ? `+${Math.round(value)}` : String(Math.round(value));
-}
-
-function gamePicksDecimalToAmerican(decimalOdds) {
-    if (!Number.isFinite(decimalOdds) || decimalOdds <= 1) return null;
-    return decimalOdds >= 2
-        ? Math.round((decimalOdds - 1) * 100)
-        : -Math.round(100 / (decimalOdds - 1));
+function formatGamePicksMultiplier(decimalOdds) {
+    const value = Number(decimalOdds);
+    return Number.isFinite(value) && value > 1 ? `${value.toFixed(2)}x` : "—";
 }
 
 function gamePicksQuoteIsFresh(quote) {
@@ -646,12 +749,60 @@ function loadGamePicksState() {
         if (!savedState) return;
         const parsed = JSON.parse(savedState);
         const balance = Number(parsed?.balance);
+        const ownedRewards = parsed?.ownedRewards ?? [];
+        const equippedRewardId = parsed?.equippedRewardId ?? "";
+        const teamColorsTeam = parsed?.teamColorsTeam ?? "";
+        const arenaStyle = parsed?.arenaStyle ?? "hardwood";
+        const spotlightPlayerKey = parsed?.spotlightPlayerKey ?? "";
+        const playerCollection = parsed?.playerCollection ?? [];
+        const statCardStyle = parsed?.statCardStyle ?? "classic";
+        const historyTeamName = parsed?.historyTeamName ?? "";
+        const profileTitle = parsed?.profileTitle ?? "Sixth Player";
+        const profileBanner = parsed?.profileBanner ?? "classic";
+        const franchiseChallengePicks = parsed?.franchiseChallengePicks ?? [];
+        const franchiseChallengeStreak = parsed?.franchiseChallengeStreak ?? 0;
+        const parlayInsuranceCount = parsed?.parlayInsuranceCount ?? 0;
+        const payoutBoostCount = parsed?.payoutBoostCount ?? 0;
+        const dailyBoostClaims = parsed?.dailyBoostClaims ?? 0;
         if (
             !Number.isSafeInteger(balance)
             || balance < 0
             || typeof parsed?.lastClaimDate !== "string"
             || !Array.isArray(parsed?.slip)
             || !Array.isArray(parsed?.bets)
+            || !Array.isArray(ownedRewards)
+            || ownedRewards.some(id => !GAME_PICKS_REWARDS.some(reward => reward.id === id))
+            || new Set(ownedRewards).size !== ownedRewards.length
+            || (equippedRewardId !== "" && !ownedRewards.includes(equippedRewardId))
+            || (teamColorsTeam !== "" && !Object.prototype.hasOwnProperty.call(teamColors, teamColorsTeam))
+            || !GAME_PICKS_ARENA_STYLES.includes(arenaStyle)
+            || typeof spotlightPlayerKey !== "string"
+            || !Array.isArray(playerCollection)
+            || playerCollection.some(card => typeof card !== "string")
+            || new Set(playerCollection).size !== playerCollection.length
+            || !GAME_PICKS_STAT_CARD_STYLES.includes(statCardStyle)
+            || (historyTeamName !== "" && typeof historyTeamName !== "string")
+            || !GAME_PICKS_PROFILE_TITLES.includes(profileTitle)
+            || !GAME_PICKS_PROFILE_BANNERS.includes(profileBanner)
+            || !Array.isArray(franchiseChallengePicks)
+            || franchiseChallengePicks.some(pick =>
+                !pick
+                || typeof pick !== "object"
+                || typeof pick.event_id !== "string"
+                || typeof pick.home !== "string"
+                || typeof pick.away !== "string"
+                || typeof pick.team !== "string"
+                || !["win", "loss"].includes(pick.prediction)
+                || !["pending", "correct", "incorrect"].includes(pick.result)
+            )
+            || !Number.isSafeInteger(franchiseChallengeStreak)
+            || franchiseChallengeStreak < 0
+            || !Number.isSafeInteger(parlayInsuranceCount)
+            || parlayInsuranceCount < 0
+            || !Number.isSafeInteger(payoutBoostCount)
+            || payoutBoostCount < 0
+            || !Number.isSafeInteger(dailyBoostClaims)
+            || dailyBoostClaims < 0
             || parsed.slip.some(leg => !leg || typeof leg !== "object")
             || parsed.bets.some(bet =>
                 !bet
@@ -666,7 +817,22 @@ function loadGamePicksState() {
             balance,
             lastClaimDate: parsed.lastClaimDate,
             slip: parsed.slip,
-            bets: parsed.bets
+            bets: parsed.bets,
+            ownedRewards,
+            equippedRewardId,
+            teamColorsTeam,
+            arenaStyle,
+            spotlightPlayerKey,
+            playerCollection,
+            statCardStyle,
+            historyTeamName,
+            profileTitle,
+            profileBanner,
+            franchiseChallengePicks,
+            franchiseChallengeStreak,
+            parlayInsuranceCount,
+            payoutBoostCount,
+            dailyBoostClaims
         };
     } catch (error) {
         console.error("Saved Game Picks data could not be loaded:", error);
@@ -696,23 +862,597 @@ function setGamePicksWalletStatus(message, isError = false) {
     status.classList.toggle("is-warning", isError);
 }
 
-function claimDailyGameTokens() {
-    const today = localDateKey();
-    if (gamePicksState.lastClaimDate === today) {
-        setGamePicksWalletStatus("You have already claimed today’s 1,000 tokens.", true);
+function franchiseChallengeRewardForStreak(streak) {
+    return 2000 + Math.min(Math.max(0, streak), 6) * 500;
+}
+
+function setFranchiseChallengePick(eventId, prediction) {
+    if (
+        !gamePicksState.ownedRewards.includes("team-colors")
+        || !gamePicksState.teamColorsTeam
+        || !["win", "loss"].includes(prediction)
+    ) return;
+    const event = gamePicksOddsSnapshot?.events?.find(item => item.id === eventId);
+    const scheduleGame = event && findGamePicksScheduleGame(event);
+    const team = gamePicksState.teamColorsTeam;
+    const isFavoriteTeamPlaying = event && (
+        gamePicksTeamKey(event.home) === gamePicksTeamKey(team)
+        || gamePicksTeamKey(event.away) === gamePicksTeamKey(team)
+    );
+    if (
+        !event
+        || !scheduleGame
+        || Number(scheduleGame.status_code) !== 1
+        || Date.parse(event.commence_time) <= Date.now()
+        || !isFavoriteTeamPlaying
+    ) {
+        setGamePicksWalletStatus("That franchise challenge is no longer available.", true);
         return;
     }
+    if (gamePicksState.franchiseChallengePicks.some(pick => pick.event_id === eventId)) {
+        return;
+    }
+    const pick = {
+        event_id: event.id,
+        game_id: scheduleGame.id,
+        home: event.home,
+        away: event.away,
+        team,
+        prediction,
+        commence_time: event.commence_time,
+        result: "pending",
+        payout: 0,
+        placed_at: new Date().toISOString(),
+        settled_at: null
+    };
     const nextState = {
         ...gamePicksState,
-        balance: gamePicksState.balance + DAILY_GAME_TOKEN_CLAIM,
-        lastClaimDate: today
+        franchiseChallengePicks: [...gamePicksState.franchiseChallengePicks, pick].slice(-100)
     };
     if (saveGamePicksState(nextState)) {
-        setGamePicksWalletStatus("1,000 virtual tokens added to your balance.");
+        setGamePicksWalletStatus(
+            `Franchise Challenge locked: ${team} to ${prediction === "win" ? "win" : "lose"}.`
+        );
         renderGamePicks();
     } else {
         setGamePicksWalletStatus(gamePicksStorageMessage, true);
     }
+}
+
+function settleFranchiseChallenges() {
+    if (!gamePicksState.ownedRewards.includes("team-colors")) return;
+    let balance = gamePicksState.balance;
+    let streak = gamePicksState.franchiseChallengeStreak;
+    let changed = false;
+    let rewardsEarned = 0;
+    const picks = [...gamePicksState.franchiseChallengePicks]
+        .map((pick, index) => ({ pick, index }))
+        .sort((left, right) =>
+            Date.parse(left.pick.commence_time || left.pick.placed_at)
+                - Date.parse(right.pick.commence_time || right.pick.placed_at)
+        );
+    const settledPicks = [...gamePicksState.franchiseChallengePicks];
+    let blockedByEarlierPendingPick = false;
+    for (const { pick, index } of picks) {
+        if (pick.result !== "pending") continue;
+        if (blockedByEarlierPendingPick) continue;
+        const game = gamePicksScheduleGames.find(item => item.id === pick.game_id)
+            || gamePicksScheduleGames.find(item =>
+                gamePicksMatchupKey(item.home, item.away)
+                    === gamePicksMatchupKey(pick.home, pick.away)
+                && Math.abs(
+                    Date.parse(`${String(item.date || "").slice(0, 10)}T12:00:00Z`)
+                    - Date.parse(`${dateKeyInPhilippines(new Date(pick.commence_time))}T12:00:00Z`)
+                ) <= 24 * 60 * 60 * 1000
+            );
+        if (!game || !isCompletedScheduleGame(game)) {
+            blockedByEarlierPendingPick = true;
+            continue;
+        }
+        const homeScore = Number(game.home_score);
+        const awayScore = Number(game.away_score);
+        if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore)) {
+            blockedByEarlierPendingPick = true;
+            continue;
+        }
+        const favoriteWon = gamePicksTeamKey(pick.team) === gamePicksTeamKey(game.home)
+            ? homeScore > awayScore
+            : awayScore > homeScore;
+        const correct = (pick.prediction === "win") === favoriteWon;
+        const payout = correct ? franchiseChallengeRewardForStreak(streak) : 0;
+        streak = correct ? streak + 1 : 0;
+        balance += payout;
+        rewardsEarned += payout;
+        settledPicks[index] = {
+            ...pick,
+            result: correct ? "correct" : "incorrect",
+            payout,
+            settled_at: new Date().toISOString()
+        };
+        changed = true;
+    }
+    if (!changed) return;
+    const nextState = {
+        ...gamePicksState,
+        balance,
+        franchiseChallengeStreak: streak,
+        franchiseChallengePicks: settledPicks
+    };
+    if (saveGamePicksState(nextState)) {
+        setGamePicksWalletStatus(
+            rewardsEarned
+                ? `Franchise Challenge earned ${rewardsEarned.toLocaleString()} tokens. Current streak: ${streak}.`
+                : `Franchise Challenge missed. Your streak is now ${streak}.`
+        );
+    } else {
+        setGamePicksWalletStatus(gamePicksStorageMessage, true);
+    }
+}
+
+function renderFranchiseChallenge() {
+    const panel = document.getElementById("gamePicksChallengePanel");
+    const teamLabel = document.getElementById("gamePicksChallengeTeam");
+    const streakLabel = document.getElementById("gamePicksChallengeStreak");
+    const nextReward = document.getElementById("gamePicksChallengeReward");
+    const history = document.getElementById("gamePicksChallengeHistory");
+    if (!panel || !teamLabel || !streakLabel || !nextReward || !history) return;
+    const available = gamePicksState.ownedRewards.includes("team-colors")
+        && Boolean(gamePicksState.teamColorsTeam);
+    panel.hidden = !available;
+    if (!available) return;
+    teamLabel.textContent = gamePicksState.teamColorsTeam;
+    streakLabel.textContent = String(gamePicksState.franchiseChallengeStreak);
+    nextReward.textContent = `${franchiseChallengeRewardForStreak(gamePicksState.franchiseChallengeStreak).toLocaleString()} tokens`;
+    const recentPicks = gamePicksState.franchiseChallengePicks.slice(-5).reverse();
+    history.innerHTML = recentPicks.length
+        ? `<strong>Recent calls</strong><ul>${recentPicks.map(pick => `
+            <li>
+                <span>${escapeMarkup(pick.away)} at ${escapeMarkup(pick.home)} · ${escapeMarkup(pick.team)} to ${pick.prediction === "win" ? "win" : "lose"}</span>
+                <span>${pick.result === "pending"
+                    ? "Pending"
+                    : pick.result === "correct"
+                        ? `Correct · +${Number(pick.payout).toLocaleString()}`
+                        : "Incorrect"}</span>
+            </li>
+        `).join("")}</ul>`
+        : "<p>Choose Win or Lose on one of your team's upcoming game cards to start a challenge.</p>";
+}
+
+function applyGamePicksSiteTheme() {
+    const root = document.documentElement;
+    const activeStyle = gamePicksState.arenaStyle || "hardwood";
+    const requiredRewardId = activeStyle === "franchise"
+        ? "team-colors"
+        : activeStyle === "hardwood"
+            ? ""
+            : GAME_PICKS_REWARDS.find(reward =>
+                reward.kind === "arena-theme" && reward.arenaStyle === activeStyle
+            )?.id;
+    const themeIsOwned = !requiredRewardId
+        || gamePicksState.ownedRewards.includes(requiredRewardId);
+    const theme = themeIsOwned && GAME_PICKS_ARENA_STYLES.includes(activeStyle)
+        ? activeStyle
+        : "hardwood";
+    root.dataset.siteTheme = theme;
+    if (theme === "franchise") {
+        const selected = teamColors[gamePicksState.teamColorsTeam];
+        const accent = selected?.primary === "#000000" || selected?.primary === "#1f1f1f"
+            ? "#aeb8c4"
+            : selected?.primary || "#007a33";
+        root.style.setProperty("--site-theme-accent", accent);
+    } else {
+        root.style.removeProperty("--site-theme-accent");
+    }
+    return theme;
+}
+
+function getApiRosterPlayers(team) {
+    const players = [
+        ...(Array.isArray(team?.starters_2026_27) ? team.starters_2026_27 : []),
+        ...(Array.isArray(team?.bench_2026_27) ? team.bench_2026_27 : [])
+    ];
+    return players
+        .filter(player => player && typeof player.name === "string" && player.name.trim())
+        .map(player => ({ ...player, name: player.name.trim() }));
+}
+
+function apiPlayerKey(team, player) {
+    return `${team.id}:${player.name}`;
+}
+
+function findApiPlayerByKey(key) {
+    for (const team of allTeams) {
+        const player = getApiRosterPlayers(team).find(
+            candidate => apiPlayerKey(team, candidate) === key
+        );
+        if (player) return { team, player };
+    }
+    return null;
+}
+
+function renderApiPlayerOptions(selectedKey = "") {
+    return allTeams.map(team => {
+        const players = getApiRosterPlayers(team);
+        if (!players.length) return "";
+        return `<optgroup label="${escapeMarkup(team.name)}">${players
+            .map(player => {
+                const key = apiPlayerKey(team, player);
+                const label = player.stats_season
+                    ? `${player.name} · ${formatPlayerSeasonStat(player, "pts")} PPG`
+                    : player.name;
+                return `<option value="${escapeMarkup(key)}" ${key === selectedKey ? "selected" : ""}>${escapeMarkup(label)}</option>`;
+            }).join("")}</optgroup>`;
+    }).join("");
+}
+
+function renderHubProfile() {
+    const banner = document.getElementById("hubProfileBanner");
+    const title = document.getElementById("hubProfileTitle");
+    const styleSelect = document.getElementById("hubProfileBannerSelect");
+    const titleSelect = document.getElementById("hubProfileTitleSelect");
+    const studio = document.getElementById("profileStudioPanel");
+    const unlocked = gamePicksState.ownedRewards.includes("profile-studio");
+    if (!banner || !title || !styleSelect || !titleSelect || !studio) return;
+    banner.hidden = !unlocked;
+    studio.hidden = !unlocked;
+    title.textContent = gamePicksState.profileTitle;
+    banner.dataset.profileBanner = gamePicksState.profileBanner;
+    styleSelect.value = gamePicksState.profileBanner;
+    titleSelect.value = gamePicksState.profileTitle;
+}
+
+function renderPlayerSpotlight() {
+    const panel = document.getElementById("playerSpotlightPanel");
+    const select = document.getElementById("playerSpotlightSelect");
+    const content = document.getElementById("playerSpotlightContent");
+    if (!panel || !select || !content) return;
+    const unlocked = gamePicksState.ownedRewards.includes("player-spotlight");
+    panel.hidden = !unlocked;
+    if (!unlocked) return;
+    const currentKey = gamePicksState.spotlightPlayerKey;
+    select.innerHTML = `<option value="">Choose a player</option>${renderApiPlayerOptions(currentKey)}`;
+    const selected = findApiPlayerByKey(currentKey);
+    if (!selected) {
+        content.innerHTML = `<p class="hub-reward-empty">${allTeams.length
+            ? "Choose a player from the live API roster to pin their season stats here."
+            : "Loading player choices from the NBA roster API…"}</p>`;
+        return;
+    }
+    const { team, player } = selected;
+    const headshot = getPlayerHeadshotUrl(player.name);
+    content.innerHTML = `
+        <article class="hub-spotlight-card" style="--team-primary:${escapeMarkup(teamColors[team.name]?.primary || "#c9082a")}">
+            <img src="${escapeMarkup(headshot)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_FALLBACK}'">
+            <div>
+                <span>${escapeMarkup(team.name)} · ${escapeMarkup(player.pos || "—")}</span>
+                <h3>${escapeMarkup(player.name)}</h3>
+                <p>${escapeMarkup(player.stats_season || "Season stats unavailable from API")}</p>
+            </div>
+            <div class="hub-spotlight-card__stats">
+                <span><strong>${escapeMarkup(formatPlayerSeasonStat(player, "pts"))}</strong> PPG</span>
+                <span><strong>${escapeMarkup(formatPlayerSeasonStat(player, "reb"))}</strong> RPG</span>
+                <span><strong>${escapeMarkup(formatPlayerSeasonStat(player, "ast"))}</strong> APG</span>
+            </div>
+            <button type="button" data-spotlight-open-player="${escapeMarkup(apiPlayerKey(team, player))}">View player profile</button>
+        </article>
+    `;
+}
+
+function renderPlayerCollection() {
+    const section = document.getElementById("playerCollectionPanel");
+    const select = document.getElementById("collectPlayerSelect");
+    const cards = document.getElementById("playerCollectionCards");
+    const button = document.getElementById("collectPlayerCard");
+    const status = document.getElementById("playerCollectionStatus");
+    if (!section || !select || !cards || !button || !status) return;
+    const unlocked = gamePicksState.ownedRewards.includes("player-collectibles");
+    section.hidden = !unlocked;
+    if (!unlocked) return;
+    const selectedKey = select.value;
+    select.innerHTML = `<option value="">Choose a player to collect</option>${renderApiPlayerOptions(selectedKey)}`;
+    const selectedPlayer = findApiPlayerByKey(select.value);
+    const alreadyCollected = selectedPlayer
+        && gamePicksState.playerCollection.includes(apiPlayerKey(selectedPlayer.team, selectedPlayer.player));
+    button.disabled = !selectedPlayer || alreadyCollected || gamePicksState.balance < 2500;
+    button.textContent = alreadyCollected ? "Already collected" : "Collect card · 2,500 tokens";
+    if (!allTeams.length) {
+        status.textContent = "Player cards load from the NBA teams API.";
+    } else if (!gamePicksState.playerCollection.length) {
+        status.textContent = "Choose an NBA player above to add your first stat card.";
+    } else {
+        status.textContent = `${gamePicksState.playerCollection.length} player card${gamePicksState.playerCollection.length === 1 ? "" : "s"} collected.`;
+    }
+    cards.innerHTML = gamePicksState.playerCollection.map(key => {
+        const entry = findApiPlayerByKey(key);
+        if (!entry) {
+            return `<article class="hub-collectible-card"><p>Player no longer appears in the current roster API response.</p></article>`;
+        }
+        const { team, player } = entry;
+        return `
+            <article class="hub-collectible-card" style="--team-primary:${escapeMarkup(teamColors[team.name]?.primary || "#c9082a")}">
+                <span class="hub-collectible-card__team">${escapeMarkup(team.name)} · ${escapeMarkup(player.stats_season || "Stats unavailable")}</span>
+                <h3>${escapeMarkup(player.name)}</h3>
+                <div><span>PPG <strong>${escapeMarkup(formatPlayerSeasonStat(player, "pts"))}</strong></span><span>RPG <strong>${escapeMarkup(formatPlayerSeasonStat(player, "reb"))}</strong></span><span>APG <strong>${escapeMarkup(formatPlayerSeasonStat(player, "ast"))}</strong></span></div>
+                <span class="hub-collectible-card__seal">NBA API STAT CARD</span>
+            </article>
+        `;
+    }).join("") || '<p class="hub-reward-empty">Your collection is empty. Choose a player and collect a stat card.</p>';
+}
+
+function renderFranchiseHistory() {
+    const section = document.getElementById("franchiseHistoryPanel");
+    const select = document.getElementById("franchiseHistoryTeam");
+    const content = document.getElementById("franchiseHistoryContent");
+    if (!section || !select || !content) return;
+    const unlocked = gamePicksState.ownedRewards.includes("franchise-history");
+    section.hidden = !unlocked;
+    if (!unlocked) return;
+    select.innerHTML = `<option value="">Choose a franchise</option>${allTeams.map(team =>
+        `<option value="${escapeMarkup(team.name)}" ${gamePicksState.historyTeamName === team.name ? "selected" : ""}>${escapeMarkup(team.name)}</option>`
+    ).join("")}`;
+    const team = allTeams.find(candidate => candidate.name === gamePicksState.historyTeamName);
+    if (!team) {
+        content.innerHTML = `<p class="hub-reward-empty">${allTeams.length
+            ? "Select a franchise to browse its records and championship years."
+            : "Franchise history loads from the NBA teams API."}</p>`;
+        return;
+    }
+    const years = Array.isArray(team.championship_years) ? team.championship_years : [];
+    content.innerHTML = `
+        <div class="hub-franchise-history__summary">
+            <span><strong>${escapeMarkup(team.championships ?? "—")}</strong> championships</span>
+            <span><strong>${escapeMarkup(team.last_season_record || "—")}</strong> last season</span>
+            <span><strong>${escapeMarkup(team.conference || "—")}</strong> conference</span>
+        </div>
+        <h3>${escapeMarkup(team.name)} championship timeline</h3>
+        <p>${years.length
+            ? years.map(year => `<span class="hub-history-year">${escapeMarkup(year)}</span>`).join("")
+            : "No championship years are listed in the team API response."}</p>
+        <small>Team history supplied by the NBA Hub teams API.</small>
+    `;
+}
+
+function renderHubRewards() {
+    const root = document.documentElement;
+    const hasCardStudio = gamePicksState.ownedRewards.includes("stat-card-studio");
+    const cardStudio = document.getElementById("statCardStudioPanel");
+    const styleSelect = document.getElementById("statCardStyleSelect");
+    if (cardStudio) cardStudio.hidden = !hasCardStudio;
+    if (styleSelect) styleSelect.value = gamePicksState.statCardStyle;
+    root.dataset.statCardStyle = hasCardStudio
+        ? gamePicksState.statCardStyle
+        : "classic";
+    renderHubProfile();
+    renderPlayerSpotlight();
+    renderPlayerCollection();
+    renderFranchiseHistory();
+}
+
+function claimDailyGameTokens() {
+    const today = localDateKey();
+    if (gamePicksState.lastClaimDate === today) {
+        setGamePicksWalletStatus("You have already claimed today’s daily tokens.", true);
+        return;
+    }
+    const boosted = gamePicksState.dailyBoostClaims > 0;
+    const claimAmount = DAILY_GAME_TOKEN_CLAIM + (boosted ? DAILY_GAME_TOKEN_BOOST : 0);
+    const nextState = {
+        ...gamePicksState,
+        balance: gamePicksState.balance + claimAmount,
+        lastClaimDate: today,
+        dailyBoostClaims: Math.max(0, gamePicksState.dailyBoostClaims - (boosted ? 1 : 0))
+    };
+    if (saveGamePicksState(nextState)) {
+        setGamePicksWalletStatus(
+            boosted
+                ? `3,000 virtual tokens claimed, including a 2,000-token daily boost. ${nextState.dailyBoostClaims} boosted claims remain.`
+                : "1,000 virtual tokens added to your balance."
+        );
+        renderGamePicks();
+    } else {
+        setGamePicksWalletStatus(gamePicksStorageMessage, true);
+    }
+}
+
+function purchaseOrEquipGamePicksReward(rewardId) {
+    const reward = GAME_PICKS_REWARDS.find(item => item.id === rewardId);
+    if (!reward || reward.available === false) return;
+    if (reward.kind === "consumable") {
+        if (gamePicksState.balance < reward.cost) {
+            setGamePicksShopStatus(
+                `You need ${(reward.cost - gamePicksState.balance).toLocaleString()} more tokens to buy ${reward.title}.`,
+                true
+            );
+            return;
+        }
+        const amount = reward.inventoryAmount || 1;
+        const count = gamePicksState[reward.inventoryKey] || 0;
+        const nextState = {
+            ...gamePicksState,
+            balance: gamePicksState.balance - reward.cost,
+            [reward.inventoryKey]: count + amount
+        };
+        if (saveGamePicksState(nextState)) {
+            renderGamePicks();
+            setGamePicksShopStatus(`${reward.title} purchased.`);
+        } else {
+            setGamePicksShopStatus(gamePicksStorageMessage, true);
+        }
+        return;
+    }
+    if (reward.kind === "feature") {
+        const ownedRewards = gamePicksState.ownedRewards || [];
+        if (ownedRewards.includes(reward.id)) return;
+        if (gamePicksState.balance < reward.cost) {
+            setGamePicksShopStatus(
+                `You need ${(reward.cost - gamePicksState.balance).toLocaleString()} more tokens to unlock ${reward.title}.`,
+                true
+            );
+            return;
+        }
+        if (saveGamePicksState({
+            ...gamePicksState,
+            balance: gamePicksState.balance - reward.cost,
+            ownedRewards: [...ownedRewards, reward.id]
+        })) {
+            renderGamePicks();
+            setGamePicksShopStatus(`${reward.title} unlocked. It is now available in its NBA Hub section.`);
+        } else {
+            setGamePicksShopStatus(gamePicksStorageMessage, true);
+        }
+        return;
+    }
+    if (reward.id === "team-colors" && !gamePicksState.teamColorsTeam) {
+        setGamePicksShopStatus("Choose your favorite NBA team before unlocking or equipping Team Colors.", true);
+        return;
+    }
+    const ownedRewards = gamePicksState.ownedRewards || [];
+    if (ownedRewards.includes(reward.id)) {
+        const isEquipped = reward.kind === "arena-theme"
+            ? gamePicksState.arenaStyle === reward.arenaStyle
+            : gamePicksState.equippedRewardId === reward.id;
+        if (isEquipped) return;
+        const nextState = {
+            ...gamePicksState,
+            equippedRewardId: reward.id,
+            ...(reward.kind === "arena-theme" ? { arenaStyle: reward.arenaStyle } : {}),
+            ...(reward.id === "team-colors" ? { arenaStyle: "franchise" } : {})
+        };
+        if (saveGamePicksState(nextState)) {
+            renderGamePicks();
+            setGamePicksShopStatus(`${reward.title} equipped.`);
+        } else {
+            setGamePicksShopStatus(gamePicksStorageMessage, true);
+        }
+        return;
+    }
+    if (gamePicksState.balance < reward.cost) {
+        setGamePicksShopStatus(
+            `You need ${(reward.cost - gamePicksState.balance).toLocaleString()} more tokens to unlock ${reward.title}.`,
+            true
+        );
+        return;
+    }
+    const nextState = {
+        ...gamePicksState,
+        balance: gamePicksState.balance - reward.cost,
+        ownedRewards: [...ownedRewards, reward.id],
+        equippedRewardId: reward.id,
+        ...(reward.kind === "arena-theme" ? { arenaStyle: reward.arenaStyle } : {}),
+        ...(reward.id === "team-colors" ? { arenaStyle: "franchise" } : {})
+    };
+    if (saveGamePicksState(nextState)) {
+        renderGamePicks();
+        setGamePicksShopStatus(`${reward.title} unlocked and equipped.`);
+    } else {
+        setGamePicksShopStatus(gamePicksStorageMessage, true);
+    }
+}
+
+function setGamePicksShopStatus(message, isError = false) {
+    const status = document.getElementById("gamePicksShopStatus");
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle("is-warning", isError);
+}
+
+function renderGamePicksShop() {
+    const section = document.getElementById("gamePicksSection");
+    const grid = document.getElementById("gamePicksRewardGrid");
+    const title = document.getElementById("gamePicksRewardTitle");
+    const resetButton = document.getElementById("resetGamePicksReward");
+    if (!section || !grid || !title || !resetButton) return;
+
+    const activeSiteTheme = applyGamePicksSiteTheme();
+    const equipped = GAME_PICKS_REWARDS.find(
+        reward => reward.id === gamePicksState.equippedRewardId
+    );
+    section.dataset.rewardStyle = equipped?.style || "default";
+    const teamColorSelection = gamePicksState.teamColorsTeam;
+    const selectedTeamColors = teamColors[teamColorSelection];
+    section.dataset.arenaStyle = activeSiteTheme;
+    if (gamePicksState.ownedRewards.includes("team-colors") && selectedTeamColors) {
+        section.style.setProperty("--game-picks-team-primary", selectedTeamColors.primary);
+        section.style.setProperty("--game-picks-team-dark", selectedTeamColors.dark);
+        section.dataset.rewardTeam = teamColorSelection;
+    } else {
+        section.style.removeProperty("--game-picks-team-primary");
+        section.style.removeProperty("--game-picks-team-dark");
+        delete section.dataset.rewardTeam;
+    }
+    title.textContent = equipped
+        ? `${equipped.title}${equipped.id === "team-colors" && teamColorSelection ? ` · ${teamColorSelection}` : ""}`
+        : "";
+    title.hidden = !equipped;
+    resetButton.hidden = !equipped;
+
+    grid.innerHTML = GAME_PICKS_REWARDS
+        .filter(reward => reward.available !== false)
+        .map(reward => {
+        if (reward.kind === "consumable") {
+            const count = gamePicksState[reward.inventoryKey] || 0;
+            const canBuy = gamePicksState.balance >= reward.cost && !gamePicksStorageMessage;
+            return `
+                <article class="game-picks-reward-card game-picks-reward-card--perk">
+                    <span class="game-picks-reward-card__category">${escapeMarkup(reward.category)}</span>
+                    <h4>${escapeMarkup(reward.title)}</h4>
+                    <p>${escapeMarkup(reward.description)}</p>
+                    <span class="game-picks-reward-inventory">${count} ${escapeMarkup(reward.inventoryLabel)} available</span>
+                    <button type="button" data-game-picks-reward="${escapeMarkup(reward.id)}" ${canBuy ? "" : "disabled"}>
+                        ${escapeMarkup(reward.purchaseLabel)} · ${reward.cost.toLocaleString()}
+                    </button>
+                </article>
+            `;
+        }
+        const owned = (gamePicksState.ownedRewards || []).includes(reward.id);
+        if (reward.kind === "feature") {
+            return `
+                <article class="game-picks-reward-card game-picks-reward-card--feature${owned ? " is-owned" : ""}">
+                    <span class="game-picks-reward-card__category">${escapeMarkup(reward.category)}</span>
+                    <h4>${escapeMarkup(reward.title)}</h4>
+                    <p>${escapeMarkup(reward.description)}</p>
+                    <button type="button" data-game-picks-reward="${escapeMarkup(reward.id)}" ${owned || gamePicksState.balance < reward.cost || Boolean(gamePicksStorageMessage) ? "disabled" : ""}>
+                        ${owned ? "Unlocked · see hub section" : `Unlock · ${reward.cost.toLocaleString()}`}
+                    </button>
+                </article>
+            `;
+        }
+        const isEquipped = reward.kind === "arena-theme"
+            ? gamePicksState.arenaStyle === reward.arenaStyle
+            : gamePicksState.equippedRewardId === reward.id;
+        const disabled = isEquipped || Boolean(gamePicksStorageMessage)
+            || (!owned && gamePicksState.balance < reward.cost)
+            || (reward.id === "team-colors" && !teamColorSelection);
+        const buttonLabel = isEquipped
+            ? "Equipped"
+            : owned
+                ? "Equip"
+                : `Unlock · ${reward.cost.toLocaleString()}`;
+        const teamSelector = reward.id === "team-colors"
+            ? `
+                <label class="game-picks-team-selector">
+                    Your team
+                    <select data-game-picks-team-select aria-label="Choose your favorite NBA team">
+                        <option value="">Choose a team</option>
+                        ${Object.keys(teamColors).sort().map(teamName => `
+                            <option value="${escapeMarkup(teamName)}" ${teamName === teamColorSelection ? "selected" : ""}>${escapeMarkup(teamName)}</option>
+                        `).join("")}
+                    </select>
+                </label>
+            `
+            : "";
+        return `
+            <article class="game-picks-reward-card${owned ? " is-owned" : ""}${isEquipped ? " is-equipped" : ""}">
+                <span class="game-picks-reward-card__category">${escapeMarkup(reward.category)}</span>
+                <h4>${escapeMarkup(reward.title)}</h4>
+                <p>${escapeMarkup(reward.description)}</p>
+                ${teamSelector}
+                <button type="button" data-game-picks-reward="${escapeMarkup(reward.id)}" ${disabled ? "disabled" : ""}>
+                    ${buttonLabel}
+                </button>
+            </article>
+        `;
+    }).join("");
 }
 
 async function loadGamePicksSchedule() {
@@ -732,7 +1472,9 @@ async function loadGamePicksSchedule() {
         }
         gamePicksScheduleGames = payload.games.map(scheduleGameInPhilippines);
         gamePicksScheduleMessage = "";
+        settleFranchiseChallenges();
         settleGamePicksBets();
+        renderFranchiseChallenge();
         renderGamePicks();
     } catch (error) {
         if (controller.signal.aborted) return;
@@ -922,6 +1664,10 @@ function renderGamePicksSlip() {
     const placeButton = document.getElementById("placeGamePicksBet");
     const clearButton = document.getElementById("clearGamePicksSlip");
     const stakeInput = document.getElementById("gamePicksStake");
+    const insuranceCheckbox = document.getElementById("gamePicksUseInsurance");
+    const insuranceCount = document.getElementById("gamePicksInsuranceCount");
+    const payoutBoostCheckbox = document.getElementById("gamePicksUsePayoutBoost");
+    const payoutBoostCount = document.getElementById("gamePicksPayoutBoostCount");
     if (!slipList || !slipCount || !placeButton || !clearButton || !stakeInput) return;
 
     const slip = gamePicksState.slip;
@@ -932,7 +1678,7 @@ function renderGamePicksSlip() {
                 <div>
                     <strong>${escapeMarkup(leg.selected_team)}</strong>
                     <span>${escapeMarkup(leg.away)} at ${escapeMarkup(leg.home)}</span>
-                    <small>${escapeMarkup(leg.bookmaker || "Sportsbook")} · ${escapeMarkup(formatGamePicksAmericanOdds(leg.american_odds))} · updated ${escapeMarkup(formatGamePicksQuoteTime({ last_updated: leg.odds_updated_at }))} PHT</small>
+                    <small>${escapeMarkup(formatGamePicksMultiplier(leg.decimal_odds))} multiplier · updated ${escapeMarkup(formatGamePicksQuoteTime({ last_updated: leg.odds_updated_at }))} PHT</small>
                 </div>
                 <button type="button" data-game-picks-remove="${escapeMarkup(leg.event_id)}" aria-label="Remove ${escapeMarkup(leg.selected_team)} pick">Remove</button>
             </article>
@@ -940,20 +1686,39 @@ function renderGamePicksSlip() {
         : '<p class="game-picks-empty">Choose a team from one or more upcoming games to build your slip.</p>';
 
     const combinedDecimal = gamePicksSlipDecimalOdds();
-    const combinedAmerican = slip.length ? gamePicksDecimalToAmerican(combinedDecimal) : null;
     const stake = Number(stakeInput.value);
     const validStake = Number.isSafeInteger(stake) && stake > 0 && stake <= gamePicksState.balance;
     const canPlace = slip.length > 0
         && validStake
         && slip.every(gamePicksLegIsBettable);
+    if (insuranceCount) {
+        const count = gamePicksState.parlayInsuranceCount || 0;
+        insuranceCount.textContent = `${count} ${count === 1 ? "available" : "available"}`;
+    }
+    if (insuranceCheckbox) {
+        insuranceCheckbox.disabled = slip.length < 2 || !(gamePicksState.parlayInsuranceCount > 0);
+        if (slip.length < 2 || gamePicksState.parlayInsuranceCount < 1) {
+            insuranceCheckbox.checked = false;
+        }
+    }
+    if (payoutBoostCount) {
+        const count = gamePicksState.payoutBoostCount || 0;
+        payoutBoostCount.textContent = `${count} available`;
+    }
+    if (payoutBoostCheckbox) {
+        payoutBoostCheckbox.disabled = slip.length < 1 || !(gamePicksState.payoutBoostCount > 0);
+        if (slip.length < 1 || gamePicksState.payoutBoostCount < 1) {
+            payoutBoostCheckbox.checked = false;
+        }
+    }
     if (combinedOddsElement) {
-        combinedOddsElement.textContent = combinedAmerican == null
-            ? "—"
-            : `${formatGamePicksAmericanOdds(combinedAmerican)} (${combinedDecimal.toFixed(2)}x)`;
+        combinedOddsElement.textContent = slip.length
+            ? formatGamePicksMultiplier(combinedDecimal)
+            : "—";
     }
     if (potentialReturnElement) {
         potentialReturnElement.textContent = validStake && slip.length
-            ? `${Math.round(stake * combinedDecimal).toLocaleString()} tokens`
+            ? `${Math.round(stake * combinedDecimal * (payoutBoostCheckbox?.checked ? 2 : 1)).toLocaleString()} tokens`
             : "—";
     }
     placeButton.disabled = !canPlace;
@@ -978,6 +1743,19 @@ function placeGamePicksWager() {
         setGamePicksWalletStatus("Refresh and review every leg before placing this pick.", true);
         return;
     }
+    const useInsurance = Boolean(document.getElementById("gamePicksUseInsurance")?.checked);
+    const usePayoutBoost = Boolean(document.getElementById("gamePicksUsePayoutBoost")?.checked);
+    if (useInsurance && (
+        gamePicksState.slip.length < 2
+        || gamePicksState.parlayInsuranceCount < 1
+    )) {
+        setGamePicksWalletStatus("Parlay Safety Net requires an available coupon and at least two picks.", true);
+        return;
+    }
+    if (usePayoutBoost && gamePicksState.payoutBoostCount < 1) {
+        setGamePicksWalletStatus("Buy a 2× Payout Boost before applying it to a ticket.", true);
+        return;
+    }
 
     const combinedDecimal = gamePicksSlipDecimalOdds();
     const bet = {
@@ -985,7 +1763,8 @@ function placeGamePicksWager() {
         legs: gamePicksState.slip.map(leg => ({ ...leg })),
         stake,
         combined_decimal_odds: combinedDecimal,
-        combined_american_odds: gamePicksDecimalToAmerican(combinedDecimal),
+        insured: useInsurance,
+        payout_boosted: usePayoutBoost,
         status: "open",
         payout: null,
         placed_at: new Date().toISOString(),
@@ -994,6 +1773,8 @@ function placeGamePicksWager() {
     const nextState = {
         ...gamePicksState,
         balance: gamePicksState.balance - stake,
+        parlayInsuranceCount: (gamePicksState.parlayInsuranceCount || 0) - (useInsurance ? 1 : 0),
+        payoutBoostCount: (gamePicksState.payoutBoostCount || 0) - (usePayoutBoost ? 1 : 0),
         slip: [],
         bets: [bet, ...gamePicksState.bets]
     };
@@ -1041,13 +1822,26 @@ function settleGamePicksBets() {
                         : "lost"
             };
         });
-        if (legs.some(leg => leg.result === "lost")) {
+        const losses = legs.filter(leg => leg.result === "lost").length;
+        const hasPendingLegs = legs.some(leg => leg.result === "pending");
+        if (losses && (!bet.insured || losses > 1)) {
             return { ...bet, legs, status: "lost", payout: 0, settled_at: new Date().toISOString() };
+        }
+        if (bet.insured && losses === 1 && !hasPendingLegs) {
+            balance += bet.stake;
+            changed = true;
+            return {
+                ...bet,
+                legs,
+                status: "protected",
+                payout: bet.stake,
+                settled_at: new Date().toISOString()
+            };
         }
         if (legs.every(leg => leg.result !== "pending")) {
             const winningLegs = legs.filter(leg => leg.result === "won");
             const payout = winningLegs.length
-                ? Math.round(bet.stake * winningLegs.reduce(
+                ? Math.round(bet.stake * (bet.payout_boosted ? 2 : 1) * winningLegs.reduce(
                     (combined, leg) => combined * Number(leg.decimal_odds),
                     1
                 ))
@@ -1093,6 +1887,8 @@ function renderGamePicksBets() {
             ? "Open"
             : bet.status === "won"
                 ? `Won · ${Number(bet.payout || 0).toLocaleString()} returned`
+                : bet.status === "protected"
+                    ? `Safety Net · ${Number(bet.payout || 0).toLocaleString()} stake returned`
                 : bet.status === "push"
                     ? `Push · ${Number(bet.payout || 0).toLocaleString()} returned`
                     : "Lost";
@@ -1105,12 +1901,14 @@ function renderGamePicksBets() {
                 <ul>
                     ${bet.legs.map(leg => `
                         <li>
-                            <span>${escapeMarkup(leg.selected_team)} ${escapeMarkup(formatGamePicksAmericanOdds(leg.american_odds))}</span>
+                            <span>${escapeMarkup(leg.selected_team)} ${escapeMarkup(formatGamePicksMultiplier(leg.decimal_odds))}</span>
                             <span>${escapeMarkup(leg.result === "pending" ? "Pending" : leg.result)}</span>
                         </li>
                     `).join("")}
                 </ul>
-                <p>${Number(bet.stake).toLocaleString()} tokens · Combined ${escapeMarkup(formatGamePicksAmericanOdds(bet.combined_american_odds))} · Potential return ${Math.round(bet.stake * bet.combined_decimal_odds).toLocaleString()} tokens</p>
+                ${bet.insured ? '<span class="game-picks-insured-label">Parlay Safety Net used</span>' : ""}
+                ${bet.payout_boosted ? '<span class="game-picks-boosted-label">2× Payout Boost used</span>' : ""}
+                <p>${Number(bet.stake).toLocaleString()} tokens · Combined ${escapeMarkup(formatGamePicksMultiplier(bet.combined_decimal_odds))} · Potential return ${Math.round(bet.stake * bet.combined_decimal_odds * (bet.payout_boosted ? 2 : 1)).toLocaleString()} tokens</p>
             </article>
         `;
     }).join("");
@@ -1153,7 +1951,7 @@ function renderGamePicksGames() {
                 && gamePicksQuoteIsFresh(quote)
             );
             const quoteText = quote
-                ? `${formatGamePicksAmericanOdds(quote.american)} · ${quote.bookmaker || "Sportsbook"}`
+                ? formatGamePicksMultiplier(quote.decimal)
                 : "No current price";
             return `
                 <button type="button"
@@ -1177,14 +1975,59 @@ function renderGamePicksGames() {
                         || !gamePicksQuoteIsFresh(event.away_odds)
                         ? "One or more sportsbook prices are missing or stale."
                         : "";
+        const favoriteTeam = gamePicksState.ownedRewards.includes("team-colors")
+            ? gamePicksState.teamColorsTeam
+            : "";
+        const featuresFavorite = Boolean(
+            favoriteTeam
+            && (
+                gamePicksTeamKey(event.home) === gamePicksTeamKey(favoriteTeam)
+                || gamePicksTeamKey(event.away) === gamePicksTeamKey(favoriteTeam)
+            )
+        );
+        const challengePick = featuresFavorite
+            ? gamePicksState.franchiseChallengePicks.find(pick => pick.event_id === event.id)
+            : null;
+        const challengeAvailable = Boolean(
+            featuresFavorite
+            && scheduleGame
+            && Number(scheduleGame.status_code) === 1
+            && Date.parse(event.commence_time) > Date.now()
+        );
+        const challengeResult = challengePick
+            ? challengePick.result === "pending"
+                ? `Locked: ${challengePick.team} to ${challengePick.prediction === "win" ? "win" : "lose"}`
+                : challengePick.result === "correct"
+                    ? `Correct · +${Number(challengePick.payout).toLocaleString()} tokens`
+                    : "Incorrect · streak reset"
+            : "";
+        const challengeControls = featuresFavorite
+            ? `
+                <div class="game-picks-franchise-challenge">
+                    <strong>Franchise Challenge</strong>
+                    ${challengePick
+                        ? `<p>${escapeMarkup(challengeResult)}</p>`
+                        : `
+                            <p>Will ${escapeMarkup(favoriteTeam)} win this game?</p>
+                            <div>
+                                <button type="button" data-game-picks-challenge="${escapeMarkup(event.id)}" data-game-picks-prediction="win" ${challengeAvailable ? "" : "disabled"}>Win</button>
+                                <button type="button" data-game-picks-challenge="${escapeMarkup(event.id)}" data-game-picks-prediction="loss" ${challengeAvailable ? "" : "disabled"}>Lose</button>
+                            </div>
+                        `}
+                </div>
+            `
+            : "";
         return `
-            <article class="game-picks-game-card">
+            <article class="game-picks-game-card"${featuresFavorite ? ' data-favorite-team="true"' : ""}>
                 <div class="game-picks-game-card__meta">
                     <span>${escapeMarkup(startLabel)} PHT</span>
-                    <span>Moneyline</span>
+                    ${featuresFavorite
+                        ? `<span class="game-picks-favorite-tag">Your team · ${escapeMarkup(favoriteTeam)}</span>`
+                        : "<span>Moneyline</span>"}
                 </div>
                 <h3>${escapeMarkup(event.away)} <span>at</span> ${escapeMarkup(event.home)}</h3>
                 <div class="game-picks-options">${pickOptions}</div>
+                ${challengeControls}
                 ${disabledReason ? `<p class="game-picks-game-card__notice">${escapeMarkup(disabledReason)}</p>` : ""}
             </article>
         `;
@@ -1199,7 +2042,11 @@ function renderGamePicks() {
     if (claimButton) {
         const claimed = gamePicksState.lastClaimDate === localDateKey();
         claimButton.disabled = claimed || Boolean(gamePicksStorageMessage);
-        claimButton.textContent = claimed ? "Claimed today" : "Claim 1,000 daily tokens";
+        claimButton.textContent = claimed
+            ? "Claimed today"
+            : gamePicksState.dailyBoostClaims > 0
+                ? "Claim 3,000 tokens · boosted"
+                : "Claim 1,000 daily tokens";
     }
     if (gamePicksStorageMessage) {
         setGamePicksWalletStatus(gamePicksStorageMessage, true);
@@ -1213,7 +2060,7 @@ function renderGamePicks() {
             })
             : "";
         if (gamePicksOddsSnapshot?.status === "fresh") {
-            oddsStatus.textContent = `Real odds from The Odds API · checked ${checkedAt || "just now"} PHT · refreshes every 5 minutes.`;
+            oddsStatus.textContent = `Live odds · checked ${checkedAt || "just now"} PHT · refreshes every 5 minutes.`;
         } else if (gamePicksOddsSnapshot?.status === "stale") {
             oddsStatus.textContent = `${gamePicksOddsSnapshot.message || "Showing stale odds"}${checkedAt ? ` Last checked ${checkedAt} PHT.` : ""}`;
         } else if (gamePicksOddsSnapshot?.status === "unavailable") {
@@ -1226,10 +2073,14 @@ function renderGamePicks() {
     if (gamePicksScheduleMessage) {
         setGamePicksWalletStatus(gamePicksScheduleMessage, true);
     }
+    settleFranchiseChallenges();
     settleGamePicksBets();
+    renderFranchiseChallenge();
     renderGamePicksSlip();
     renderGamePicksGames();
     renderGamePicksBets();
+    renderGamePicksShop();
+    renderHubRewards();
 }
 
 function initializeGamePicks() {
@@ -1242,7 +2093,17 @@ function initializeGamePicks() {
         else setGamePicksWalletStatus(gamePicksStorageMessage, true);
     });
     document.getElementById("gamePicksStake").addEventListener("input", renderGamePicksSlip);
+    document.getElementById("gamePicksUseInsurance").addEventListener("change", renderGamePicksSlip);
+    document.getElementById("gamePicksUsePayoutBoost").addEventListener("change", renderGamePicksSlip);
     document.getElementById("gamePicksGamesGrid").addEventListener("click", event => {
+        const challengeButton = event.target.closest("[data-game-picks-challenge]");
+        if (challengeButton) {
+            setFranchiseChallengePick(
+                challengeButton.dataset.gamePicksChallenge,
+                challengeButton.dataset.gamePicksPrediction
+            );
+            return;
+        }
         const option = event.target.closest("[data-game-picks-event]");
         if (option) {
             toggleGamePicksLeg(option.dataset.gamePicksEvent, option.dataset.gamePicksTeam);
@@ -1256,6 +2117,132 @@ function initializeGamePicks() {
         );
         if (saveGamePicksState({ ...gamePicksState, slip })) renderGamePicks();
         else setGamePicksWalletStatus(gamePicksStorageMessage, true);
+    });
+    document.getElementById("gamePicksRewardGrid").addEventListener("click", event => {
+        const button = event.target.closest("[data-game-picks-reward]");
+        if (button) purchaseOrEquipGamePicksReward(button.dataset.gamePicksReward);
+    });
+    document.getElementById("gamePicksRewardGrid").addEventListener("change", event => {
+        const select = event.target.closest("[data-game-picks-team-select]");
+        if (!select) return;
+        const teamName = select.value;
+        if (!Object.prototype.hasOwnProperty.call(teamColors, teamName)) {
+            renderGamePicksShop();
+            return;
+        }
+        if (saveGamePicksState({ ...gamePicksState, teamColorsTeam: teamName })) {
+            renderGamePicksShop();
+            renderGamePicksGames();
+            renderFranchiseChallenge();
+            setGamePicksShopStatus(
+                gamePicksState.ownedRewards.includes("team-colors")
+                    ? `${teamName} colors selected.`
+                    : `${teamName} selected. Unlock Team Colors to apply them.`
+            );
+        } else {
+            setGamePicksShopStatus(gamePicksStorageMessage, true);
+        }
+    });
+    document.getElementById("playerSpotlightSelect").addEventListener("change", event => {
+        const key = event.target.value;
+        if (key && !findApiPlayerByKey(key)) {
+            renderPlayerSpotlight();
+            return;
+        }
+        if (saveGamePicksState({ ...gamePicksState, spotlightPlayerKey: key })) {
+            renderPlayerSpotlight();
+        } else {
+            setGamePicksWalletStatus(gamePicksStorageMessage, true);
+        }
+    });
+    document.getElementById("playerSpotlightContent").addEventListener("click", event => {
+        const button = event.target.closest("[data-spotlight-open-player]");
+        if (!button) return;
+        const entry = findApiPlayerByKey(button.dataset.spotlightOpenPlayer);
+        if (entry) openPlayerModal(entry.player, entry.team);
+    });
+    document.getElementById("collectPlayerSelect").addEventListener("change", event => {
+        const selected = findApiPlayerByKey(event.target.value);
+        const alreadyCollected = selected
+            && gamePicksState.playerCollection.includes(apiPlayerKey(selected.team, selected.player));
+        const button = document.getElementById("collectPlayerCard");
+        button.disabled = !selected || Boolean(alreadyCollected) || gamePicksState.balance < 2500;
+        button.textContent = alreadyCollected ? "Already collected" : "Collect card · 2,500 tokens";
+    });
+    document.getElementById("collectPlayerCard").addEventListener("click", () => {
+        const select = document.getElementById("collectPlayerSelect");
+        const selected = findApiPlayerByKey(select.value);
+        if (!selected) {
+            document.getElementById("playerCollectionStatus").textContent =
+                "Choose a current player from the NBA roster API first.";
+            return;
+        }
+        const key = apiPlayerKey(selected.team, selected.player);
+        if (gamePicksState.playerCollection.includes(key)) return;
+        if (gamePicksState.balance < 2500) {
+            document.getElementById("playerCollectionStatus").textContent =
+                "You need 2,500 tokens to collect this player card.";
+            return;
+        }
+        if (saveGamePicksState({
+            ...gamePicksState,
+            balance: gamePicksState.balance - 2500,
+            playerCollection: [...gamePicksState.playerCollection, key]
+        })) {
+            renderGamePicks();
+            document.getElementById("playerCollectionStatus").textContent =
+                `${selected.player.name} added to your collection.`;
+        } else {
+            setGamePicksWalletStatus(gamePicksStorageMessage, true);
+        }
+    });
+    document.getElementById("franchiseHistoryTeam").addEventListener("change", event => {
+        const teamName = event.target.value;
+        if (teamName && !allTeams.some(team => team.name === teamName)) {
+            renderFranchiseHistory();
+            return;
+        }
+        if (saveGamePicksState({ ...gamePicksState, historyTeamName: teamName })) {
+            renderFranchiseHistory();
+        } else {
+            setGamePicksWalletStatus(gamePicksStorageMessage, true);
+        }
+    });
+    document.getElementById("hubProfileTitleSelect").addEventListener("change", event => {
+        if (!GAME_PICKS_PROFILE_TITLES.includes(event.target.value)) return;
+        if (saveGamePicksState({ ...gamePicksState, profileTitle: event.target.value })) {
+            renderHubProfile();
+        } else {
+            setGamePicksWalletStatus(gamePicksStorageMessage, true);
+        }
+    });
+    document.getElementById("hubProfileBannerSelect").addEventListener("change", event => {
+        if (!GAME_PICKS_PROFILE_BANNERS.includes(event.target.value)) return;
+        if (saveGamePicksState({ ...gamePicksState, profileBanner: event.target.value })) {
+            renderHubProfile();
+        } else {
+            setGamePicksWalletStatus(gamePicksStorageMessage, true);
+        }
+    });
+    document.getElementById("statCardStyleSelect").addEventListener("change", event => {
+        if (!GAME_PICKS_STAT_CARD_STYLES.includes(event.target.value)) return;
+        if (saveGamePicksState({ ...gamePicksState, statCardStyle: event.target.value })) {
+            renderHubRewards();
+        } else {
+            setGamePicksWalletStatus(gamePicksStorageMessage, true);
+        }
+    });
+    document.getElementById("resetGamePicksReward").addEventListener("click", () => {
+        if (saveGamePicksState({
+            ...gamePicksState,
+            equippedRewardId: "",
+            arenaStyle: "hardwood"
+        })) {
+            renderGamePicks();
+            setGamePicksShopStatus("Default NBA Hub theme restored. Your rewards remain unlocked.");
+        } else {
+            setGamePicksShopStatus(gamePicksStorageMessage, true);
+        }
     });
 
     renderGamePicks();
@@ -1438,6 +2425,8 @@ async function loadLiveScores({ background = false } = {}) {
                         .map(game => [game.id, `${game.home_score}-${game.away_score}`])
                 );
                 scheduleGames = mergeLiveScoresIntoSchedule(scheduleGames, payload.games);
+                playoffScheduleBySeason.set(selectedScheduleSeason, scheduleGames);
+                refreshPlayoffBracketFromCache(selectedScheduleSeason);
                 newlyFinalGame = scheduleGames.find(game =>
                     isCompletedScheduleGame(game)
                     && previousFinalScores.get(game.id)
@@ -1644,20 +2633,102 @@ function formatTeamStandingRecord(team) {
     return `${formatStandingValue(team.wins)}-${formatStandingValue(team.losses)}`;
 }
 
+function usesHistoricalPlayoffSeeding() {
+    return selectedStandingsPhase === "regular"
+        && Number(selectedStandingsSeason.slice(0, 4)) < 2015;
+}
+
+function compareConferenceStandings(left, right) {
+    const leftPct = Number(left.win_pct);
+    const rightPct = Number(right.win_pct);
+    if (Number.isFinite(leftPct) && Number.isFinite(rightPct) && leftPct !== rightPct) {
+        return rightPct - leftPct;
+    }
+    const leftWins = Number(left.wins);
+    const rightWins = Number(right.wins);
+    if (Number.isFinite(leftWins) && Number.isFinite(rightWins) && leftWins !== rightWins) {
+        return rightWins - leftWins;
+    }
+
+    const leftRank = Number(left.conference_rank);
+    const rightRank = Number(right.conference_rank);
+    if (
+        left.conference_rank != null
+        && right.conference_rank != null
+        && Number.isFinite(leftRank)
+        && Number.isFinite(rightRank)
+        && leftRank !== rightRank
+    ) return leftRank - rightRank;
+
+    const recordPercentage = record => {
+        const match = String(record || "").match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+        if (!match) return null;
+        const wins = Number(match[1]);
+        const losses = Number(match[2]);
+        return wins + losses ? wins / (wins + losses) : null;
+    };
+    const leftConferencePct = recordPercentage(left.conference_record);
+    const rightConferencePct = recordPercentage(right.conference_record);
+    if (
+        leftConferencePct != null
+        && rightConferencePct != null
+        && leftConferencePct !== rightConferencePct
+    ) return rightConferencePct - leftConferencePct;
+
+    const leftDifferential = Number(left.point_differential);
+    const rightDifferential = Number(right.point_differential);
+    if (
+        Number.isFinite(leftDifferential)
+        && Number.isFinite(rightDifferential)
+        && leftDifferential !== rightDifferential
+    ) return rightDifferential - leftDifferential;
+    return 0;
+}
+
+function rankConferenceStandings(standings, conference, season, historicalSeeding) {
+    const ranked = standings
+        .filter(team => team.conference === conference)
+        .sort(compareConferenceStandings);
+    if (!historicalSeeding) return ranked;
+
+    const seasonStart = Number(season.slice(0, 4));
+    const protectedSeedCount = seasonStart < 2005 ? 3 : 4;
+    const divisionWinners = ranked
+        .filter(team => team.division_champion)
+        .slice(0, protectedSeedCount);
+    for (const divisionWinner of divisionWinners) {
+        const currentIndex = ranked.indexOf(divisionWinner);
+        if (currentIndex < protectedSeedCount) continue;
+
+        let replaceIndex = -1;
+        for (let index = protectedSeedCount - 1; index >= 0; index--) {
+            if (!ranked[index].division_champion) {
+                replaceIndex = index;
+                break;
+            }
+        }
+        if (replaceIndex < 0) continue;
+
+        ranked.splice(currentIndex, 1);
+        ranked.splice(replaceIndex, 0, divisionWinner);
+    }
+    return ranked;
+}
+
 function renderStandings(standings) {
     const tbody = document.getElementById("standingsTableBody");
     const panel = document.getElementById("standings-panel");
     if (!tbody || !panel) return;
+    const historicalSeeding = usesHistoricalPlayoffSeeding();
+    const historicalRuleNote = document.getElementById("standingsHistoricalRule");
+    if (historicalRuleNote) historicalRuleNote.hidden = !historicalSeeding;
 
-    const conferenceStandings = standings
-        .filter(team => team.conference === selectedStandingsConference)
-        .sort((left, right) => {
-            const pctDifference = Number(right.win_pct ?? -1) - Number(left.win_pct ?? -1);
-            if (Number.isFinite(pctDifference) && pctDifference !== 0) return pctDifference;
-            const winDifference = Number(right.wins ?? -1) - Number(left.wins ?? -1);
-            if (Number.isFinite(winDifference) && winDifference !== 0) return winDifference;
-            return String(left.team || "").localeCompare(String(right.team || ""));
-        });
+    const conferenceStandings = rankConferenceStandings(
+        standings,
+        selectedStandingsConference,
+        selectedStandingsSeason,
+        historicalSeeding
+    );
 
     if (!conferenceStandings.length) {
         tbody.innerHTML = '<tr><td colspan="14" class="standings-empty">No standings are available for this conference yet.</td></tr>';
@@ -1669,9 +2740,12 @@ function renderStandings(standings) {
             <td>
                 <div class="standings-team-cell">
                     <span class="standings-rank">${index + 1}</span>
-                    ${team.logo ? `<img src="${escapeMarkup(team.logo)}" alt="" loading="lazy">` : ""}
+                    ${playoffTeamLogo(team) ? `<img src="${escapeMarkup(playoffTeamLogo(team))}" alt="" loading="lazy">` : ""}
                     <span class="standings-team-info">
-                        <span class="standings-team-name">${escapeMarkup(team.team || "NBA team")}</span>
+                        <span class="standings-team-name">
+                            ${escapeMarkup(team.team || "NBA team")}
+                            ${historicalSeeding && team.division_champion ? '<span class="standings-division-champion">Division champion</span>' : ""}
+                        </span>
                         <span class="standings-team-record">${escapeMarkup(formatTeamStandingRecord(team))}</span>
                     </span>
                 </div>
@@ -1691,6 +2765,544 @@ function renderStandings(standings) {
             <td>${escapeMarkup(formatStandingValue(team.streak, "—"))}</td>
         </tr>
     `).join("");
+}
+
+function loadStandingsPrediction() {
+    if (standingsPrediction) return standingsPrediction;
+    try {
+        const stored = localStorage.getItem(STANDINGS_PREDICTION_STORAGE_KEY);
+        standingsPrediction = stored ? JSON.parse(stored) : {};
+        if (!standingsPrediction || typeof standingsPrediction !== "object" || Array.isArray(standingsPrediction)) {
+            throw new Error("Saved standings prediction has an invalid format.");
+        }
+    } catch (error) {
+        console.error("Standings prediction could not be loaded:", error);
+        standingsPrediction = {};
+    }
+    return standingsPrediction;
+}
+
+function renderStandingsPrediction() {
+    const grid = document.getElementById("standingsPredictionGrid");
+    if (!grid) return;
+    if (!allTeams.length) {
+        grid.innerHTML = '<p class="standings-prediction-status">NBA teams are unavailable. The prediction form will appear when the team API is available.</p>';
+        updateStandingsPredictionValidity();
+        return;
+    }
+    const saved = loadStandingsPrediction();
+    grid.innerHTML = ["Eastern", "Western"].map(conference => {
+        const conferenceTeams = allTeams.filter(team => team.conference === conference);
+        const teams = orderedPredictionTeams(conferenceTeams, saved[conference]);
+        if (teams.length !== 15) {
+            return `<fieldset class="standings-prediction-conference">
+                <legend>${conference} Conference</legend>
+                <p class="standings-prediction-status">Expected 15 API teams; received ${teams.length}. Predictions are disabled until the roster is complete.</p>
+            </fieldset>`;
+        }
+        return `<fieldset class="standings-prediction-conference">
+            <legend>${conference} Conference</legend>
+            <ol class="standings-prediction-list" data-prediction-list="${conference}" aria-label="${conference} Conference predicted order">
+                ${teams.map((team, index) => `
+                    <li class="standings-prediction-team" draggable="true" data-prediction-team="${escapeMarkup(team.id)}">
+                        <span class="standings-prediction-rank">${index + 1}</span>
+                        ${team.logo ? `<img src="${escapeMarkup(team.logo)}" alt="" loading="lazy">` : ""}
+                        <span class="standings-prediction-name">${escapeMarkup(team.name)}</span>
+                        <span class="standings-prediction-move">
+                            <button type="button" data-prediction-move="up" aria-label="Move ${escapeMarkup(team.name)} up">↑</button>
+                            <button type="button" data-prediction-move="down" aria-label="Move ${escapeMarkup(team.name)} down">↓</button>
+                        </span>
+                    </li>
+                `).join("")}
+            </ol>
+        </fieldset>`;
+    }).join("");
+    updateStandingsPredictionValidity();
+}
+
+function orderedPredictionTeams(teams, savedOrder) {
+    const byId = new Map(teams.map(team => [String(team.id), team]));
+    let orderedIds = [];
+    if (Array.isArray(savedOrder)) {
+        orderedIds = savedOrder.map(String);
+    } else if (savedOrder && typeof savedOrder === "object") {
+        orderedIds = Object.entries(savedOrder)
+            .sort((left, right) => Number(left[1]) - Number(right[1]))
+            .map(([teamId]) => String(teamId));
+    }
+    const ordered = orderedIds.map(teamId => byId.get(teamId)).filter(Boolean);
+    const seenIds = new Set(ordered.map(team => String(team.id)));
+    return [
+        ...ordered,
+        ...teams
+            .filter(team => !seenIds.has(String(team.id)))
+            .sort((left, right) => String(left.name).localeCompare(String(right.name)))
+    ];
+}
+
+function updateStandingsPredictionValidity() {
+    const status = document.getElementById("standingsPredictionStatus");
+    const saveButton = document.getElementById("saveStandingsPrediction");
+    const grid = document.getElementById("standingsPredictionGrid");
+    if (!grid || !status || !saveButton) return;
+    const conferences = ["Eastern", "Western"];
+    const valid = allTeams.length === 30 && conferences.every(conference => {
+        const list = grid.querySelector(`[data-prediction-list="${conference}"]`);
+        const teamIds = list ? [...list.querySelectorAll("[data-prediction-team]")]
+            .map(team => team.dataset.predictionTeam) : [];
+        return teamIds.length === 15 && new Set(teamIds).size === 15;
+    });
+    status.textContent = valid
+        ? "Drag the teams into your 1–15 order, then save your prediction."
+        : "The team list is incomplete. Load all 30 teams before saving.";
+    saveButton.disabled = !valid;
+}
+
+function saveStandingsPrediction(event) {
+    event.preventDefault();
+    updateStandingsPredictionValidity();
+    const status = document.getElementById("standingsPredictionStatus");
+    const grid = document.getElementById("standingsPredictionGrid");
+    if (!grid || !status || document.getElementById("saveStandingsPrediction").disabled) return;
+    const prediction = { season: "2026-27" };
+    for (const conference of ["Eastern", "Western"]) {
+        prediction[conference] = [...grid.querySelectorAll(`[data-prediction-list="${conference}"] [data-prediction-team]`)]
+            .map(team => Number(team.dataset.predictionTeam));
+    }
+    try {
+        localStorage.setItem(STANDINGS_PREDICTION_STORAGE_KEY, JSON.stringify(prediction));
+        standingsPrediction = prediction;
+        status.textContent = "Your 2026–27 standings prediction is saved in this browser.";
+    } catch (error) {
+        console.error("Standings prediction could not be saved:", error);
+        status.textContent = "Your prediction could not be saved. Check this browser's storage settings and try again.";
+    }
+}
+
+function updateStandingsPredictionOrder(list) {
+    if (!list) return;
+    [...list.querySelectorAll("[data-prediction-team]")].forEach((team, index, teams) => {
+        team.querySelector(".standings-prediction-rank").textContent = String(index + 1);
+        team.querySelector('[data-prediction-move="up"]').disabled = index === 0;
+        team.querySelector('[data-prediction-move="down"]').disabled = index === teams.length - 1;
+    });
+    updateStandingsPredictionValidity();
+}
+
+function moveStandingsPredictionTeam(event) {
+    const button = event.target.closest("[data-prediction-move]");
+    if (!button) return;
+    const team = button.closest("[data-prediction-team]");
+    const list = team?.parentElement;
+    if (!team || !list) return;
+    if (button.dataset.predictionMove === "up" && team.previousElementSibling) {
+        list.insertBefore(team, team.previousElementSibling);
+    } else if (button.dataset.predictionMove === "down" && team.nextElementSibling) {
+        list.insertBefore(team.nextElementSibling, team);
+    }
+    updateStandingsPredictionOrder(list);
+}
+
+function startStandingsPredictionDrag(event) {
+    const team = event.target.closest("[data-prediction-team]");
+    if (!team) return;
+    team.classList.add("is-dragging");
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", team.dataset.predictionTeam);
+    }
+}
+
+function dragOverStandingsPrediction(event) {
+    const target = event.target.closest("[data-prediction-team]");
+    const dragged = document.querySelector("#standingsPredictionGrid .is-dragging");
+    if (!target || !dragged || target === dragged || target.parentElement !== dragged.parentElement) return;
+    event.preventDefault();
+    const bounds = target.getBoundingClientRect();
+    const insertBeforeTarget = event.clientY < bounds.top + bounds.height / 2;
+    target.parentElement.insertBefore(dragged, insertBeforeTarget ? target : target.nextElementSibling);
+    updateStandingsPredictionOrder(target.parentElement);
+}
+
+function endStandingsPredictionDrag(event) {
+    const team = event.target.closest("[data-prediction-team]");
+    if (!team) return;
+    team.classList.remove("is-dragging");
+    updateStandingsPredictionOrder(team.parentElement);
+}
+
+function clearStandingsPrediction() {
+    try {
+        localStorage.removeItem(STANDINGS_PREDICTION_STORAGE_KEY);
+        standingsPrediction = {};
+        renderStandingsPrediction();
+        const status = document.getElementById("standingsPredictionStatus");
+        if (status) status.textContent = "Your saved prediction was cleared.";
+    } catch (error) {
+        console.error("Standings prediction could not be cleared:", error);
+        const status = document.getElementById("standingsPredictionStatus");
+        if (status) status.textContent = "Your prediction could not be cleared. Check this browser's storage settings and try again.";
+    }
+}
+
+function sortedStandingsForBracket(standings, conference, season) {
+    const historicalSeeding = Number(season.slice(0, 4)) < 2015;
+    return rankConferenceStandings(standings, conference, season, historicalSeeding)
+        .slice(0, 10)
+        .map((team, index) => ({ ...team, playoffSeed: index + 1 }));
+}
+
+function actualFirstRoundOpponent(team, lowerSeed, rankedConferenceTeams, gamesByPair) {
+    if (!team) return null;
+    const teamCode = canonicalNbaTricode(team.abbreviation);
+    const teamByCode = new Map(rankedConferenceTeams.map(candidate => [
+        canonicalNbaTricode(candidate.abbreviation),
+        candidate
+    ]));
+    let earliestGame = null;
+    for (const [pairKey, games] of gamesByPair) {
+        if (!pairKey.split(":").includes(teamCode)) continue;
+        for (const game of games) {
+            if (!earliestGame || String(game.date).localeCompare(String(earliestGame.date)) < 0) {
+                earliestGame = game;
+            }
+        }
+    }
+    if (!earliestGame) return null;
+    const opponentCode = canonicalNbaTricode(
+        canonicalNbaTricode(earliestGame.home_tricode) === teamCode
+            ? earliestGame.away_tricode
+            : earliestGame.home_tricode
+    );
+    const opponent = teamByCode.get(opponentCode);
+    if (!opponent || opponent.playoffSeed < 5 || opponent.playoffSeed > 10) return null;
+    return { ...opponent, playoffSeed: lowerSeed };
+}
+
+function playoffSeriesForTeams(firstTeam, secondTeam, gamesByPair, winsNeeded = 4) {
+    if (!firstTeam || !secondTeam) return null;
+    const firstCode = canonicalNbaTricode(firstTeam.abbreviation);
+    const secondCode = canonicalNbaTricode(secondTeam.abbreviation);
+    const pairKey = [firstCode, secondCode].sort().join(":");
+    const games = gamesByPair.get(pairKey) || [];
+    let firstWins = 0;
+    let secondWins = 0;
+    for (const game of games) {
+        if (!isCompletedScheduleGame(game)) continue;
+        const homeScore = Number(game.home_score);
+        const awayScore = Number(game.away_score);
+        if (!Number.isFinite(homeScore) || !Number.isFinite(awayScore) || homeScore === awayScore) continue;
+        const winnerCode = canonicalNbaTricode(
+            homeScore > awayScore ? game.home_tricode : game.away_tricode
+        );
+        if (winnerCode === firstCode) firstWins++;
+        else if (winnerCode === secondCode) secondWins++;
+    }
+    const winner = firstWins >= winsNeeded
+        ? firstTeam
+        : secondWins >= winsNeeded
+            ? secondTeam
+            : null;
+    const completedGames = games.filter(isCompletedScheduleGame);
+    return {
+        firstTeam,
+        secondTeam,
+        firstWins,
+        secondWins,
+        winsNeeded,
+        winner,
+        games,
+        gamesPlayed: completedGames.length,
+        latestFinal: completedGames.at(-1) || null
+    };
+}
+
+function playoffRoundDateRange(seriesList) {
+    const dates = seriesList.flatMap(series =>
+        series?.games.map(game => String(game.date || "").slice(0, 10)).filter(Boolean) || []
+    ).sort();
+    if (!dates.length) return "Dates TBD";
+    const format = date => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC"
+    });
+    return dates[0] === dates[dates.length - 1]
+        ? format(dates[0])
+        : `${format(dates[0])} – ${format(dates[dates.length - 1])}`;
+}
+
+function playoffTeamDisplayName(team) {
+    const fullName = String(team?.team || "NBA team");
+    const nicknames = {
+        "Portland Trail Blazers": "Trail Blazers",
+        "New Orleans/Oklahoma City Hornets": "Hornets"
+    };
+    return nicknames[fullName] || fullName.split(/\s+/).at(-1);
+}
+
+function playoffTeamLogo(team) {
+    const historicalFranchiseLogos = {
+        "Toronto Raptors": "https://cdn.nba.com/logos/nba/1610612761/primary/L/logo.svg",
+        "New Jersey Nets": "https://cdn.nba.com/logos/nba/1610612751/primary/L/logo.svg"
+    };
+    const historicalFranchiseLogo = historicalFranchiseLogos[String(team?.team || "")];
+    if (historicalFranchiseLogo) return historicalFranchiseLogo;
+    if (team.logo) return team.logo;
+    const configuredTeam = allTeams.find(candidate =>
+        Number(candidate.id) === Number(team.team_id)
+    );
+    return configuredTeam?.logo
+        || (team.team_id
+            ? `https://cdn.nba.com/logos/nba/${encodeURIComponent(team.team_id)}/primary/L/logo.svg`
+            : "");
+}
+
+function renderPlayoffSeriesCard(series, round, season) {
+    if (!series) {
+        return `<article class="playoff-series-card is-pending"><span>${escapeMarkup(round)}</span><p>Matchup to be determined</p></article>`;
+    }
+    const { firstTeam, secondTeam, firstWins, secondWins, winner, gamesPlayed, latestFinal } = series;
+    const orderedGames = [...series.games].sort((left, right) =>
+        `${left.date || ""} ${left.time || ""} ${left.id || ""}`
+            .localeCompare(`${right.date || ""} ${right.time || ""} ${right.id || ""}`)
+    );
+    const seriesLabel = winner
+        ? `${winner.team} wins series ${series.winsNeeded}-${winner === firstTeam ? secondWins : firstWins}`
+        : gamesPlayed
+            ? `${firstWins === secondWins ? "Series tied" : `${firstWins > secondWins ? firstTeam.team : secondTeam.team} leads`} ${Math.max(firstWins, secondWins)}-${Math.min(firstWins, secondWins)}`
+            : "Series not started";
+    const seriesGameList = orderedGames.length
+        ? `<details class="playoff-series-games">
+            <summary>Game box scores <span>${orderedGames.length}</span></summary>
+            <ol>
+                ${orderedGames.map((game, index) => {
+                    const completed = isCompletedScheduleGame(game);
+                    const awayScore = game.away_score == null ? "—" : game.away_score;
+                    const homeScore = game.home_score == null ? "—" : game.home_score;
+                    const gameLabel = `Game ${index + 1}`;
+                    const matchup = `${game.away_tricode || game.away || secondTeam.team} ${awayScore} – ${game.home_tricode || game.home || firstTeam.team} ${homeScore}`;
+                    return `<li>
+                        <span class="playoff-series-game-meta">
+                            <strong>${gameLabel}</strong>
+                            <span>${escapeMarkup(game.date ? formatScheduleDate(String(game.date).slice(0, 10), { month: "short", day: "numeric", year: "numeric" }) : "Date TBD")}</span>
+                        </span>
+                        <span class="playoff-series-game-score">${escapeMarkup(completed ? matchup : game.status || "Scheduled")}</span>
+                        ${completed || Number(game.status_code) === 2
+                            ? `<button type="button" class="playoff-series-box-score-button" data-playoff-game-id="${escapeMarkup(game.id)}" data-playoff-season="${escapeMarkup(season)}" aria-label="View ${gameLabel} player box score">Box score</button>`
+                            : '<span class="playoff-series-game-pending">Not final</span>'}
+                    </li>`;
+                }).join("")}
+            </ol>
+        </details>`
+        : "";
+    const renderTeam = (team, wins) => {
+        const logo = playoffTeamLogo(team);
+        const fallbackLogo = team.team_id
+            ? `https://cdn.nba.com/logos/nba/${encodeURIComponent(team.team_id)}/primary/L/logo.svg`
+            : "";
+        const historicalWordmark = Boolean(team.historical_logo_wordmark);
+        return `
+            <div class="playoff-series-team${winner === team ? " is-series-winner" : ""}${historicalWordmark ? " has-historical-wordmark" : ""}">
+                ${logo
+                    ? `<img src="${escapeMarkup(logo)}" alt="" loading="lazy"${fallbackLogo && logo !== fallbackLogo ? ` onerror="this.onerror=null;this.src='${escapeMarkup(fallbackLogo)}'"` : ""}>`
+                    : '<span class="playoff-series-logo-placeholder" aria-hidden="true"></span>'}
+                <span class="playoff-series-seed">${team.playoffSeed}</span>
+                <span class="playoff-series-name">${escapeMarkup(playoffTeamDisplayName(team))}</span>
+                <strong>${wins}</strong>
+            </div>`;
+    };
+    return `<article class="playoff-series-card">
+        <span class="playoff-series-status">${escapeMarkup(seriesLabel)}</span>
+        ${renderTeam(firstTeam, firstWins)}
+        ${renderTeam(secondTeam, secondWins)}
+        ${latestFinal ? `<div class="playoff-series-last-score">
+            Latest · ${escapeMarkup(latestFinal.away_tricode || "")} ${escapeMarkup(latestFinal.away_score)}
+            – ${escapeMarkup(latestFinal.home_tricode || "")} ${escapeMarkup(latestFinal.home_score)}
+        </div>` : ""}
+        ${seriesGameList}
+    </article>`;
+}
+
+function renderPlayoffBracket(season, standings, schedule) {
+    const bracket = document.getElementById("playoffBracket");
+    const status = document.getElementById("playoffBracketStatus");
+    const label = document.getElementById("playoffBracketSeason");
+    if (!bracket || !status || !label) return;
+    label.textContent = `${season.replace("-", "–")} SEASON`;
+    const playoffGames = schedule.filter(game =>
+        schedulePhaseForGame(game) === "playoffs"
+        && !/play.?in/i.test(String(game.stage || ""))
+        && !/cancelled|canceled|abandoned/i.test(String(game.status || ""))
+        && game.home_tricode
+        && game.away_tricode
+    );
+    const gamesByPair = new Map();
+    for (const game of playoffGames) {
+        const key = [
+            canonicalNbaTricode(game.home_tricode),
+            canonicalNbaTricode(game.away_tricode)
+        ].sort().join(":");
+        if (!gamesByPair.has(key)) gamesByPair.set(key, []);
+        gamesByPair.get(key).push(game);
+    }
+    for (const games of gamesByPair.values()) games.sort((left, right) => String(left.date).localeCompare(String(right.date)));
+
+    const eastern = sortedStandingsForBracket(standings, "Eastern", season);
+    const western = sortedStandingsForBracket(standings, "Western", season);
+    if (eastern.length < 8 || western.length < 8) {
+        bracket.innerHTML = "";
+        status.textContent = "Playoff scores are available, but complete regular-season standings are required to seed the bracket.";
+        return;
+    }
+    const makeConferenceRounds = teams => {
+        const bySeed = new Map(teams.map(team => [team.playoffSeed, team]));
+        const firstRoundWinsNeeded = Number(season.slice(0, 4)) <= 2001 ? 3 : 4;
+        const firstRound = [[1, 8], [4, 5], [3, 6], [2, 7]]
+            .map(([first, second]) => {
+                const firstTeam = bySeed.get(first);
+                const opponent = actualFirstRoundOpponent(firstTeam, second, teams, gamesByPair);
+                return playoffSeriesForTeams(
+                    firstTeam,
+                    opponent || bySeed.get(second),
+                    gamesByPair,
+                    firstRoundWinsNeeded
+                );
+            });
+        const secondRound = [
+            playoffSeriesForTeams(firstRound[0]?.winner, firstRound[1]?.winner, gamesByPair),
+            playoffSeriesForTeams(firstRound[2]?.winner, firstRound[3]?.winner, gamesByPair)
+        ];
+        const conferenceFinal = playoffSeriesForTeams(secondRound[0]?.winner, secondRound[1]?.winner, gamesByPair);
+        return [firstRound, secondRound, [conferenceFinal]];
+    };
+    const eastRounds = makeConferenceRounds(eastern);
+    const westRounds = makeConferenceRounds(western);
+    const eastChampion = eastRounds[2][0]?.winner;
+    const westChampion = westRounds[2][0]?.winner;
+    const finals = playoffSeriesForTeams(eastChampion, westChampion, gamesByPair);
+    const roundLabels = [
+        ["1st Round", westRounds[0]],
+        ["Conf. Semifinals", westRounds[1]],
+        ["Conf. Finals", westRounds[2]],
+        ["NBA Finals", finals ? [finals] : []],
+        ["Conf. Finals", eastRounds[2]],
+        ["Conf. Semifinals", eastRounds[1]],
+        ["1st Round", eastRounds[0]]
+    ];
+    const renderRoundColumn = (labelText, seriesList, className, side, round) => `
+        <section class="playoff-round-column ${className}" data-side="${side}" data-round="${round}">
+            <div class="playoff-round-cards">
+                ${seriesList.map(series => renderPlayoffSeriesCard(series, labelText, season)).join("")}
+            </div>
+        </section>`;
+    bracket.innerHTML = `
+        <div class="playoff-bracket-board">
+            <div class="playoff-bracket-conference-labels">
+                <h4>Western Conference</h4>
+                <h4>Eastern Conference</h4>
+            </div>
+            <div class="playoff-bracket-round-headings">
+                ${roundLabels.map(([labelText, seriesList]) => `
+                    <div>
+                        <strong>${labelText}</strong>
+                        <span>${escapeMarkup(playoffRoundDateRange(seriesList))}</span>
+                    </div>
+                `).join("")}
+            </div>
+            <div class="playoff-bracket-rounds">
+                ${renderRoundColumn("1st Round", westRounds[0], "is-first-round", "west", "1")}
+                ${renderRoundColumn("Conf. Semifinals", westRounds[1], "is-second-round", "west", "2")}
+                ${renderRoundColumn("Conf. Finals", westRounds[2], "is-conference-final", "west", "3")}
+                <section class="playoff-finals-column">
+                    <div class="playoff-finals-card">
+                        <strong>Championship</strong>
+                        <span>NBA Finals</span>
+                        ${renderPlayoffSeriesCard(finals, "NBA Finals", season)}
+                    </div>
+                    ${finals?.winner ? `<div class="playoff-champion-banner">
+                        <span>${escapeMarkup(season.replace("-", "–"))}</span>
+                        ${playoffTeamLogo(finals.winner) ? `<img src="${escapeMarkup(playoffTeamLogo(finals.winner))}" alt="" loading="lazy">` : ""}
+                        <strong>${escapeMarkup(finals.winner.team)}</strong>
+                        <span>NBA CHAMPIONS</span>
+                    </div>` : ""}
+                </section>
+                ${renderRoundColumn("Conf. Finals", eastRounds[2], "is-conference-final", "east", "3")}
+                ${renderRoundColumn("Conf. Semifinals", eastRounds[1], "is-second-round", "east", "2")}
+                ${renderRoundColumn("1st Round", eastRounds[0], "is-first-round", "east", "1")}
+            </div>
+        </div>`;
+    status.textContent = playoffGames.length
+        ? `Showing playoff series from the ${season.replace("-", "–")} regular-season seeds.`
+        : `Full bracket shown for ${season.replace("-", "–")}; playoff games have not started or are unavailable yet.`;
+    status.classList.remove("is-warning");
+}
+
+function refreshPlayoffBracketFromCache(season) {
+    if (season !== selectedStandingsSeason) return;
+    const standings = standingsByPhase.get(`${season}:regular`);
+    const schedule = playoffScheduleBySeason.get(season);
+    if (standings && schedule) renderPlayoffBracket(season, standings, schedule);
+}
+
+async function loadPlayoffBracket(season = selectedStandingsSeason) {
+    const status = document.getElementById("playoffBracketStatus");
+    const bracket = document.getElementById("playoffBracket");
+    if (!status || !bracket || !season) return;
+    const requestSequence = ++playoffBracketRequestSequence;
+    status.textContent = `Loading ${season.replace("-", "–")} playoff games and seeds…`;
+    status.classList.remove("is-warning");
+    try {
+        let schedule = playoffScheduleBySeason.get(season);
+        let standings = standingsByPhase.get(`${season}:regular`);
+        const requests = [];
+        if (!schedule) {
+            if (selectedScheduleSeason === season && scheduleGames.length) {
+                schedule = scheduleGames;
+                playoffScheduleBySeason.set(season, schedule);
+            } else {
+                requests.push(fetch(
+                    `${API_URL}/api/v1/schedule?season=${encodeURIComponent(season)}`,
+                    { headers: { "x-api-key": API_KEY } }
+                ).then(async response => {
+                    if (!response.ok) throw new Error(`Playoff schedule request failed (${response.status}).`);
+                    const payload = await response.json();
+                    if (
+                        payload.season !== season
+                        || !Array.isArray(payload.games)
+                        || Number(payload.regular_game_count ?? payload.games.length) < minimumScheduleRegularGames(season)
+                    ) throw new Error(payload.message || `The complete ${season.replace("-", "–")} schedule is unavailable.`);
+                    schedule = payload.games.map(scheduleGameInPhilippines);
+                    playoffScheduleBySeason.set(season, schedule);
+                }));
+            }
+        }
+        if (!standings) {
+            requests.push(fetch(
+                `${API_URL}/api/v1/standings?season_type=regular&season=${encodeURIComponent(season)}`,
+                { headers: { "x-api-key": API_KEY } }
+            ).then(async response => {
+                if (!response.ok) throw new Error(`Playoff seeding request failed (${response.status}).`);
+                const payload = await response.json();
+                if (payload.season !== season || !Array.isArray(payload.standings) || payload.status === "unavailable") {
+                    throw new Error(payload.message || `Regular-season seeds for ${season.replace("-", "–")} are unavailable.`);
+                }
+                standings = payload.standings;
+                standingsByPhase.set(`${season}:regular`, standings);
+            }));
+        }
+        await Promise.all(requests);
+        if (requestSequence !== playoffBracketRequestSequence) return;
+        renderPlayoffBracket(season, standings || [], schedule || []);
+    } catch (error) {
+        if (requestSequence !== playoffBracketRequestSequence) return;
+        console.error(`NBA ${season} playoff bracket load failed:`, error);
+        bracket.innerHTML = "";
+        status.textContent = error instanceof Error
+            ? `${error.message} The bracket will retry when you change seasons.`
+            : "The playoff bracket could not be loaded. Try selecting another season.";
+        status.classList.add("is-warning");
+    }
 }
 
 function setStandingsConference(conference) {
@@ -1743,6 +3355,7 @@ function selectStandingsSeason(season) {
     if (seasonHeading) seasonHeading.textContent = `${season.replace("-", "–")} NBA STANDINGS`;
     currentStandings = standingsByPhase.get(`${season}:${selectedStandingsPhase}`) || [];
     renderStandings(currentStandings);
+    void loadPlayoffBracket(season);
     const statusElement = document.getElementById("standingsUpdateStatus");
     statusElement.textContent = `Loading ${season.replace("-", "–")} ${selectedStandingsPhase} standings…`;
     void loadStandings({ seasonType: selectedStandingsPhase, season, background: true });
@@ -1783,6 +3396,7 @@ async function loadStandings({
         if (requestSequence !== standingsRequestSequence) return;
 
         standingsByPhase.set(`${season}:${seasonType}`, payload.standings);
+        if (seasonType === "regular") refreshPlayoffBracketFromCache(season);
         if (seasonType === selectedStandingsPhase && season === selectedStandingsSeason) {
             currentStandings = payload.standings;
             renderStandings(currentStandings);
@@ -1937,7 +3551,8 @@ function renderBoxScoreTeam(team, side) {
     const playerRows = players.map(player => {
         const stats = player.statistics || {};
         const status = player.played ? formatBoxScoreStat(stats.minutes) : "DNP";
-        const headshot = getPlayerHeadshotUrl(player.name);
+        const headshot = player.headshot_url || getPlayerHeadshotUrl(player.name);
+        const fallbackPortrait = getPlayerFallbackPortraitUrl(player.name);
         const jerseyNumber = [
             player.jersey_number,
             player.jerseyNum,
@@ -1951,7 +3566,7 @@ function renderBoxScoreTeam(team, side) {
                 data-player-id="${escapeMarkup(playerId)}"
                 data-player-name="${escapeMarkup(player.name || "")}">
                 <td class="box-score-player-cell">
-                    <img src="${escapeMarkup(headshot)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_FALLBACK}'">
+                    <img src="${escapeMarkup(headshot)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${escapeMarkup(fallbackPortrait)}'">
                     <span class="box-score-player-cell__jersey" aria-label="${jerseyNumber !== undefined ? `Jersey number ${escapeMarkup(jerseyNumber)}` : "Jersey number unavailable"}"${jerseyNumber === undefined ? " hidden" : ""}>${jerseyNumber !== undefined ? `#${escapeMarkup(jerseyNumber)}` : ""}</span>
                     <span class="box-score-player-cell__name">${escapeMarkup(player.name)}</span>
                     ${player.starter ? '<span class="box-score-starter-badge">STARTER</span>' : ""}
@@ -2299,7 +3914,7 @@ async function loadBoxScore(gameId, { background = false } = {}) {
         ? `${activeBoxScoreSeason.replace("-", "–")} season · ${formatScheduleDate(activeBoxScoreGame.date, { month: "long", day: "numeric", year: "numeric" })}`
         : activeBoxScoreSeason.replace("-", "–");
     const seriesGame = activeBoxScoreGame
-        ? playoffSeriesGameNumber(activeBoxScoreGame)
+        ? playoffSeriesGameNumber(activeBoxScoreGame, activeBoxScoreSeason)
         : null;
     try {
         const response = await fetch(`${API_URL}/api/v1/games/${encodeURIComponent(gameId)}/boxscore?season=${encodeURIComponent(activeBoxScoreSeason)}`, {
@@ -2307,6 +3922,7 @@ async function loadBoxScore(gameId, { background = false } = {}) {
         });
         if (!response.ok) throw new Error(`Box score request failed (${response.status}).`);
         const payload = await response.json();
+        if (activeBoxScoreGameId !== gameId) return;
         if (payload.status === "unavailable" || !payload.home || !payload.away) {
             statusElement.textContent = `${gameContext} · ${payload.message || "Player box-score data is not available yet. Checking again shortly."}`;
             if (!background) content.innerHTML = "";
@@ -2378,6 +3994,7 @@ async function loadBoxScore(gameId, { background = false } = {}) {
             );
         }
     } catch (error) {
+        if (activeBoxScoreGameId !== gameId) return;
         console.error("Game box score load failed:", error);
         statusElement.textContent = `${gameContext} · ${isHistoricalGame
             ? "Could not load this archived box score. Please try again later."
@@ -2393,13 +4010,23 @@ async function loadBoxScore(gameId, { background = false } = {}) {
     }
 }
 
-function openBoxScore(gameId) {
-    const game = scheduleGames.find(item => item.id === gameId);
+function openBoxScore(gameId, season = selectedScheduleSeason) {
+    const seasonGames = playoffScheduleBySeason.get(season)
+        || (season === selectedScheduleSeason ? scheduleGames : []);
+    const game = seasonGames.find(item => item.id === gameId);
     const dialog = document.getElementById("boxScoreDialog");
     if (!game || !dialog) return;
+    if (boxScoreRefreshInterval) {
+        window.clearInterval(boxScoreRefreshInterval);
+        boxScoreRefreshInterval = null;
+    }
+    if (playByPlayRefreshInterval) {
+        window.clearInterval(playByPlayRefreshInterval);
+        playByPlayRefreshInterval = null;
+    }
     activeBoxScoreGameId = gameId;
     activeBoxScoreGame = game;
-    activeBoxScoreSeason = selectedScheduleSeason;
+    activeBoxScoreSeason = season;
     document.getElementById("boxScoreTitle").textContent =
         `${game.away} at ${game.home} · ${activeBoxScoreSeason.replace("-", "–")}`;
     document.getElementById("boxScoreBadge").textContent =
@@ -2409,7 +4036,7 @@ function openBoxScore(gameId) {
     const statusElement = document.getElementById("boxScoreStatus");
     const content = document.getElementById("boxScoreContent");
     const gameContext = `${activeBoxScoreSeason.replace("-", "–")} season · ${formatScheduleDate(game.date, { month: "long", day: "numeric", year: "numeric" })}`;
-    const seriesGame = playoffSeriesGameNumber(game);
+    const seriesGame = playoffSeriesGameNumber(game, season);
     statusElement.textContent = `${gameContext}${seriesGame ? ` · Game ${seriesGame}` : ""} · ${activeBoxScoreSeason === currentNbaSeason()
         ? "Checking for the latest score and player stats…"
         : "Archived box score"}`;
@@ -2439,18 +4066,16 @@ function closeBoxScore() {
 }
 
 function refreshHeadlineSlides() {
+    const staticStories = DEFAULT_HEADLINE_STORIES.map((story, index) => ({
+        ...story,
+        id: `default-story-${index}`,
+        kind: story.kind || "news",
+        category: story.category || "NBA NEWS"
+    }));
+
     headlineItems = [...headlineScoreItems, ...newsItems];
     if (!headlineItems.length) {
-        headlineItems = [{
-            id: "news-loading",
-            kind: "article",
-            category: "NBA NEWS",
-            headline: "The latest from around the NBA",
-            story: "Headlines, game results and league stories will appear here as soon as the live feeds load.",
-            url: "https://www.espn.ph/nba/",
-            published: null,
-            source: "ESPN"
-        }];
+        headlineItems = staticStories;
     }
     currentHeadlineIndex = Math.min(currentHeadlineIndex, headlineItems.length - 1);
     setupHeadlineDots();
@@ -2657,39 +4282,20 @@ async function loadHeadlines({ background = false } = {}) {
     isRefreshingNews = true;
     const statusElement = document.getElementById("newsFeedStatus");
     try {
-        const response = await fetch(`${API_URL}/api/v1/news`, {
-            headers: { "x-api-key": API_KEY }
-        });
-        if (!response.ok) throw new Error(`NBA news request failed (${response.status}).`);
-        const payload = await response.json();
-        if (!Array.isArray(payload.items) || !payload.items.length) {
-            throw new Error(payload.message || "The NBA news feed is empty.");
-        }
-        newsItems = payload.items;
+        newsItems = DEFAULT_HEADLINE_STORIES.map((story, index) => ({
+            ...story,
+            id: `default-story-${index}`,
+            category: story.category || "NBA NEWS",
+            kind: story.kind || "news"
+        }));
         lastNewsRefreshAt = Date.now();
         refreshHeadlineSlides();
-        const refreshedAt = payload.last_updated
-            ? new Date(payload.last_updated).toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "2-digit",
-                timeZone: "Asia/Manila"
-            })
-            : "";
-        statusElement.textContent = payload.status === "stale"
-            ? "ESPN refresh is delayed · showing the last available NBA headlines"
-            : `NBA news from ESPN · updated ${refreshedAt} · refreshes automatically`;
-        statusElement.classList.toggle("is-warning", payload.status === "stale");
+        statusElement.textContent = "NBA headlines · rotating daily stories";
+        statusElement.classList.remove("is-warning");
     } catch (error) {
-        console.error("NBA headlines could not be refreshed:", error);
-        if (!background || !newsItems.length) {
-            const message = error instanceof Error ? error.message : String(error);
-            statusElement.textContent = message.includes("(404)")
-                ? "The live news API is not deployed yet. Publish the updated api/index.py to enable current headlines."
-                : newsItems.length
-                    ? "Could not refresh NBA news · showing the last available headlines"
-                    : "NBA headlines are temporarily unavailable. Live scores and standings remain available below.";
-            statusElement.classList.add("is-warning");
-        }
+        console.error("NBA headlines could not be loaded:", error);
+        statusElement.textContent = "NBA headlines are temporarily unavailable.";
+        statusElement.classList.add("is-warning");
     } finally {
         isRefreshingNews = false;
     }
@@ -3025,12 +4631,13 @@ function renderPlayerCard(p, team) {
         ppg: formatPlayerSeasonStat(p, "pts"),
         apg: formatPlayerSeasonStat(p, "ast"),
         rpg: formatPlayerSeasonStat(p, "reb"),
-        statsSeason: p.stats_season || "Stats unavailable"
+        statsSeason: p.stats_season || "Stats unavailable",
+        jersey: p.jersey_number ?? p.jersey ?? p.number ?? ""
     };
 
     const salary = typeof p.salary === "number"
         ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 }).format(p.salary)
-        : "Salary unavailable";
+        : "";
     const headshotId = getPlayerHeadshotId(p.name);
     const photoUrl = headshotId ? getPlayerHeadshotUrl(p.name) : "";
     const safeName = p.name.replace(/'/g, "\\'");
@@ -3039,42 +4646,46 @@ function renderPlayerCard(p, team) {
         : `<span class="card-player-headshot-fallback" aria-label="Official portrait unavailable">${getPlayerInitials(p.name)}</span>`;
 
     return `
-        <div class="nba-player-card" onclick="selectSearchedPlayer('${safeName}', ${team.id})">
-            <div>
-                <div class="card-header-row">
-                    <div class="card-player-identity">
-                        <div class="card-player-name">${p.name}</div>
-                        <div class="card-player-pos">${info.pos}</div>
-                    </div>
+        <div class="nba-player-card roster-player-card" onclick="selectSearchedPlayer('${safeName}', ${team.id})">
+            <div class="roster-card-header">
+                <div class="card-player-identity">
+                    <div class="card-player-name">${p.name}</div>
+                    <div class="card-player-pos">${info.pos}</div>
                 </div>
-
-                <div class="card-center-row single-visual-layout">
-                    <div class="card-headshot-box">
-                        ${portrait}
-                    </div>
-                </div>
+                <div class="roster-player-jersey">${info.jersey || "—"}</div>
             </div>
 
-            <div>
-                <div class="card-stats-strip">
-                    <div class="stat-cell"><span class="stat-title">SEASON</span><span class="stat-num">${info.statsSeason}</span></div>
-                    <div class="stat-cell"><span class="stat-title">GP</span><span class="stat-num">${info.gp}</span></div>
-                    <div class="stat-cell"><span class="stat-title">PPG</span><span class="stat-num">${info.ppg}</span></div>
-                    <div class="stat-cell"><span class="stat-title">APG</span><span class="stat-num">${info.apg}</span></div>
-                    <div class="stat-cell"><span class="stat-title">RPG</span><span class="stat-num">${info.rpg}</span></div>
-                </div>
-                <div class="card-player-salary">${salary}</div>
+            <div class="card-headshot-box">
+                ${portrait}
             </div>
+
+            <div class="roster-card-meta">
+                <div class="roster-card-stat"><span>Season</span><strong>${info.statsSeason}</strong></div>
+                <div class="roster-card-stat"><span>GP</span><strong>${info.gp}</strong></div>
+                <div class="roster-card-stat"><span>PPG</span><strong>${info.ppg}</strong></div>
+                <div class="roster-card-stat"><span>APG</span><strong>${info.apg}</strong></div>
+                <div class="roster-card-stat"><span>RPG</span><strong>${info.rpg}</strong></div>
+            </div>
+
+            ${salary ? `<div class="card-player-salary">${salary}</div>` : ""}
         </div>
     `;
 }
 
 function openModal(team) {
+    if (!team) return;
     activeTeamId = team.id;
-    document.querySelector(".modal-body").scrollTop = 0;
-    document.querySelector(".modal-image-col").scrollTop = 0;
-    document.querySelector(".modal-info-col").scrollTop = 0;
+
+    const modalBody = document.querySelector(".modal-body");
+    const modalImageCol = document.querySelector(".modal-image-col");
+    const modalInfoCol = document.querySelector(".modal-info-col");
     const modalCard = document.querySelector(".modal-card");
+    const detailModal = document.getElementById("detailModal");
+    if (!detailModal || !modalBody || !modalImageCol || !modalInfoCol || !modalCard) return;
+
+    modalBody.scrollTop = 0;
+    modalImageCol.scrollTop = 0;
+    modalInfoCol.scrollTop = 0;
     applyTeamThemeToElement(modalCard, team.name);
 
     const formattedSalary = typeof team.total_salary === "number" ? `$${team.total_salary.toLocaleString()}` : "Payroll unavailable";
@@ -3083,43 +4694,45 @@ function openModal(team) {
     const teamTxContainer = document.getElementById("modalTeamTransactions");
     const teamTxList = getTeamTransactions(team.name);
 
-    document.getElementById("modalConference").innerText = `${team.conference.toUpperCase()} CONFERENCE • ${team.division.toUpperCase()}`;
-    document.getElementById("modalTitle").innerText = team.name;
-    document.getElementById("modalStar").innerText = `Featured Star: ${team.featured_star} (${team.headline_stat})`;
-
-    document.getElementById("modalRecord").innerHTML = `
-        <div class="modal-record__line"><span>Last season</span><strong>${team.last_season_record}</strong></div>
-        <div class="modal-record__line"><span>Championships</span><strong>${team.championships ?? "—"}</strong></div>
-        <div class="modal-record__years">Title years <strong>${yearsString}</strong></div>
-        <div class="modal-season-stats-grid">
-            <div class="modal-season-stat-box"><span>Featured player</span><strong>${team.headline_stat || "Stats unavailable"}</strong></div>
-        </div>
-    `;
-
-    document.getElementById("modalDescription").innerText = team.description;
-
+    const modalConference = document.getElementById("modalConference");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalStar = document.getElementById("modalStar");
+    const modalRecord = document.getElementById("modalRecord");
+    const modalDescription = document.getElementById("modalDescription");
     const modalImg = document.getElementById("modalLogo");
-    modalImg.src = team.logo;
-    modalImg.onerror = () => {
-        modalImg.src = "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
-    };
+    if (modalConference) modalConference.innerText = `${team.conference.toUpperCase()} CONFERENCE • ${team.division.toUpperCase()}`;
+    if (modalTitle) modalTitle.innerText = team.name;
+    if (modalStar) modalStar.innerText = `Featured Star: ${team.featured_star} (${team.headline_stat})`;
+    if (modalRecord) {
+        modalRecord.innerHTML = `
+            <div class="modal-record__line"><span>Last season</span><strong>${team.last_season_record}</strong></div>
+            <div class="modal-record__line"><span>Championships</span><strong>${team.championships ?? "—"}</strong></div>
+            <div class="modal-record__years">Title years <strong>${yearsString}</strong></div>
+            <div class="modal-season-stats-grid">
+                <div class="modal-season-stat-box"><span>Featured player</span><strong>${team.headline_stat || "Stats unavailable"}</strong></div>
+            </div>
+        `;
+    }
+    if (modalDescription) modalDescription.innerText = team.description;
+    if (modalImg) {
+        modalImg.src = team.logo;
+        modalImg.onerror = () => {
+            modalImg.src = "https://cdn.nba.com/logos/nba/1610612738/primary/L/logo.svg";
+        };
+    }
 
-    const cleanStarters = Array.isArray(team.starters_2026_27) ? team.starters_2026_27 : [];
-    const cleanBench = Array.isArray(team.bench_2026_27) ? team.bench_2026_27 : [];
+    const rosterPlayers = Array.isArray(team.roster_2026_27)
+        ? team.roster_2026_27
+        : [
+            ...(Array.isArray(team.starters_2026_27) ? team.starters_2026_27 : []),
+            ...(Array.isArray(team.bench_2026_27) ? team.bench_2026_27 : [])
+        ];
 
-    // Populate Cards Grids
-    const startersGrid = document.getElementById("modalStartersGrid");
-    startersGrid.innerHTML = cleanStarters.map(p => renderPlayerCard(p, team)).join("");
-
-    const benchGrid = document.getElementById("modalBenchGrid");
-    const benchCount = document.getElementById("modalBenchCount");
-    if (benchGrid) {
-        if (benchCount) benchCount.textContent = `${cleanBench.length} players`;
-        if (cleanBench && cleanBench.length > 0) {
-            benchGrid.innerHTML = cleanBench.map(p => renderPlayerCard(p, team)).join("");
-        } else {
-            benchGrid.innerHTML = `<p style="color:#94a3b8; font-size:0.85rem; padding: 12px 0;">No bench players currently registered.</p>`;
-        }
+    const playersGrid = document.getElementById("modalPlayersGrid");
+    if (playersGrid) {
+        playersGrid.innerHTML = rosterPlayers.length
+            ? rosterPlayers.map(p => renderPlayerCard(p, team)).join("")
+            : `<p style="color:#94a3b8; font-size:0.85rem; padding: 12px 0;">No players currently registered for this team.</p>`;
     }
 
     const salaryRow = document.getElementById("modalSalaryRow");
@@ -3143,14 +4756,12 @@ function openModal(team) {
         `).join("") : `<p style="font-size:0.8rem; color:#64748b;">No major offseason transactions recorded.</p>`;
     }
 
-    document.querySelector(".modal-body").scrollTop = 0;
-    document.querySelector(".modal-image-col").scrollTop = 0;
-    document.querySelector(".modal-info-col").scrollTop = 0;
-    document.getElementById("detailModal").classList.add("open");
+    detailModal.classList.add("open");
 }
 
 function closeModal() {
-    document.getElementById("detailModal").classList.remove("open");
+    const detailModal = document.getElementById("detailModal");
+    if (detailModal) detailModal.classList.remove("open");
 }
 
 function handleBackdropClick(event) {
@@ -3241,6 +4852,7 @@ loadSchedule();
 loadLiveScores();
 loadTransactions();
 loadStandings();
+loadPlayoffBracket();
 document.querySelectorAll(".standings-phase-tab").forEach(tab => {
     tab.addEventListener("click", () => setStandingsPhase(tab.dataset.seasonType));
 });
@@ -3250,6 +4862,19 @@ document.querySelectorAll(".standings-tab").forEach(tab => {
 document.getElementById("standingsSeasonPicker").addEventListener("change", event => {
     selectStandingsSeason(event.target.value);
 });
+document.getElementById("playoffBracket").addEventListener("click", event => {
+    const button = event.target.closest("[data-playoff-game-id][data-playoff-season]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openBoxScore(button.dataset.playoffGameId, button.dataset.playoffSeason);
+});
+document.getElementById("standingsPredictionForm").addEventListener("submit", saveStandingsPrediction);
+document.getElementById("standingsPredictionGrid").addEventListener("click", moveStandingsPredictionTeam);
+document.getElementById("standingsPredictionGrid").addEventListener("dragstart", startStandingsPredictionDrag);
+document.getElementById("standingsPredictionGrid").addEventListener("dragover", dragOverStandingsPrediction);
+document.getElementById("standingsPredictionGrid").addEventListener("dragend", endStandingsPredictionDrag);
+document.getElementById("clearStandingsPrediction").addEventListener("click", clearStandingsPrediction);
 updateStandingsPanelLabel();
 document.getElementById("scheduleSeasonPicker").addEventListener("change", event => {
     selectScheduleSeason(event.target.value);

@@ -20,7 +20,7 @@
             
             <nav class="nav-links">
                 <a href="#hero">NBA Today</a>
-                <a href="#transactionsSection" class="nav-highlight">Offseason Transactions</a>
+                <a href="#transactionsSection">NBA Transactions</a>
                 <a href="#scheduleSection">Live Scores & Schedule</a>
                 <a href="#gamePicksSection">Game Picks</a>
                 <a href="#standingsSection">Standings</a>
@@ -38,6 +38,11 @@
             </div>
         </div>
     </header>
+
+    <aside id="hubProfileBanner" class="hub-profile-banner" hidden aria-label="NBA Hub fan profile">
+        <span>NBA HUB FAN</span>
+        <strong id="hubProfileTitle">Sixth Player</strong>
+    </aside>
 
     <!-- HEADLINE HERO SECTION -->
     <section id="hero" class="hero-section" aria-label="Today's NBA headlines and scores">
@@ -68,12 +73,54 @@
         <div class="hero-dots" id="heroDots"></div>
     </section>
 
+    <section class="hub-reward-panels" aria-label="Unlocked NBA Hub rewards">
+        <section id="profileStudioPanel" class="hub-reward-panel hub-profile-studio" aria-labelledby="profileStudioTitle" hidden>
+            <div>
+                <span class="nba-badge">PROFILE CUSTOMIZATION</span>
+                <h2 id="profileStudioTitle">Hub Profile Studio</h2>
+                <p>Your title and banner appear on the NBA Hub.</p>
+            </div>
+            <label>Fan title
+                <select id="hubProfileTitleSelect" aria-label="Choose your fan title">
+                    <option>Sixth Player</option>
+                    <option>Stat Head</option>
+                    <option>Franchise Voice</option>
+                    <option>League Historian</option>
+                </select>
+            </label>
+            <label>Profile banner
+                <select id="hubProfileBannerSelect" aria-label="Choose your profile banner">
+                    <option value="classic">Classic</option>
+                    <option value="midnight">Midnight</option>
+                    <option value="gold">Championship Gold</option>
+                    <option value="court">Hardwood</option>
+                </select>
+            </label>
+        </section>
+
+        <section id="playerSpotlightPanel" class="hub-reward-panel hub-player-spotlight" aria-labelledby="playerSpotlightTitle" hidden>
+            <div class="hub-reward-panel__header">
+                <div>
+                    <span class="nba-badge">NBA TODAY FEATURE</span>
+                    <h2 id="playerSpotlightTitle">Player Spotlight</h2>
+                    <p>Pin a player from the current NBA roster API to the top of your hub.</p>
+                </div>
+                <label>Choose player
+                    <select id="playerSpotlightSelect" aria-label="Choose a player for your spotlight">
+                        <option value="">Choose a player</option>
+                    </select>
+                </label>
+            </div>
+            <div id="playerSpotlightContent"></div>
+        </section>
+    </section>
+
     <!-- OFFSEASON TRANSACTIONS SECTION -->
     <section id="transactionsSection" class="transactions-section">
         <div class="section-container">
             <div class="transactions-header-block">
-                <span class="nba-badge">OFFSEASON LEDGER</span>
-                <h2 class="section-heading">2026 OFFSEASON TRANSACTIONS</h2>
+                <span class="nba-badge">NBA TRANSACTIONS</span>
+                <h2 class="section-heading">2026 NBA TRANSACTIONS</h2>
                 <p class="section-subheading">Trades, signings, extensions, draft selections, and waiver moves from the latest NBA transaction feed.</p>
             </div>
 
@@ -100,7 +147,7 @@
             <div class="schedule-header-block">
                 <span class="nba-badge">GAME TRACKER</span>
                 <h2 class="section-heading">NBA SEASON SCHEDULE & SCORES</h2>
-                <p class="section-subheading">Choose a season from 2000 onward, select a phase and any date in that season, then open a completed game to view its box score.</p>
+                <p class="section-subheading">Choose a season, starting with 1999–00 (the 2000 playoffs), select a phase and date, then open a completed game to view its box score.</p>
             </div>
 
             <!-- FULL-SEASON DATE SELECTOR -->
@@ -135,6 +182,7 @@
                 <span class="nba-badge">VIRTUAL TOKENS ONLY</span>
                 <h2 class="section-heading">GAME PICKS</h2>
                 <p class="section-subheading">Build a parlay by picking a winner in each game, then stake your daily claimable tokens. A one-game slip is a straight pick. Tokens have no cash value and cannot be deposited, transferred, or redeemed.</p>
+                <p id="gamePicksRewardTitle" class="game-picks-reward-title" hidden></p>
             </div>
 
             <div class="game-picks-wallet">
@@ -161,10 +209,18 @@
                     <label for="gamePicksStake">Tokens to stake
                         <input id="gamePicksStake" type="number" min="1" step="1" value="100" inputmode="numeric">
                     </label>
+                    <label class="game-picks-insurance-control" for="gamePicksUseInsurance">
+                        <span><input id="gamePicksUseInsurance" type="checkbox" disabled> Parlay Safety Net <strong id="gamePicksInsuranceCount">0 available</strong></span>
+                        <small>Protects a parlay stake if exactly one leg loses.</small>
+                    </label>
+                    <label class="game-picks-insurance-control" for="gamePicksUsePayoutBoost">
+                        <span><input id="gamePicksUsePayoutBoost" type="checkbox" disabled> 2× Payout Boost <strong id="gamePicksPayoutBoostCount">0 available</strong></span>
+                        <small>Double the return if this pick or parlay wins.</small>
+                    </label>
                     <div class="game-picks-parlay-summary">
                         <span>Combined odds</span>
                         <strong id="gamePicksCombinedOdds">—</strong>
-                        <span>Potential return</span>
+                        <span>Potential return <small>(with boost if selected)</small></span>
                         <strong id="gamePicksPotentialReturn">—</strong>
                     </div>
                     <div class="game-picks-slip-actions">
@@ -174,13 +230,40 @@
                 </div>
             </section>
 
+            <section id="gamePicksChallengePanel" class="game-picks-challenge-panel" aria-labelledby="gamePicksChallengeTitle" hidden>
+                <div>
+                    <span class="nba-badge">FRANCHISE MODE</span>
+                    <h3 id="gamePicksChallengeTitle">Franchise Challenge</h3>
+                    <p>Predict whether your team wins or loses its upcoming games. Correct calls build a streak and pay more virtual tokens.</p>
+                </div>
+                <div class="game-picks-challenge-panel__stats">
+                    <span><strong id="gamePicksChallengeTeam">—</strong> challenge team</span>
+                    <span>Win streak <strong id="gamePicksChallengeStreak">0</strong></span>
+                    <span>Next correct pick <strong id="gamePicksChallengeReward">2,000 tokens</strong></span>
+                </div>
+                <div id="gamePicksChallengeHistory" class="game-picks-challenge-history" aria-live="polite"></div>
+            </section>
+
             <div id="gamePicksGamesGrid" class="game-picks-games-grid"></div>
 
             <div class="game-picks-bets-panel">
                 <h3>My picks</h3>
                 <div id="gamePicksBetsList" class="game-picks-bets-list"></div>
             </div>
-            <p class="game-picks-disclaimer">Odds are provided by The Odds API and may be delayed or unavailable. They are displayed for informational use only; Game Picks uses simulated tokens, not real-money bets.</p>
+
+            <section class="game-picks-shop" aria-labelledby="gamePicksShopTitle">
+                <div class="game-picks-shop__header">
+                    <div>
+                        <span class="nba-badge">TOKEN REWARDS</span>
+                        <h3 id="gamePicksShopTitle">Prize Shop</h3>
+                        <p>Use gameplay perks, choose a franchise challenge, and unlock arena looks for your NBA hub. Rewards are in-app only and have no cash value.</p>
+                    </div>
+                    <button type="button" id="resetGamePicksReward" class="game-picks-reset-reward" hidden>Restore default site theme</button>
+                </div>
+                <div id="gamePicksRewardGrid" class="game-picks-reward-grid"></div>
+                <p id="gamePicksShopStatus" class="game-picks-shop-status" role="status" aria-live="polite"></p>
+            </section>
+            <p class="game-picks-disclaimer">Odds may be delayed or unavailable and are displayed for informational use only. Game Picks uses simulated tokens, not real-money bets. Prize Shop perks are browser-local and have no real-world prize value.</p>
         </div>
     </section>
 
@@ -196,14 +279,17 @@
                     <select id="standingsSeasonPicker" aria-label="Choose an NBA standings season"></select>
                 </label>
                 <div class="standings-phase-tabs" role="tablist" aria-label="Standings season phase">
-                    <button type="button" class="standings-phase-tab active" id="standings-phase-preseason" role="tab" aria-selected="true" aria-controls="standings-panel" data-season-type="preseason">Preseason</button>
-                    <button type="button" class="standings-phase-tab" id="standings-phase-regular" role="tab" aria-selected="false" aria-controls="standings-panel" data-season-type="regular">Regular Season</button>
+                    <button type="button" class="standings-phase-tab" id="standings-phase-preseason" role="tab" aria-selected="false" aria-controls="standings-panel" data-season-type="preseason">Preseason</button>
+                    <button type="button" class="standings-phase-tab active" id="standings-phase-regular" role="tab" aria-selected="true" aria-controls="standings-panel" data-season-type="regular">Regular Season</button>
                 </div>
                 <div class="standings-conference-tabs" role="tablist" aria-label="Standings conference">
                     <button type="button" class="standings-tab active" id="standings-tab-west" role="tab" aria-selected="true" aria-controls="standings-panel" data-conference="Western">Western Conference</button>
                     <button type="button" class="standings-tab" id="standings-tab-east" role="tab" aria-selected="false" aria-controls="standings-panel" data-conference="Eastern">Eastern Conference</button>
                 </div>
                 <p id="standingsUpdateStatus" class="standings-update-status" role="status" aria-live="polite">Loading current NBA standings…</p>
+                <p id="standingsHistoricalRule" class="standings-historical-rule" hidden>
+                    Historical playoff seeding: division champions were guaranteed top-three seeds through 2004–05 and top-four seeds from 2005–06 through 2014–15. Records and statistics remain unchanged.
+                </p>
             </div>
             <div id="standings-panel" class="standings-table-wrap" role="tabpanel" aria-labelledby="standings-tab-west" tabindex="0">
                 <table class="standings-table">
@@ -226,10 +312,41 @@
                         </tr>
                     </thead>
                     <tbody id="standingsTableBody">
-                        <tr><td colspan="14" class="standings-empty">Loading current standings…</td></tr>
+                        <tr><td colspan="14" class="standings-empty">Loading regular-season standings…</td></tr>
                     </tbody>
                 </table>
             </div>
+            <section class="playoff-bracket-panel" aria-labelledby="playoffBracketTitle">
+                <div class="standings-subsection-heading">
+                    <div>
+                        <span class="nba-badge">POSTSEASON ARCHIVE</span>
+                        <h3 id="playoffBracketTitle">NBA Playoff Bracket</h3>
+                        <p>Full playoff archive: 2000–2026. Choose 1999–00 for the 2000 playoffs; 2025–26 contains the 2026 postseason.</p>
+                    </div>
+                    <span id="playoffBracketSeason" class="playoff-bracket-season"></span>
+                </div>
+                <p id="playoffBracketStatus" class="standings-update-status" role="status" aria-live="polite">Choose a season to load its playoff bracket.</p>
+                <div id="playoffBracket" class="playoff-bracket" aria-live="polite"></div>
+            </section>
+            <section class="standings-prediction-panel" aria-labelledby="standingsPredictionTitle">
+                <div class="standings-subsection-heading">
+                    <div>
+                        <span class="nba-badge">FAN FORECAST</span>
+                        <h3 id="standingsPredictionTitle">Predict the 2026–27 Standings</h3>
+                        <p>Drag teams into your 1–15 order in each conference. On touch screens, use the move buttons. Your prediction is saved only in this browser.</p>
+                    </div>
+                    <button type="button" id="clearStandingsPrediction" class="standings-prediction-clear">Clear prediction</button>
+                </div>
+                <form id="standingsPredictionForm">
+                    <div id="standingsPredictionGrid" class="standings-prediction-grid">
+                        <p class="standings-prediction-status" role="status">Loading NBA teams…</p>
+                    </div>
+                    <div class="standings-prediction-actions">
+                        <p id="standingsPredictionStatus" class="standings-prediction-status" role="status" aria-live="polite">Drag teams into your order, then save your prediction.</p>
+                        <button type="submit" id="saveStandingsPrediction" disabled>Save my prediction</button>
+                    </div>
+                </form>
+            </section>
         </div>
     </section>
 
@@ -265,6 +382,57 @@
 
             <p id="statsUpdateStatus" class="stats-update-status" role="status" aria-live="polite">Connecting to NBA stats…</p>
             <div id="teamGrid" class="watch-grid"></div>
+
+            <section id="statCardStudioPanel" class="hub-reward-panel hub-stat-card-studio" aria-labelledby="statCardStudioTitle" hidden>
+                <div>
+                    <span class="nba-badge">CARD DISPLAY</span>
+                    <h2 id="statCardStudioTitle">Stat Card Studio</h2>
+                    <p>Change the player card layout used throughout team rosters and player profiles.</p>
+                </div>
+                <label>Player card layout
+                    <select id="statCardStyleSelect" aria-label="Choose a player card layout">
+                        <option value="classic">Classic</option>
+                        <option value="broadcast">Broadcast panel</option>
+                        <option value="spotlight">Spotlight stats</option>
+                    </select>
+                </label>
+            </section>
+
+            <section id="franchiseHistoryPanel" class="hub-reward-panel hub-franchise-history" aria-labelledby="franchiseHistoryTitle" hidden>
+                <div class="hub-reward-panel__header">
+                    <div>
+                        <span class="nba-badge">API-BACKED ARCHIVE</span>
+                        <h2 id="franchiseHistoryTitle">Franchise History Gallery</h2>
+                        <p>Browse championship years and team records from the NBA teams API.</p>
+                    </div>
+                    <label>Choose franchise
+                        <select id="franchiseHistoryTeam" aria-label="Choose a franchise for its history">
+                            <option value="">Choose a franchise</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="franchiseHistoryContent"></div>
+            </section>
+
+            <section id="playerCollectionPanel" class="hub-reward-panel hub-player-collection" aria-labelledby="playerCollectionTitle" hidden>
+                <div class="hub-reward-panel__header">
+                    <div>
+                        <span class="nba-badge">PLAYER COLLECTIBLES</span>
+                        <h2 id="playerCollectionTitle">Player Card Collection</h2>
+                        <p>Collect stat cards generated from current roster and season data supplied by the NBA API.</p>
+                    </div>
+                    <div class="hub-collection-controls">
+                        <label>Choose a player
+                            <select id="collectPlayerSelect" aria-label="Choose a player to collect">
+                                <option value="">Choose a player to collect</option>
+                            </select>
+                        </label>
+                        <button type="button" id="collectPlayerCard" disabled>Collect card · 2,500 tokens</button>
+                    </div>
+                </div>
+                <p id="playerCollectionStatus" class="hub-reward-status" role="status" aria-live="polite"></p>
+                <div id="playerCollectionCards" class="hub-collectible-grid"></div>
+            </section>
         </div>
     </section>
 
@@ -288,15 +456,8 @@
                     <p class="modal-description" id="modalDescription"></p>
                     <div class="modal-divider"></div>
 
-                    <h4 class="modal-section-title">2026–27 Projected Starters</h4>
-                    <p class="roster-projection-note">These are roster-based projections, not confirmed game-day lineups.</p>
-                    <div id="modalStartersGrid" class="player-cards-grid"></div>
-
-                    <div class="modal-divider"></div>
-                    <details class="roster-disclosure">
-                        <summary class="modal-section-title roster-disclosure__summary">2026–27 Bench & Reserves <span id="modalBenchCount"></span></summary>
-                        <div id="modalBenchGrid" class="player-cards-grid"></div>
-                    </details>
+                    <h4 class="modal-section-title">Players</h4>
+                    <div id="modalPlayersGrid" class="player-cards-grid"></div>
 
                     <div class="modal-divider"></div>
                     <h4 class="modal-section-title" style="color: var(--nba-red);">Team Offseason Transactions</h4>

@@ -101,6 +101,10 @@ function buildInitialsPortraitUrl(playerName) {
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+function getPlayerFallbackPortraitUrl(playerName) {
+    return buildInitialsPortraitUrl(playerName);
+}
+
 function getPlayerHeadshotUrl(playerName) {
     if (!playerName) return DEFAULT_AVATAR_FALLBACK;
 
@@ -124,3 +128,4 @@ function getPlayerInitials(playerName) {
 window.getPlayerHeadshotUrl = getPlayerHeadshotUrl;
 window.getPlayerHeadshotId = getPlayerHeadshotId;
 window.getPlayerInitials = getPlayerInitials;
+window.getPlayerFallbackPortraitUrl = getPlayerFallbackPortraitUrl;
