@@ -18,8 +18,6 @@ from fastapi import FastAPI, HTTPException, Header, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
-from supabase import Client, create_client
 
 try:
     from supabase import create_client, Client
