@@ -1514,6 +1514,13 @@ async function loadTeams({ background = false } = {}) {
 
     const missingSalaries = teams.reduce((count, team) => count + getTeamPlayers(team).filter((player) => !hasSalary(player)).length, 0);
     const stats = data.stats || {};
+    if (stats.status === "snapshot") {
+      apiStatusEl.textContent = `Nov. 11 PHT roster and ${stats.season} stats snapshot · ${missingSalaries} salaries unavailable`;
+      apiStatusEl.title = [data.roster?.message, stats.message].filter(Boolean).join(" ");
+      apiStatusEl.classList.remove("pill--warning");
+      renderTradeBoard();
+      return;
+    }
     const updatedAt = stats.last_updated
       ? new Date(stats.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
       : "";

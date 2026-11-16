@@ -3,6 +3,8 @@ const API_KEY = "lebron2369";
 const BUDGET = 15;
 const TEAM_SIZE = 5;
 const SAMPLE_PER_TIER = 5;
+const AUTH_SESSION_KEY = "cap-space-manager.supabase-auth-session.v1";
+let supabaseAuthConfig;
 const TIER_NAMES = {
   1: "Sleeper",
   2: "Role player",
@@ -75,6 +77,12 @@ const elements = {
   challengePlayerOptions: document.getElementById("challengePlayerOptions"),
   challengePlayerCount: document.getElementById("challengePlayerCount"),
   challengePlayerFeedback: document.getElementById("challengePlayerFeedback"),
+  challengeAuthStatus: document.getElementById("challengeAuthStatus"),
+  challengeAuthEmail: document.getElementById("challengeAuthEmail"),
+  challengeAuthPassword: document.getElementById("challengeAuthPassword"),
+  challengeSignIn: document.getElementById("challengeSignIn"),
+  challengeSignUp: document.getElementById("challengeSignUp"),
+  challengeSignOut: document.getElementById("challengeSignOut"),
   submitChallenge: document.getElementById("submitChallenge"),
   closeCreateChallenge: document.getElementById("closeCreateChallenge"),
   cancelCreateChallenge: document.getElementById("cancelCreateChallenge"),
@@ -111,8 +119,172 @@ const state = {
   challengeSelectedPlayerIds: new Set(),
   challengeSubmitting: false,
   challengeSelectionValid: false,
+  authSession: null,
   toastTimer: null
 };
+
+function setAuthStatus(message, isError = false) {
+  elements.challengeAuthStatus.textContent = message;
+  elements.challengeAuthStatus.classList.toggle("is-error", isError);
+}
+
+function updateAuthControls() {
+  const signedIn = Boolean(state.authSession?.access_token);
+  elements.challengeAuthStatus.textContent = signedIn
+    ? `Signed in${state.authSession.email ? ` as ${state.authSession.email}` : ""}.`
+    : "Sign in or create an account to publish and manage your challenges.";
+  elements.challengeAuthEmail.parentElement.hidden = signedIn;
+  elements.challengeAuthPassword.parentElement.hidden = signedIn;
+  elements.challengeSignIn.hidden = signedIn;
+  elements.challengeSignUp.hidden = signedIn;
+  elements.challengeSignOut.hidden = !signedIn;
+}
+
+function loadStoredAuthSession() {
+  try {
+    const saved = sessionStorage.getItem(AUTH_SESSION_KEY);
+    if (!saved) return null;
+    const session = JSON.parse(saved);
+    if (typeof session.access_token !== "string" || typeof session.refresh_token !== "string") {
+      throw new Error("Stored sign-in data is incomplete.");
+    }
+    return session;
+  } catch (error) {
+    sessionStorage.removeItem(AUTH_SESSION_KEY);
+    setAuthStatus(error instanceof Error ? error.message : "Could not read the saved sign-in.", true);
+    return null;
+  }
+}
+
+function storeAuthSession(session) {
+  const expiresAt = Number(session.expires_at)
+    ? Number(session.expires_at) * 1000
+    : Date.now() + Number(session.expires_in || 3600) * 1000;
+  state.authSession = {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: expiresAt,
+    email: session.user?.email || ""
+  };
+  try {
+    sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(state.authSession));
+  } catch {
+    state.authSession = null;
+    throw new Error("Could not save your sign-in for this browser session.");
+  }
+  updateAuthControls();
+}
+
+async function getSupabaseAuthConfig() {
+  if (supabaseAuthConfig) return supabaseAuthConfig;
+  const response = await fetch(`${API_URL}/api/v1/auth/config`);
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.detail || `Sign-in configuration unavailable (${response.status}).`);
+  }
+  if (!payload.supabase_url || !payload.publishable_key) {
+    throw new Error("The API returned incomplete Supabase sign-in configuration.");
+  }
+  supabaseAuthConfig = payload;
+  return supabaseAuthConfig;
+}
+
+async function supabaseAuthRequest(path, body, accessToken = "") {
+  const config = await getSupabaseAuthConfig();
+  const headers = {
+    "Content-Type": "application/json",
+    apikey: config.publishable_key
+  };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const response = await fetch(`${config.supabase_url}/auth/v1/${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body)
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      payload.msg || payload.message || payload.error_description
+        || "Supabase sign-in request failed."
+    );
+  }
+  return payload;
+}
+
+async function signInToSupabase(createAccount = false) {
+  const email = elements.challengeAuthEmail.value.trim();
+  const password = elements.challengeAuthPassword.value;
+  if (!email || !elements.challengeAuthEmail.validity.valid || password.length < 8) {
+    setAuthStatus("Enter a valid email address and a password of at least 8 characters.", true);
+    return;
+  }
+  elements.challengeSignIn.disabled = true;
+  elements.challengeSignUp.disabled = true;
+  setAuthStatus(createAccount ? "Creating your account…" : "Signing in…");
+  try {
+    const path = createAccount
+      ? "signup"
+      : "token?grant_type=password";
+    const payload = await supabaseAuthRequest(path, { email, password });
+    if (!payload.access_token || !payload.refresh_token) {
+      setAuthStatus("Account created. Check your email to confirm it, then sign in.");
+      return;
+    }
+    storeAuthSession(payload);
+    elements.challengeAuthPassword.value = "";
+    setAuthStatus(`Signed in${payload.user?.email ? ` as ${payload.user.email}` : ""}.`);
+  } catch (error) {
+    setAuthStatus(error instanceof Error ? error.message : "Could not sign in.", true);
+  } finally {
+    elements.challengeSignIn.disabled = false;
+    elements.challengeSignUp.disabled = false;
+  }
+}
+
+async function getValidSupabaseAccessToken() {
+  if (!state.authSession) {
+    throw new Error("Sign in or create an account before publishing a challenge.");
+  }
+  if (state.authSession.expires_at > Date.now() + 60_000) {
+    return state.authSession.access_token;
+  }
+  try {
+    const refreshed = await supabaseAuthRequest("token?grant_type=refresh_token", {
+      refresh_token: state.authSession.refresh_token
+    });
+    storeAuthSession(refreshed);
+    return state.authSession.access_token;
+  } catch (error) {
+    state.authSession = null;
+    sessionStorage.removeItem(AUTH_SESSION_KEY);
+    updateAuthControls();
+    throw new Error(error instanceof Error
+      ? `Your sign-in expired. Please sign in again. ${error.message}`
+      : "Your sign-in expired. Please sign in again.");
+  }
+}
+
+async function signOutFromSupabase() {
+  const token = state.authSession?.access_token;
+  state.authSession = null;
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  updateAuthControls();
+  if (!token) return;
+  try {
+    await supabaseAuthRequest("logout", {}, token);
+    setAuthStatus("Signed out.");
+  } catch (error) {
+    setAuthStatus(
+      `Signed out on this device, but Supabase could not revoke the remote session: ${
+        error instanceof Error ? error.message : "request failed"
+      }`,
+      true
+    );
+  }
+}
+
+state.authSession = loadStoredAuthSession();
+updateAuthControls();
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -771,6 +943,12 @@ let lastPoolRefreshAt = 0;
 let isLoadingPlayers = false;
 
 function updatePlayerPoolStatus(stats, roster) {
+  if (stats?.status === "snapshot") {
+    elements.apiStatus.textContent = `${state.players.length} NBA players · Nov. 11 PHT roster and ${stats.season} stats snapshot`;
+    elements.apiStatus.title = [roster?.message, stats?.message].filter(Boolean).join(" ");
+    elements.apiStatus.classList.remove("is-error");
+    return;
+  }
   const updatedAt = stats?.last_updated
     ? new Date(stats.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
     : "";
@@ -933,7 +1111,7 @@ async function createCommunityChallenge(event) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": API_KEY
+        Authorization: `Bearer ${await getValidSupabaseAccessToken()}`
       },
       body: JSON.stringify(challengeData)
     });
@@ -977,6 +1155,9 @@ elements.openCreateChallenge.addEventListener("click", () => {
 elements.closeCreateChallenge.addEventListener("click", () => elements.createChallengeDialog.close());
 elements.cancelCreateChallenge.addEventListener("click", () => elements.createChallengeDialog.close());
 elements.createChallengeForm.addEventListener("submit", createCommunityChallenge);
+elements.challengeSignIn.addEventListener("click", () => signInToSupabase());
+elements.challengeSignUp.addEventListener("click", () => signInToSupabase(true));
+elements.challengeSignOut.addEventListener("click", signOutFromSupabase);
 elements.challengePlayerSearch.addEventListener("input", updateChallengePlayerPicker);
 elements.createChallengeForm.elements.rule_type.addEventListener("change", () => {
   const eligibleIds = new Set(state.players

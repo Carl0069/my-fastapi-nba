@@ -249,6 +249,14 @@ h1, h2, p { margin-top: 0; }
 .create-dialog__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .create-dialog__header h2 { margin: 2px 0 0; font-family: "Barlow Condensed", sans-serif; font-size: 31px; }
 .create-dialog__intro { margin: 10px 0 16px; color: #707a73; font-size: 10px; line-height: 1.5; }
+.challenge-auth { margin: 0 0 15px; padding: 11px; border: 1px solid #d9d2c6; border-radius: 6px; background: #f8f5ee; }
+.challenge-auth > strong { color: var(--ink); font-size: 10px; }
+.challenge-auth > p { margin: 5px 0 9px; color: #707a73; font-size: 8px; line-height: 1.45; }
+.challenge-auth > p.is-error { color: #9a4b36; }
+.challenge-auth .form-field { margin-bottom: 8px; }
+.challenge-auth__actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.challenge-auth__actions button { min-height: 31px; padding: 0 10px; border: 1px solid #cfc8bb; border-radius: 4px; background: #fffefa; color: var(--ink); font-size: 8px; font-weight: 850; cursor: pointer; }
+.challenge-auth__actions button:disabled { opacity: .55; cursor: wait; }
 .dialog-close { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid #d8d1c5; border-radius: 50%; background: #f4f0e7; color: var(--ink); font-size: 20px; cursor: pointer; }
 .form-field { display: grid; gap: 6px; margin: 0 0 13px; color: #48564e; font-size: 9px; font-weight: 850; }
 .form-field input, .form-field select, .form-field textarea { width: 100%; min-height: 38px; padding: 9px 10px; border: 1px solid #cfc8bb; border-radius: 5px; background: #fffefa; color: var(--ink); font: 500 11px "DM Sans", sans-serif; }

@@ -114,6 +114,17 @@
           <button type="button" class="dialog-close" id="closeCreateChallenge" aria-label="Close">×</button>
         </header>
         <p class="create-dialog__intro">Choose the exact players people can draft in this challenge. They will be the whole player pool—no random replacements.</p>
+        <section class="challenge-auth" aria-labelledby="challengeAuthTitle">
+          <strong id="challengeAuthTitle">Sign in to publish</strong>
+          <p id="challengeAuthStatus" role="status">Sign in or create an account to publish and manage your challenges.</p>
+          <label class="form-field">Email<input id="challengeAuthEmail" type="email" autocomplete="email" maxlength="254" /></label>
+          <label class="form-field">Password<input id="challengeAuthPassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" /></label>
+          <div class="challenge-auth__actions">
+            <button type="button" id="challengeSignIn">Sign in</button>
+            <button type="button" id="challengeSignUp">Create account</button>
+            <button type="button" id="challengeSignOut" hidden>Sign out</button>
+          </div>
+        </section>
         <label class="form-field">Challenge name<input name="title" required minlength="3" maxlength="48" placeholder="e.g. Triple-double threat" /></label>
         <label class="form-field">Your display name<input name="creator" required minlength="2" maxlength="24" placeholder="Name shown on the challenge" /></label>
         <label class="form-field">Challenge category

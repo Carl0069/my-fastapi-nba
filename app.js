@@ -307,6 +307,12 @@ async function loadTeams() {
 function renderStatsUpdateStatus(stats, roster) {
     const status = document.getElementById("statsUpdateStatus");
     if (!status) return;
+    if (stats?.status === "snapshot") {
+        status.textContent = `Roster and ${stats.season} stats snapshot · as of ${stats.as_of} PHT`;
+        status.title = [roster?.message, stats?.message].filter(Boolean).join(" ");
+        status.classList.remove("is-warning");
+        return;
+    }
     const updatedAt = stats?.last_updated
         ? new Date(stats.last_updated).toLocaleTimeString([], {
             hour: "numeric",
