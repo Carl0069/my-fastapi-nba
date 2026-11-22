@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="trade-machine.css" />
+    <link rel="stylesheet" href="trade-machine.css?v=two-way-roster-1" />
   </head>
   <body>
     <div class="page-shell">
@@ -30,6 +30,11 @@
           <span class="pill pill--primary" id="apiStatus">Connecting to API…</span>
           <span class="pill" id="teamCountLabel">0 of 5 teams</span>
         </div>
+        <nav class="trade-site-nav" aria-label="Trade Desk sections">
+          <a href="trade-home.html">Home</a>
+          <a href="trade-community.html">Community</a>
+          <a class="is-active" href="trade-machine.html" aria-current="page">Trade Machine</a>
+        </nav>
       </header>
 
       <main class="trade-workspace">
@@ -40,30 +45,93 @@
           </div>
           <div class="workspace-toolbar__actions">
             <button type="button" class="button button--ghost" id="clearTradeBtn">Reset</button>
-            <button type="button" class="button button--ghost" id="savedTradesBtn">Saved trades</button>
+            <button type="button" class="button button--ghost" id="tradeSlidersBtn">Trade sliders</button>
             <button type="button" class="button button--add" id="addTeamBtn">+ Add team</button>
             <button type="button" class="button button--primary" id="reviewTradeBtn">Review trade</button>
           </div>
         </section>
 
+        <p id="guestTradeNotice" class="trade-trending__note guest-trade-notice" role="status" hidden>
+          Guest access: build and review two-team trades. Sign in to add up to five teams or submit a community proposal.
+        </p>
+
         <section class="trade-trending" aria-labelledby="trendingTitle">
           <div class="trade-trending__heading">
             <div>
-              <p class="trade-trending__eyebrow"><span aria-hidden="true"></span> LEAGUE PULSE / PLAYER STATS</p>
-              <h2 id="trendingTitle">Scoring leaders <span>from the API</span></h2>
+              <p class="trade-trending__eyebrow"><span aria-hidden="true"></span> LEAGUE PULSE / TRADE WATCH</p>
+              <h2 id="trendingTitle">NBA Trade <span>Watch</span></h2>
             </div>
           </div>
-          <div id="trendingPlayers" class="trade-trending__rail" aria-label="Players trending in trade scenarios"></div>
-          <p class="trade-trending__note">Players are ranked by current API points per game · stats refresh every 15 minutes</p>
+          <div id="trendingPlayers" class="trade-trending__rail" aria-label="NBA Trade Watch players"></div>
+          <p class="trade-trending__note">Updated November 22, 2026 · CBS Sports, NBC Sports, Hoops Rumors and The Stein Line.</p>
         </section>
 
         <div id="teamGrid" class="team-grid" aria-live="polite"></div>
+
       </main>
 
       <div id="tradeToast" class="trade-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
-      <dialog id="playerProfileDialog" class="player-profile-dialog" aria-labelledby="playerProfileName">
+      <dialog id="playerProfileDialog" class="player-profile-dialog player-career-dialog" aria-labelledby="playerProfileName">
         <div id="playerProfileContent"></div>
+      </dialog>
+
+      <dialog id="playerCompareDialog" class="player-profile-dialog" aria-label="Compare NBA players">
+        <div id="playerCompareContent"></div>
+      </dialog>
+
+      <dialog id="frontOfficeDialog" class="sign-trade-dialog" aria-label="Front office action">
+        <div id="frontOfficeContent"></div>
+      </dialog>
+
+      <dialog id="signTradeDialog" class="sign-trade-dialog" aria-label="Sign and trade contract builder">
+        <div id="signTradeContent"></div>
+      </dialog>
+
+      <dialog id="tradeAdminDialog" class="trade-admin-dialog" aria-labelledby="tradeAdminTitle">
+        <div class="trade-admin-shell">
+          <header class="trade-admin-header">
+            <div>
+              <p class="eyebrow">TRADE MACHINE / ADMIN</p>
+              <h2 id="tradeAdminTitle">Admin controls</h2>
+            </div>
+            <button type="button" class="icon-button" id="closeTradeAdminBtn" aria-label="Close admin controls">×</button>
+          </header>
+          <nav class="trade-admin-tabs" aria-label="Admin sections">
+            <button type="button" class="is-active" data-admin-tab="community">Community</button>
+            <button type="button" data-admin-tab="rumors">Trade watch</button>
+            <button type="button" data-admin-tab="audit">Audit log</button>
+          </nav>
+          <div id="tradeAdminStatus" class="trade-admin-status" role="status"></div>
+          <section id="tradeAdminCommunity" class="trade-admin-panel"></section>
+          <section id="tradeAdminRumors" class="trade-admin-panel" hidden></section>
+          <section id="tradeAdminAudit" class="trade-admin-panel" hidden></section>
+        </div>
+      </dialog>
+
+      <dialog id="tradeSlidersDialog" class="trade-sliders-dialog" aria-labelledby="tradeSlidersTitle">
+        <form id="tradeSlidersForm" class="trade-sliders-form">
+          <header class="trade-sliders-header">
+            <div>
+              <p class="eyebrow">TRADE MACHINE / 2K STYLE</p>
+              <h2 id="tradeSlidersTitle">Trade sliders</h2>
+              <p>Turn restrictions on or off for fantasy trades and sandbox scenarios.</p>
+            </div>
+            <button type="button" class="icon-button" id="closeTradeSlidersBtn" aria-label="Close trade sliders">×</button>
+          </header>
+          <div class="trade-sliders-grid">
+            <label><span><strong>Salary matching</strong><small>Limit incoming salary by outgoing salary.</small></span><input name="salaryMatching" type="checkbox" role="switch"></label>
+            <label><span><strong>Apron restrictions</strong><small>Apply first- and second-apron rules.</small></span><input name="apronHardCaps" type="checkbox" role="switch"></label>
+            <label><span><strong>Minimum team salary</strong><small>Check the post-trade salary floor.</small></span><input name="minimumTeamSalaryFloor" type="checkbox" role="switch"></label>
+            <label><span><strong>Sign-and-trade rules</strong><small>Apply the sign-and-trade term checks.</small></span><input name="signAndTradeRules" type="checkbox" role="switch"></label>
+            <label><span><strong>Protected-pick rules</strong><small>Check Stepien, frozen picks, and protections.</small></span><input name="protectedPickRules" type="checkbox" role="switch"></label>
+            <label><span><strong>Roster size limits</strong><small>Limit teams to NBA roster restrictions.</small></span><input name="rosterSizeRules" type="checkbox" role="switch"></label>
+          </div>
+          <footer class="trade-sliders-footer">
+            <button type="button" class="button button--ghost" id="resetTradeSlidersBtn">Reset all</button>
+            <button type="submit" class="button button--primary">Apply sliders</button>
+          </footer>
+        </form>
       </dialog>
 
       <dialog id="tradeReviewDialog" class="trade-review-dialog" aria-labelledby="reviewTitle">
@@ -75,28 +143,25 @@
           <button type="button" class="icon-button" id="closeReviewBtn" aria-label="Close trade review" title="Close">×</button>
         </div>
         <div id="reviewContent" class="review-content"></div>
+        <div class="review-post-fields">
+          <label>Post title
+            <input id="tradePostTitle" type="text" minlength="3" maxlength="100" placeholder="Give your trade proposal a title" />
+          </label>
+          <label>Explanation
+            <textarea id="tradePostExplanation" maxlength="1000" rows="3" placeholder="Explain the reasoning behind this trade"></textarea>
+          </label>
+        </div>
         <div class="review-footer">
           <span class="review-disclaimer">Trade checker estimate · protected pick language requires manual confirmation</span>
-          <button type="button" class="button button--ghost" id="editSavedTradeBtn" hidden>Edit this trade</button>
-          <button type="button" class="button button--add" id="saveTradeBtn">Submit &amp; save</button>
+          <button type="button" class="button button--add" id="submitTradeBtn">Submit proposal</button>
           <button type="button" class="button button--primary" id="doneReviewBtn">Done</button>
         </div>
-      </dialog>
-
-      <dialog id="savedTradesDialog" class="trade-review-dialog saved-trades-dialog" aria-labelledby="savedTradesTitle">
-        <div class="review-header">
-          <div>
-            <p class="eyebrow">TRADE DESK</p>
-            <h2 id="savedTradesTitle">Saved trades</h2>
-          </div>
-          <button type="button" class="icon-button" id="closeSavedTradesBtn" aria-label="Close saved trades" title="Close">×</button>
-        </div>
-        <div id="savedTradesContent" class="review-content"></div>
       </dialog>
     </div>
 
     <script src="nba-player-ids.js"></script>
     <script src="player-headshots.js"></script>
-    <script src="trade-machine.js"></script>
+    <script src="trade-machine.js?v=two-way-roster-1"></script>
+    <script src="shared-auth.js?v=20261121-auth-page-fix-2"></script>
   </body>
 </html>

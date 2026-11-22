@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>Trade Community | NBA Trade Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="trade-machine.css?v=trade-snapshot-4" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar community-topbar">
+        <div class="topbar__brand">
+          <a class="brand-mark community-brand-mark" href="trade-home.html" aria-label="NBA Trade Desk home">
+            <svg class="brand-mark__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+              <path class="brand-mark__route brand-mark__route--upper" d="M13 17h20l-5-5m5 5-5 5" />
+              <path class="brand-mark__route brand-mark__route--lower" d="M35 31H15l5 5m-5-5 5-5" />
+              <path class="brand-mark__center" d="M24 19v10" />
+              <circle class="brand-mark__node" cx="24" cy="24" r="2.2" />
+            </svg>
+          </a>
+          <div>
+            <p class="eyebrow">FRONT OFFICE / COMMUNITY</p>
+            <h1>Trade Community</h1>
+          </div>
+        </div>
+        <div class="topbar__info community-topbar__actions">
+          <nav class="trade-site-nav" aria-label="Trade Desk sections">
+            <a href="trade-home.html">Home</a>
+            <a class="is-active" href="trade-community.html" aria-current="page">Community</a>
+            <a href="trade-machine.html">Trade Machine</a>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <section class="community-feed community-feed--standalone" aria-labelledby="communityFeedTitle">
+          <div class="community-feed__heading">
+            <div>
+              <p class="trade-trending__eyebrow"><span aria-hidden="true"></span> FRONT OFFICE / COMMUNITY</p>
+              <h2 id="communityFeedTitle">Community trade proposals</h2>
+              <p id="communityAccessNote" class="community-feed__note">Browse proposals. Sign in to submit a trade, comment, or rate a proposal.</p>
+            </div>
+            <div class="community-feed__tools">
+              <span id="communityFeedStatus" class="community-feed__status" role="status" aria-live="polite">Loading proposals…</span>
+              <button type="button" class="button button--ghost" id="refreshCommunityBtn">Refresh</button>
+            </div>
+          </div>
+          <div id="communityTrades" class="community-trades" aria-live="polite"></div>
+          <button type="button" class="button button--ghost community-load-more" id="loadMoreCommunityBtn" hidden>Load more proposals</button>
+        </section>
+      </main>
+    </div>
+    <dialog id="tradeSnapshotDialog" class="trade-snapshot-dialog" aria-labelledby="tradeSnapshotTitle">
+      <div class="trade-snapshot-dialog__header">
+        <div>
+          <p>TRADE COMMUNITY / SNAPSHOT</p>
+          <h2 id="tradeSnapshotTitle">Share this deal</h2>
+        </div>
+        <button type="button" id="closeTradeSnapshot" aria-label="Close snapshot">×</button>
+      </div>
+      <div class="trade-snapshot-dialog__sizes" role="group" aria-label="Snapshot size">
+        <button type="button" class="is-active" data-snapshot-size="landscape">Landscape 1200×675</button>
+        <button type="button" data-snapshot-size="square">Square 1080×1080</button>
+        <button type="button" data-snapshot-size="story">Story 1080×1920</button>
+      </div>
+      <div class="trade-snapshot-dialog__preview">
+        <canvas id="tradeSnapshotCanvas" width="1200" height="675" aria-label="Generated trade snapshot"></canvas>
+      </div>
+      <footer class="trade-snapshot-dialog__footer">
+        <button type="button" class="button button--ghost" id="copyTradeSnapshot">Copy image</button>
+        <button type="button" class="button button--primary" id="downloadTradeSnapshot">Download PNG</button>
+      </footer>
+    </dialog>
+    <script src="nba-player-ids.js"></script>
+    <script src="player-headshots.js"></script>
+    <script src="shared-auth.js?v=20261121-auth-page-fix-2"></script>
+    <script src="trade-community.js?v=community-clean-header-1"></script>
+  </body>
+</html>

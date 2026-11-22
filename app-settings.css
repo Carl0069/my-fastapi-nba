@@ -1,0 +1,327 @@
+:root {
+  color-scheme: dark;
+  --settings-bg: #071b2b;
+  --settings-panel: #10263a;
+  --settings-ink: #f5f8ff;
+  --settings-muted: #aab9ca;
+  --settings-line: rgba(148, 183, 222, 0.22);
+  --settings-accent: #c9082a;
+  --settings-font: "Montserrat", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 10% 0, rgba(43, 111, 227, .18), transparent 30rem),
+    linear-gradient(180deg, #061b2e, var(--settings-bg));
+  color: var(--settings-ink);
+  font-family: var(--settings-font);
+}
+
+body[data-settings-app="trade_machine"] {
+  color-scheme: dark;
+  --settings-bg: #0c1513;
+  --settings-panel: #111c1a;
+  --settings-ink: #e8f2ed;
+  --settings-muted: #a7b9ae;
+  --settings-line: #315a4d;
+  --settings-accent: #28714d;
+  --settings-font: "Space Grotesk", sans-serif;
+  background:
+    linear-gradient(rgba(7, 15, 13, .96), rgba(7, 15, 13, .96)),
+    repeating-linear-gradient(90deg, transparent 0 38px, rgba(143, 224, 170, .06) 39px);
+}
+
+body[data-settings-app="build_15"] {
+  color-scheme: light;
+  --settings-bg: #f4f0e7;
+  --settings-panel: #fffaf0;
+  --settings-ink: #192323;
+  --settings-muted: #64716c;
+  --settings-line: #d4cdbf;
+  --settings-accent: #23734d;
+  --settings-font: "DM Sans", sans-serif;
+  background:
+    radial-gradient(ellipse at 80% 5%, rgba(238, 186, 121, .2), transparent 35%),
+    repeating-linear-gradient(0deg, transparent 0 34px, rgba(41, 57, 49, .025) 35px),
+    var(--settings-bg);
+}
+
+a, button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--settings-accent), white 35%);
+  outline-offset: 3px;
+}
+
+.settings-topbar {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px max(22px, calc((100vw - 1060px) / 2));
+  border-bottom: 1px solid var(--settings-line);
+  background: color-mix(in srgb, var(--settings-bg), transparent 8%);
+}
+
+.settings-back,
+.settings-account {
+  color: var(--settings-ink);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.settings-back:hover,
+.settings-account:hover { color: color-mix(in srgb, var(--settings-accent), white 35%); }
+
+.settings-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-account-avatar,
+.settings-account-fallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.settings-account-fallback {
+  display: grid;
+  place-items: center;
+  background: var(--settings-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.settings-shell {
+  width: min(940px, calc(100% - 36px));
+  margin: 42px auto 80px;
+}
+
+.settings-intro { margin-bottom: 24px; }
+
+.settings-eyebrow {
+  margin: 0 0 8px;
+  color: color-mix(in srgb, var(--settings-accent), white 35%);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.settings-intro h1 {
+  margin: 0;
+  font-family: var(--settings-font);
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.settings-intro > p:last-child {
+  max-width: 620px;
+  margin: 12px 0 0;
+  color: var(--settings-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+body[data-settings-app="trade_machine"] .settings-intro h1 {
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: -.08em;
+}
+
+body[data-settings-app="build_15"] .settings-intro h1 {
+  font-family: "Barlow Condensed", sans-serif;
+  text-transform: uppercase;
+}
+
+.settings-section {
+  margin: 16px 0;
+  padding: 22px;
+  border: 1px solid var(--settings-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--settings-panel), transparent 4%);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .12);
+}
+
+body[data-settings-app="trade_machine"] .settings-section { border-radius: 8px; }
+body[data-settings-app="build_15"] .settings-section { border-radius: 8px; }
+
+.settings-section h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.settings-section > p {
+  margin: 7px 0 18px;
+  color: var(--settings-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.settings-field {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  color: var(--settings-ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.settings-field input:not([type="checkbox"]),
+.settings-field select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--settings-line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: var(--settings-bg);
+  color: var(--settings-ink);
+}
+
+.settings-field input[type="number"] { font-variant-numeric: tabular-nums; }
+
+.settings-checkbox {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  color: var(--settings-ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.settings-checkbox input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--settings-accent);
+}
+
+.settings-checkbox span { display: grid; gap: 3px; }
+.settings-checkbox small { color: var(--settings-muted); font-size: 11px; font-weight: 500; }
+
+.settings-page-status {
+  min-height: 20px;
+  margin: 0 0 12px;
+  color: var(--settings-muted);
+  font-size: 13px;
+}
+
+.settings-page-status.is-error { color: #ff7b82; }
+.settings-page-status.is-success { color: #64d99b; }
+body[data-settings-app="build_15"] .settings-page-status.is-success { color: #23734d; }
+
+.settings-profile-picture {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  grid-row: span 2;
+}
+
+.settings-profile-picture img,
+.settings-profile-picture > span {
+  width: 70px;
+  height: 70px;
+  border: 3px solid var(--settings-line);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.settings-profile-picture > span {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--settings-accent), white 25%);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.settings-profile-picture img:not([hidden]) + span {
+  display: none;
+}
+
+.settings-profile-role {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  color: var(--settings-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.settings-profile-role strong {
+  width: fit-content;
+  border: 1px solid var(--settings-line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--settings-ink);
+  font-size: 12px;
+}
+
+.settings-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.settings-cancel,
+.settings-save {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--settings-line);
+  border-radius: 8px;
+  padding: 0 18px;
+  color: var(--settings-ink);
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.settings-cancel { background: transparent; }
+.settings-save { border-color: var(--settings-accent); background: var(--settings-accent); cursor: pointer; }
+.settings-save:disabled { cursor: wait; opacity: .65; }
+
+body[data-settings-app="trade_machine"] .settings-save,
+body[data-settings-app="trade_machine"] .settings-cancel {
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+body[data-settings-app="build_15"] .settings-save,
+body[data-settings-app="build_15"] .settings-cancel { border-radius: 5px; }
+
+@media (max-width: 620px) {
+  .settings-topbar { min-height: 60px; padding-inline: 16px; }
+  .settings-shell { width: min(100% - 24px, 940px); margin-top: 28px; }
+  .settings-section { padding: 17px; }
+  .settings-fields { grid-template-columns: 1fr; gap: 12px; }
+}

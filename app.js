@@ -32,6 +32,7 @@ const GAME_PICKS_REWARDS = [
 ];
 
 let allTeams = [];
+let freeAgents = [];
 let currentHeadlineIndex = 0;
 let headlineAutoTimer = null;
 let headlineItems = [];
@@ -262,6 +263,72 @@ function formatPlayerSeasonStat(player, field, suffix = "") {
     return player.stats_season ? formatSeasonStat(player[field], suffix) : "—";
 }
 
+function renderFreeAgents() {
+    const grid = document.getElementById("freeAgentGrid");
+    if (!grid) return;
+    if (!freeAgents.length) {
+        grid.innerHTML = '<p class="free-agent-empty">No free agents are currently in the Supabase roster.</p>';
+        return;
+    }
+    grid.innerHTML = freeAgents.map(player => {
+        const initials = String(player.name || "NBA")
+            .split(/\s+/).filter(Boolean).slice(0, 2)
+            .map(part => part[0]).join("").toUpperCase();
+        return `
+            <article class="free-agent-card">
+                <div class="free-agent-card__top">
+                    <div class="free-agent-card__badge"><span></span> FREE AGENT</div>
+                    ${window.NBAHubAuth?.isAdmin() ? `
+                        <details class="free-agent-card__menu">
+                            <summary aria-label="Actions for ${escapeMarkup(player.name)}">•••</summary>
+                            <div class="free-agent-card__menu-items">
+                                <button type="button" data-edit-free-agent="${escapeMarkup(player.id)}">Edit player</button>
+                            </div>
+                        </details>
+                    ` : ""}
+                </div>
+                <div class="free-agent-card__identity">
+                    <div class="free-agent-card__portrait" aria-hidden="${player.headshot_url ? "false" : "true"}">
+                        ${player.headshot_url
+                            ? `<img src="${escapeMarkup(player.headshot_url)}" alt="${escapeMarkup(player.name)}" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden>${initials}</span>`
+                            : initials}
+                    </div>
+                    <div>
+                        <p>${escapeMarkup(player.pos || "—")}${player.jersey_number ? ` · #${escapeMarkup(player.jersey_number)}` : ""}</p>
+                        <h3>${escapeMarkup(player.name)}</h3>
+                    </div>
+                </div>
+                <div class="free-agent-card__stats">
+                    <span><strong>${formatPlayerSeasonStat(player, "pts")}</strong><small>PPG</small></span>
+                    <span><strong>${formatPlayerSeasonStat(player, "reb")}</strong><small>RPG</small></span>
+                    <span><strong>${formatPlayerSeasonStat(player, "ast")}</strong><small>APG</small></span>
+                </div>
+                <footer class="free-agent-card__footer">
+                    <span>${Number(player.gp) > 0 ? `${player.gp} GP` : "No games"}</span>
+                    <button type="button" class="free-agent-card__view">View player</button>
+                </footer>
+            </article>
+        `;
+    }).join("");
+    grid.querySelectorAll(".free-agent-card__view").forEach((button, index) => {
+        button.addEventListener("click", () => {
+            const player = freeAgents[index];
+            openModal({
+                id: 0,
+                name: "Free Agent",
+                conference: "—",
+                division: "—",
+                logo: "",
+                starters_2026_27: [player],
+                bench_2026_27: []
+            });
+        });
+    });
+    grid.querySelectorAll("[data-edit-free-agent]").forEach((button) => {
+        button.addEventListener("click", () => openAdminFreeAgentEditor(button.dataset.editFreeAgent));
+    });
+}
+
 async function loadTeams() {
     if (isRefreshingTeams) return;
     isRefreshingTeams = true;
@@ -277,6 +344,8 @@ async function loadTeams() {
             throw new Error("The API returned no NBA teams.");
         }
         allTeams = data.teams;
+        freeAgents = Array.isArray(data.free_agents) ? data.free_agents : [];
+        renderFreeAgents();
         renderHubRewards();
         renderStandingsPrediction();
         hydrateScoreHeadlineTeams();
@@ -878,7 +947,10 @@ function renderInjuryReportSection() {
             filter.innerHTML = expected.map(value => `<option value="${escapeMarkup(value)}">${escapeMarkup(value)}</option>`).join("");
         }
 
-        if (selected === "All teams" || available.has(selected)) {
+        const preferredTeam = window.NBAHubAuth?.getSession()?.settings?.favoriteTeam;
+        if (preferredTeam && ALL_NBA_TEAM_NAMES.includes(preferredTeam)) {
+            filter.value = preferredTeam;
+        } else if (selected === "All teams" || available.has(selected)) {
             filter.value = selected;
         } else {
             filter.value = "All teams";
@@ -901,7 +973,7 @@ function renderInjuryReportSection() {
                     <h3>${escapeMarkup(team.team)}</h3>
                 </div>
             </div>
-            <div class="injury-team-table-wrap">
+            <div class="injury-team-table-wrap" role="region" aria-label="${escapeMarkup(team.team)} injury report table" tabindex="0">
                 <table class="injury-team-table">
                     <thead>
                         <tr>
@@ -936,6 +1008,7 @@ function renderInjuryReportSection() {
                     </tbody>
                 </table>
             </div>
+            <p class="injury-team-table-scroll-hint">Swipe horizontally to see all injury details <span aria-hidden="true">&rarr;</span></p>
         </div>
     `).join("");
 }
@@ -5128,84 +5201,6 @@ function closeModal() {
     if (detailModal) detailModal.classList.remove("open");
 }
 
-function renderPlayerCareerHistory(history) {
-    const panel = document.getElementById("playerCareerPanel");
-    const grid = document.getElementById("playerCareerHistory");
-    const labelEl = document.getElementById("playerCareerLabel");
-    if (!panel || !grid || !labelEl) return;
-
-    const items = Array.isArray(history) ? history : [];
-    if (!items.length) {
-        panel.hidden = true;
-        labelEl.textContent = "Career timeline";
-        grid.innerHTML = "";
-        return;
-    }
-
-    panel.hidden = false;
-    labelEl.textContent = `${items.length} seasons`;
-    grid.innerHTML = items
-        .slice()
-        .reverse()
-        .map(item => {
-            const season = escapeMarkup(item.season || "Season");
-            const team = escapeMarkup(item.team || "Team");
-            const pts = item.pts != null ? Number(item.pts).toFixed(1) : "—";
-            const reb = item.reb != null ? Number(item.reb).toFixed(1) : "—";
-            const ast = item.ast != null ? Number(item.ast).toFixed(1) : "—";
-            const fgPct = item.fg_pct != null ? `${Number(item.fg_pct).toFixed(1)}%` : "—";
-            const gp = item.gp != null ? Number(item.gp) : "—";
-            return `
-                <div class="player-career-season">
-                    <span>${season}</span>
-                    <strong>${escapeMarkup(pts)}</strong>
-                    <small>${team}<br>GP ${escapeMarkup(String(gp))} · RPG ${escapeMarkup(String(reb))} · APG ${escapeMarkup(String(ast))}<br>FG ${escapeMarkup(fgPct)}</small>
-                </div>
-            `;
-        })
-        .join("");
-}
-
-async function loadPlayerCareerHistory(player) {
-    const playerId = Number(player?.id ?? player?.player_id ?? player?.nba_id ?? "");
-    const panel = document.getElementById("playerCareerPanel");
-    const grid = document.getElementById("playerCareerHistory");
-    const labelEl = document.getElementById("playerCareerLabel");
-    if (!panel || !grid || !labelEl) return;
-    if (!Number.isFinite(playerId) || playerId <= 0) {
-        panel.hidden = true;
-        labelEl.textContent = "Career timeline";
-        grid.innerHTML = "";
-        return;
-    }
-
-    panel.hidden = false;
-    labelEl.textContent = "Loading…";
-    grid.innerHTML = `
-        <div class="player-career-season">
-            <span>Career</span>
-            <strong>…</strong>
-            <small>Loading rookie-to-now stats…</small>
-        </div>
-    `;
-
-    try {
-        const response = await fetch(
-            `${API_URL}/api/v1/player-career?player_id=${encodeURIComponent(playerId)}&player_name=${encodeURIComponent(player?.name || "")}`,
-            { headers: { "x-api-key": API_KEY } }
-        );
-        if (!response.ok) throw new Error(`Career stats request failed (${response.status}).`);
-        const payload = await response.json();
-        const history = Array.isArray(payload?.history) ? payload.history : [];
-        renderPlayerCareerHistory(history);
-    } catch (error) {
-        console.warn("Player career history is unavailable.", error);
-        panel.hidden = true;
-        labelEl.textContent = "Career timeline";
-        grid.innerHTML = "";
-    }
-}
-
 function handleBackdropClick(event) {
     if (event.target.id === "detailModal") {
         closeModal();
@@ -5258,8 +5253,6 @@ function openPlayerModal(player, team) {
     animateNumber(document.getElementById("playerStatFt"), ft);
     animateNumber(document.getElementById("playerStatTov"), tov);
 
-    loadPlayerCareerHistory(player);
-
     const viewTeamBtn = document.getElementById("playerModalViewTeamBtn");
     viewTeamBtn.onclick = function() {
         closePlayerModal();
@@ -5279,25 +5272,205 @@ function handlePlayerBackdropClick(event) {
     }
 }
 
-refreshHeadlineSlides();
-startHeadlineAutoPlay();
-initializeSeasonPickers();
-document.querySelector("#scheduleSection .section-heading").textContent =
-    `${selectedScheduleSeason.replace("-", "–")} SEASON SCHEDULE & SCORES`;
-document.querySelector("#standingsSection .section-heading").textContent =
-    `${selectedStandingsSeason.replace("-", "–")} NBA STANDINGS`;
-loadHeadlines();
-loadLiveInjuryReports({ background: true });
-filterTransactions();
-updateScheduleDateBounds(true);
-renderSchedule();
-initializeGamePicks();
-loadTeams();
-loadSchedule();
-loadLiveScores();
-loadTransactions();
-loadStandings();
-loadPlayoffBracket();
+function setupAdminPlayerManager() {
+    const dialog = document.getElementById("adminAddPlayerDialog");
+    const form = document.getElementById("adminAddPlayerForm");
+    const teamSelect = document.getElementById("adminPlayerTeam");
+    const status = document.getElementById("adminAddPlayerStatus");
+    let editingPlayerId = null;
+    if (!dialog || !form || !teamSelect) return;
+
+    const setFormValue = (name, value) => {
+        const control = form.elements.namedItem(name);
+        if (control) control.value = value == null ? "" : String(value);
+    };
+
+    window.openAdminFreeAgentEditor = (playerId) => {
+        const player = freeAgents.find(item => item.id === playerId);
+        if (!player) return;
+        editingPlayerId = playerId;
+        teamSelect.innerHTML = '<option value="">Free agent</option>' +
+            allTeams.map(team =>
+                `<option value="${team.id}">${escapeMarkup(team.name)}</option>`
+            ).join("");
+        setFormValue("name", player.name);
+        setFormValue("team_id", "");
+        setFormValue("position", player.pos);
+        setFormValue("contract_type", player.contract_type === "Two-Way" ? "Two-Way" : "Standard");
+        setFormValue("jersey_number", player.jersey_number);
+        setFormValue("headshot_url", player.headshot_url);
+        setFormValue("salary", player.salary);
+        setFormValue("contract_years_remaining", player.contract_years_remaining);
+        setFormValue("gp", player.gp);
+        setFormValue("pts", player.pts);
+        setFormValue("reb", player.reb);
+        setFormValue("ast", player.ast);
+        setFormValue("stl", player.stl);
+        setFormValue("blk", player.blk);
+        setFormValue("tov", player.tov);
+        setFormValue("fg", player.fg);
+        setFormValue("fg3", player.fg3);
+        setFormValue("ft", player.ft);
+        document.getElementById("adminAddPlayerTitle").textContent = "Edit player";
+        document.querySelector("#adminAddPlayerDialog .admin-add-player-header p").textContent =
+            "Update this player's team, contract, and season stats.";
+        document.getElementById("submitAdminAddPlayer").textContent = "Save changes";
+        status.className = "admin-add-player-status";
+        status.textContent = "";
+        dialog.showModal();
+    };
+
+    const closeDialog = () => dialog.close();
+    document.getElementById("closeAdminAddPlayer")?.addEventListener("click", closeDialog);
+    document.getElementById("cancelAdminAddPlayer")?.addEventListener("click", closeDialog);
+    dialog.addEventListener("click", event => {
+        if (event.target === dialog) closeDialog();
+    });
+
+    const refreshButton = () => {
+        const existing = document.getElementById("adminAddPlayerButton");
+        if (existing) existing.remove();
+        renderFreeAgents();
+        if (!window.NBAHubAuth?.isAdmin()) return;
+        const nav = document.querySelector(".nav-container");
+        if (!nav) return;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.id = "adminAddPlayerButton";
+        button.className = "admin-add-player-button";
+        button.textContent = "+ Add player";
+        button.addEventListener("click", () => {
+            editingPlayerId = null;
+            form.reset();
+            teamSelect.innerHTML = '<option value="">Free agent</option>' +
+                allTeams.map(team =>
+                    `<option value="${team.id}">${escapeMarkup(team.name)}</option>`
+                ).join("");
+            document.getElementById("adminAddPlayerTitle").textContent = "Add a player";
+            document.querySelector("#adminAddPlayerDialog .admin-add-player-header p").textContent =
+                "Place a player on an NBA team or save them as a free agent.";
+            document.getElementById("submitAdminAddPlayer").textContent = "Add player";
+            status.className = "admin-add-player-status";
+            status.textContent = "";
+            dialog.showModal();
+        });
+        nav.appendChild(button);
+    };
+
+    window.addEventListener("nba-hub-auth-ready", refreshButton);
+    window.addEventListener("nba-hub-auth-changed", refreshButton);
+    refreshButton();
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const submit = document.getElementById("submitAdminAddPlayer");
+        const session = window.NBAHubAuth?.getSession();
+        if (!window.NBAHubAuth?.isAdmin() || !session?.access_token) {
+            status.className = "admin-add-player-status is-error";
+            status.textContent = "Administrator sign-in is required.";
+            return;
+        }
+
+        const formData = new FormData(form);
+        const optionalNumber = name => {
+            const value = String(formData.get(name) || "").trim();
+            return value ? Number(value) : null;
+        };
+        const body = {
+            name: String(formData.get("name") || "").trim(),
+            full_name: String(formData.get("name") || "").trim(),
+            team_id: String(formData.get("team_id") || "") ? Number(formData.get("team_id")) : null,
+            position: String(formData.get("position") || "").trim(),
+            contract_type: String(formData.get("contract_type") || "Standard") === "Two-Way" ? "Two-Way" : "Standard",
+            jersey_number: String(formData.get("jersey_number") || "").trim() || null,
+            headshot_url: String(formData.get("headshot_url") || "").trim() || null,
+            salary: optionalNumber("salary"),
+            contract_years_remaining: optionalNumber("contract_years_remaining"),
+            gp: optionalNumber("gp"),
+            pts: optionalNumber("pts"),
+            reb: optionalNumber("reb"),
+            ast: optionalNumber("ast"),
+            stl: optionalNumber("stl"),
+            blk: optionalNumber("blk"),
+            tov: optionalNumber("tov"),
+            fg: optionalNumber("fg"),
+            fg3: optionalNumber("fg3"),
+            ft: optionalNumber("ft")
+        };
+
+        submit.disabled = true;
+        status.className = "admin-add-player-status";
+        status.textContent = editingPlayerId ? "Updating player in Supabase…" : "Saving player to Supabase…";
+        try {
+            const endpoint = editingPlayerId
+                ? `${API_URL}/api/v1/admin/players/${encodeURIComponent(editingPlayerId)}`
+                : `${API_URL}/api/v1/admin/players`;
+            const response = await fetch(endpoint, {
+                method: editingPlayerId ? "PATCH" : "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify(body)
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.detail || `Could not add player (${response.status}).`);
+            status.className = "admin-add-player-status is-success";
+            status.textContent = editingPlayerId
+                ? `${payload.player.name} was updated ${payload.player.team_id ? "on the roster" : "as a free agent"}.`
+                : `${payload.player.name} was added ${payload.player.team_id ? "to the roster" : "as a free agent"}.`;
+            form.reset();
+            await loadTeams();
+        } catch (error) {
+            status.className = "admin-add-player-status is-error";
+            status.textContent = error instanceof Error ? error.message : "Could not add the player.";
+        } finally {
+            submit.disabled = false;
+        }
+    });
+}
+
+setupAdminPlayerManager();
+const currentHubPage = new URLSearchParams(window.location.search).get("page") || "nba-today";
+
+if (currentHubPage === "nba-today") {
+    refreshHeadlineSlides();
+    startHeadlineAutoPlay();
+    loadHeadlines();
+    loadTeams();
+}
+if (currentHubPage === "injury-watch") {
+    loadLiveInjuryReports({ background: false });
+}
+if (currentHubPage === "transactions") {
+    filterTransactions();
+    loadTransactions();
+}
+if (currentHubPage === "schedule") {
+    initializeSeasonPickers();
+    document.querySelector("#scheduleSection .section-heading").textContent =
+        `${selectedScheduleSeason.replace("-", "–")} SEASON SCHEDULE & SCORES`;
+    updateScheduleDateBounds(true);
+    renderSchedule();
+    loadTeams();
+    loadSchedule();
+    loadLiveScores();
+}
+if (currentHubPage === "game-picks") {
+    initializeGamePicks();
+    loadTeams();
+}
+if (currentHubPage === "standings") {
+    initializeSeasonPickers();
+    document.querySelector("#standingsSection .section-heading").textContent =
+        `${selectedStandingsSeason.replace("-", "–")} NBA STANDINGS`;
+    loadTeams();
+    loadStandings();
+    loadPlayoffBracket();
+}
+if (currentHubPage === "teams") {
+    loadTeams();
+}
 document.querySelectorAll(".standings-phase-tab").forEach(tab => {
     tab.addEventListener("click", () => setStandingsPhase(tab.dataset.seasonType));
 });
@@ -5391,31 +5564,107 @@ document.getElementById("boxScoreDialog").addEventListener("close", () => {
         playByPlayRefreshInterval = null;
     }
 });
-window.setInterval(loadTeams, 15 * 60 * 1000);
-window.setInterval(loadSchedule, 24 * 60 * 60 * 1000);
-window.setInterval(() => loadLiveScores({ background: true }), 30 * 1000);
-window.setInterval(() => loadTransactions({ background: true }), 60 * 60 * 1000);
-window.setInterval(() => loadStandings({ background: true }), 5 * 60 * 1000);
-window.setInterval(() => loadHeadlines({ background: true }), 15 * 60 * 1000);
-window.setInterval(() => loadLiveInjuryReports({ background: true }), 15 * 60 * 1000);
+const hubPageForIntervals = new URLSearchParams(window.location.search).get("page") || "nba-today";
+if (["nba-today", "schedule", "standings", "teams", "game-picks"].includes(hubPageForIntervals)) {
+    window.setInterval(loadTeams, 15 * 60 * 1000);
+}
+if (hubPageForIntervals === "schedule") {
+    window.setInterval(loadSchedule, 24 * 60 * 60 * 1000);
+    window.setInterval(() => loadLiveScores({ background: true }), 30 * 1000);
+}
+if (hubPageForIntervals === "transactions") {
+    window.setInterval(() => loadTransactions({ background: true }), 60 * 60 * 1000);
+}
+if (hubPageForIntervals === "standings") {
+    window.setInterval(() => loadStandings({ background: true }), 5 * 60 * 1000);
+}
+if (hubPageForIntervals === "nba-today") {
+    window.setInterval(() => loadHeadlines({ background: true }), 15 * 60 * 1000);
+}
+if (hubPageForIntervals === "injury-watch") {
+    window.setInterval(() => loadLiveInjuryReports({ background: true }), 15 * 60 * 1000);
+}
 document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && Date.now() - lastTeamsRefreshAt >= 15 * 60 * 1000) loadTeams();
+    if (
+        !document.hidden
+        && ["nba-today", "schedule", "standings", "teams", "game-picks"].includes(currentHubPage)
+        && Date.now() - lastTeamsRefreshAt >= 15 * 60 * 1000
+    ) loadTeams();
 });
 document.addEventListener("visibilitychange", () => {
     if (document.hidden) return;
-    if (Date.now() - lastScheduleRefreshAt >= 24 * 60 * 60 * 1000) loadSchedule();
-    if (Date.now() - lastStandingsRefreshAt >= 5 * 60 * 1000) loadStandings({ background: true });
-    if (Date.now() - lastGamePicksOddsRefreshAt >= 5 * 60 * 1000) loadGamePicksOdds();
-    if (Date.now() - lastNewsRefreshAt >= 15 * 60 * 1000) loadHeadlines({ background: true });
-    if (Date.now() - INJURY_REPORT_CACHE.lastUpdated >= 15 * 60 * 1000) loadLiveInjuryReports({ background: true });
-    loadLiveScores({ background: true });
-    if (activeBoxScoreGameId) loadBoxScore(activeBoxScoreGameId, { background: true });
+    if (currentHubPage === "schedule") {
+        if (Date.now() - lastScheduleRefreshAt >= 24 * 60 * 60 * 1000) loadSchedule();
+        loadLiveScores({ background: true });
+        if (activeBoxScoreGameId) loadBoxScore(activeBoxScoreGameId, { background: true });
+    }
+    if (currentHubPage === "standings" && Date.now() - lastStandingsRefreshAt >= 5 * 60 * 1000) {
+        loadStandings({ background: true });
+    }
+    if (currentHubPage === "game-picks" && Date.now() - lastGamePicksOddsRefreshAt >= 5 * 60 * 1000) {
+        loadGamePicksOdds();
+    }
+    if (currentHubPage === "nba-today" && Date.now() - lastNewsRefreshAt >= 15 * 60 * 1000) {
+        loadHeadlines({ background: true });
+    }
+    if (currentHubPage === "injury-watch" && Date.now() - INJURY_REPORT_CACHE.lastUpdated >= 15 * 60 * 1000) {
+        loadLiveInjuryReports({ background: true });
+    }
 });
 window.addEventListener("focus", () => {
-    if (Date.now() - lastStandingsRefreshAt >= 5 * 60 * 1000) loadStandings({ background: true });
-    if (Date.now() - lastNewsRefreshAt >= 15 * 60 * 1000) loadHeadlines({ background: true });
-    if (Date.now() - INJURY_REPORT_CACHE.lastUpdated >= 15 * 60 * 1000) loadLiveInjuryReports({ background: true });
-    loadLiveScores({ background: true });
-    if (activeBoxScoreGameId) loadBoxScore(activeBoxScoreGameId, { background: true });
-    if (Date.now() - lastTransactionsRefreshAt >= 60 * 60 * 1000) loadTransactions({ background: true });
+    if (currentHubPage === "standings" && Date.now() - lastStandingsRefreshAt >= 5 * 60 * 1000) loadStandings({ background: true });
+    if (currentHubPage === "nba-today" && Date.now() - lastNewsRefreshAt >= 15 * 60 * 1000) loadHeadlines({ background: true });
+    if (currentHubPage === "injury-watch" && Date.now() - INJURY_REPORT_CACHE.lastUpdated >= 15 * 60 * 1000) loadLiveInjuryReports({ background: true });
+    if (currentHubPage === "schedule") {
+        loadLiveScores({ background: true });
+        if (activeBoxScoreGameId) loadBoxScore(activeBoxScoreGameId, { background: true });
+    }
+    if (currentHubPage === "transactions" && Date.now() - lastTransactionsRefreshAt >= 60 * 60 * 1000) loadTransactions({ background: true });
 });
+
+window.NBAHubAppSettings = {
+    appId: "nba_hub",
+    get() {
+        return {
+            theme: document.documentElement.dataset.accountTheme || "default",
+            favoriteTeam: document.getElementById("injuryTeamFilter")?.value === "All teams"
+                ? ""
+                : document.getElementById("injuryTeamFilter")?.value || "",
+            defaultSeason: selectedScheduleSeason === currentNbaSeason() ? "" : selectedScheduleSeason,
+            standingsConference: selectedStandingsConference,
+            schedulePhase: selectedSchedulePhase,
+            compactCards: document.documentElement.dataset.accountCompactCards === "true",
+            reduceMotion: document.documentElement.dataset.reduceMotion === "true"
+        };
+    },
+    apply(settings = {}) {
+        document.documentElement.dataset.accountTheme = settings.theme || "default";
+        document.documentElement.dataset.accountCompactCards = String(settings.compactCards === true);
+        document.documentElement.dataset.reduceMotion = String(settings.reduceMotion === true);
+        const season = settings.defaultSeason || currentNbaSeason();
+        const schedulePicker = document.getElementById("scheduleSeasonPicker");
+        const standingsPicker = document.getElementById("standingsSeasonPicker");
+        if (schedulePicker && [...schedulePicker.options].some(option => option.value === season)) {
+            schedulePicker.value = season;
+            selectScheduleSeason(season);
+        }
+        if (standingsPicker && [...standingsPicker.options].some(option => option.value === season)) {
+            standingsPicker.value = season;
+            selectStandingsSeason(season);
+        }
+        const schedulePhase = ["all", "preseason", "regular", "playoffs"].includes(settings.schedulePhase)
+            ? settings.schedulePhase
+            : "all";
+        const phasePicker = document.getElementById("schedulePhasePicker");
+        if (phasePicker) phasePicker.value = schedulePhase;
+        selectSchedulePhase(schedulePhase);
+        setStandingsConference(settings.standingsConference === "Eastern" ? "Eastern" : "Western");
+        const filter = document.getElementById("injuryTeamFilter");
+        const favoriteTeam = settings.favoriteTeam || "All teams";
+        if (filter && [...filter.options].some(option => option.value === favoriteTeam)
+            && filter.value !== favoriteTeam) {
+            filter.value = favoriteTeam;
+            renderInjuryReportSection();
+        }
+    }
+};

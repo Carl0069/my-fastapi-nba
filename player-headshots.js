@@ -48,7 +48,15 @@ const playerHeadshotIds = {
     "Jabari Smith Jr.": "1631095", "Alperen Şengün": "1630578", "Ty Jerome": "1629660", "Jaylen Wells": "1642377",
     "Zach Edey": "1641744", "Dejounte Murray": "1627749", "Trey Murphy III": "1630530", "Herb Jones": "1630529",
     "Zion Williamson": "1629627", "De'Aaron Fox": "1628368", "Stephon Castle": "1642264", "Devin Vassell": "1630170",
-    "Julian Champagnie": "1630577", "Victor Wembanyama": "1641705"
+    "Julian Champagnie": "1630577",     "Victor Wembanyama": "1641705",
+    "Devin Carter": "4433188", "Jaden Akins": "4683730", "James Wiseman": "4432808",
+    "Labaron Philon Jr.": "4873090", "Orlando Robinson": "4593049", "Zack Austin": "4702099",
+    "Khalifa Diop": "4997530", "Bobby Portis": "3064482", "Rafael Castro": "4684443",
+    "Reece Beekman": "4432187", "Cam Whitmore": "5105592", "Jimmy Butler III": "202710",
+    "Graham Ike": "4703396", "Blake Wesley": "4683935", "Carson Cooper": "5105817",
+    "Jonas Aidoo": "4684682", "Duop Reath": "4066268", "Drew Timme": "4431695",
+    "Leaky Black": "4395650", "Mason Plumlee": "2488653", "Morez Johnson Jr.": "4873153",
+    "Malik Dia": "4712862", "Herbert Jones": "4277813", "Julian Reese": "4683742"
 };
 
 const playerCustomPhotos = {

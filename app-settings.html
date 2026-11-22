@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#071b2b" />
+    <title>App Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="app-settings.css?v=20261121" />
+    <link rel="stylesheet" href="shared-auth.css?v=20261121" />
+  </head>
+  <body data-settings-app="nba_hub">
+    <header class="settings-topbar">
+      <a class="settings-back" id="settingsBackLink" href="index.html">← Back to app</a>
+      <a class="settings-account" href="#" id="settingsAccountLink">Account</a>
+    </header>
+    <main class="settings-shell">
+      <section class="settings-intro">
+        <p class="settings-eyebrow" id="settingsAppLabel">NBA HUB</p>
+        <h1>App settings</h1>
+        <p id="settingsIntroText">Tune your experience. Your preferences are saved to your account.</p>
+      </section>
+      <p class="settings-page-status" id="settingsPageStatus" role="status"></p>
+      <section class="settings-section settings-profile-section">
+        <h2>Account profile</h2>
+        <p>Your username and role are saved for this app. Your email is managed by Supabase Auth.</p>
+        <form id="settingsProfileForm">
+          <div class="settings-fields">
+            <div class="settings-profile-picture">
+              <img id="settingsProfileAvatarPreview" alt="Current profile picture" hidden>
+              <span id="settingsProfileAvatarFallback">A</span>
+              <label class="settings-field">Profile picture
+                <input id="settingsProfileAvatar" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+              </label>
+            </div>
+            <label class="settings-field">Display name
+              <input id="settingsProfileDisplayName" type="text" autocomplete="name" minlength="2" maxlength="48">
+            </label>
+            <label class="settings-field">App username
+              <input id="settingsProfileUsername" type="text" autocomplete="nickname" minlength="3" maxlength="24" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,23}" required>
+            </label>
+            <label class="settings-field">Email
+              <input id="settingsProfileEmail" type="email" readonly>
+            </label>
+            <div class="settings-profile-role"><span>Account role</span><strong id="settingsProfileRole">Signed out</strong></div>
+          </div>
+          <p class="settings-page-status" id="settingsProfileStatus" role="status"></p>
+          <div class="settings-profile-actions">
+            <button class="settings-cancel" id="settingsSignOutButton" type="button">Sign out</button>
+            <button class="settings-save" id="settingsProfileSaveButton" type="submit">Save username</button>
+          </div>
+        </form>
+      </section>
+      <form id="settingsPageForm">
+        <div id="settingsSections"></div>
+        <div class="settings-actions">
+          <a class="settings-cancel" id="settingsCancelLink" href="index.html">Cancel</a>
+          <button class="settings-save" id="settingsSaveButton" type="submit">Save settings</button>
+        </div>
+      </form>
+    </main>
+    <script src="shared-auth.js?v=20261121-global-guest"></script>
+    <script src="app-settings.js?v=20261121-guest-persist"></script>
+  </body>
+</html>

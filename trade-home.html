@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>NBA Trade Desk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="trade-machine.css?v=trade-home-1" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar trade-site-topbar">
+        <div class="topbar__brand">
+          <a class="brand-mark" href="trade-home.html" aria-label="NBA Trade Desk home">
+            <svg class="brand-mark__icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+              <path class="brand-mark__route brand-mark__route--upper" d="M13 17h20l-5-5m5 5-5 5" />
+              <path class="brand-mark__route brand-mark__route--lower" d="M35 31H15l5 5m-5-5 5-5" />
+              <path class="brand-mark__center" d="M24 19v10" />
+              <circle class="brand-mark__node" cx="24" cy="24" r="2.2" />
+            </svg>
+          </a>
+          <div>
+            <p class="eyebrow">FRONT OFFICE / 2026–27</p>
+            <h1>NBA Trade Desk</h1>
+          </div>
+        </div>
+        <nav class="trade-site-nav" aria-label="Trade Desk sections">
+          <a class="is-active" href="trade-home.html" aria-current="page">Home</a>
+          <a href="trade-community.html">Community</a>
+          <a href="trade-machine.html">Trade Machine</a>
+        </nav>
+      </header>
+
+      <main class="trade-home">
+        <section class="trade-home__hero">
+          <div>
+            <p class="trade-trending__eyebrow"><span aria-hidden="true"></span> NBA TRADE WATCH</p>
+            <h2>Build the deal. Follow the rumors.</h2>
+            <p>Explore the league’s trade market, submit proposals, and compare front-office decisions.</p>
+            <div class="trade-home__actions">
+              <a class="button button--primary" href="trade-machine.html">Open Trade Machine</a>
+              <a class="button button--ghost" href="trade-community.html">View Community</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="trade-trending trade-home__rumors" aria-labelledby="rumorTitle">
+          <div class="trade-trending__heading">
+            <div>
+              <p class="trade-trending__eyebrow"><span aria-hidden="true"></span> LEAGUE PULSE / TRADE WATCH</p>
+              <h2 id="rumorTitle">NBA Trade <span>Watch</span></h2>
+            </div>
+          </div>
+          <div id="rumoredPlayers" class="trade-trending__rail" aria-label="NBA Trade Watch players"></div>
+          <p class="trade-trending__note">Updated November 22, 2026 · CBS Sports, NBC Sports, Hoops Rumors and The Stein Line.</p>
+        </section>
+      </main>
+    </div>
+    <script src="nba-player-ids.js"></script>
+    <script src="player-headshots.js"></script>
+    <script src="shared-auth.js?v=20261121-auth-page-fix-2"></script>
+    <script>
+      (() => {
+        const fallbackRumors = [
+          ["Dejounte Murray", "NOP", "New Orleans Pelicans"],
+          ["Anthony Davis", "WAS", "Washington Wizards"],
+          ["Trey Murphy III", "NOP", "New Orleans Pelicans"],
+          ["Naz Reid", "MIN", "Minnesota Timberwolves"],
+          ["Wendell Carter Jr.", "ORL", "Orlando Magic"],
+          ["Paolo Banchero", "ORL", "Orlando Magic"],
+          ["Kyrie Irving", "DAL", "Dallas Mavericks"],
+          ["Jalen Green", "PHX", "Phoenix Suns"],
+          ["Herbert Jones", "NOP", "New Orleans Pelicans"],
+          ["Tre Jones", "CHI", "Chicago Bulls"],
+          ["Zion Williamson", "NOP", "New Orleans Pelicans"],
+          ["Kristaps Porzingis", "GSW", "Golden State Warriors"],
+          ["Isaiah Collier", "UTA", "Utah Jazz"],
+          ["Lauri Markkanen", "UTA", "Utah Jazz"]
+        ];
+        const rail = document.getElementById("rumoredPlayers");
+        const render = (rumors) => {
+          rail.innerHTML = rumors.map(([name, abbreviation, team], index) => `
+          <article class="trending-player trade-rumor-card" data-team-theme="${abbreviation}">
+            <span class="trending-player__portrait">
+              <img class="trending-player__headshot" src="${window.getPlayerHeadshotUrl ? window.getPlayerHeadshotUrl(name) : ""}" alt="" loading="${index < 8 ? "eager" : "lazy"}" onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+              <span class="trending-player__fallback" hidden>${name.split(/\s+/).slice(0,2).map(part => part[0]).join("")}</span>
+              <span class="trending-player__rank">${index + 1}</span>
+            </span>
+            <span class="trending-player__name">${name}</span>
+            <span class="trending-player__team-name">${team}</span>
+            <span class="trending-player__stats">TRADE WATCH</span>
+          </article>
+          `).join("");
+        };
+        render(fallbackRumors);
+        fetch("https://my-fastapi-nba.vercel.app/api/v1/trade-machine/rumors")
+          .then(response => response.json())
+          .then(payload => {
+            if (!Array.isArray(payload.players) || !payload.players.length) return;
+            render(payload.players.map(player => [
+              player.player_name,
+              player.team_abbreviation,
+              player.team_name
+            ]));
+          })
+          .catch(() => {});
+      })();
+    </script>
+  </body>
+</html>

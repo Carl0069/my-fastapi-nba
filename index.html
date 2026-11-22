@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NBA Hub | NBA Scores, Standings & News</title>
-    <link rel="stylesheet" href="style.css?v=20261104">
+    <link rel="stylesheet" href="style.css?v=two-way-player-1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -14,17 +14,18 @@
     <!-- NAVBAR WITH TOP-RIGHT GLOBAL SEARCH -->
     <header class="navbar">
         <div class="nav-container">
-            <a href="#hero" class="brand-logo">
+            <a href="index.html?page=nba-today" class="brand-logo">
                 <span class="nba-badge">NBA</span> STATS & NEWS HUB
             </a>
             
-            <nav class="nav-links">
-                <a href="#hero">NBA Today</a>
-                <a href="#transactionsSection">NBA Transactions</a>
-                <a href="#scheduleSection">Live Scores & Schedule</a>
-                <a href="#gamePicksSection">Game Picks</a>
-                <a href="#standingsSection">Standings</a>
-                <a href="#teamsSection">Teams Directory</a>
+            <nav class="nav-links" aria-label="NBA Hub pages">
+                <a href="index.html?page=nba-today" data-hub-page-link="nba-today">NBA Today</a>
+                <a href="index.html?page=injury-watch" data-hub-page-link="injury-watch">Injury Watch</a>
+                <a href="index.html?page=transactions" data-hub-page-link="transactions">NBA Transactions</a>
+                <a href="index.html?page=schedule" data-hub-page-link="schedule">Live Scores &amp; Schedule</a>
+                <a href="index.html?page=game-picks" data-hub-page-link="game-picks">Game Picks</a>
+                <a href="index.html?page=standings" data-hub-page-link="standings">Standings</a>
+                <a href="index.html?page=teams" data-hub-page-link="teams">Teams Directory</a>
             </nav>
 
             <!-- TOP RIGHT SEARCH BAR WITH LIVE PLAYER & TEAM DROPDOWN -->
@@ -402,6 +403,13 @@
 
             <p id="statsUpdateStatus" class="stats-update-status" role="status" aria-live="polite">Connecting to NBA stats…</p>
             <div id="teamGrid" class="watch-grid"></div>
+            <section class="free-agent-section" aria-labelledby="freeAgentTitle">
+                <div class="free-agent-section__header">
+                    <span class="nba-badge">NBA HUB ADMIN</span>
+                    <h2 id="freeAgentTitle">Free agents</h2>
+                </div>
+                <div id="freeAgentGrid" class="free-agent-grid"></div>
+            </section>
 
             <section id="statCardStudioPanel" class="hub-reward-panel hub-stat-card-studio" aria-labelledby="statCardStudioTitle" hidden>
                 <div>
@@ -555,20 +563,60 @@
                     </div>
                 </div>
 
-                <div class="player-career-panel" id="playerCareerPanel" hidden>
-                    <div class="player-career-panel__header">
-                        <span>Rookie to now</span>
-                        <strong id="playerCareerLabel">Career timeline</strong>
-                    </div>
-                    <div id="playerCareerHistory" class="player-career-history"></div>
-                </div>
-
                 <button class="hero-roster-jump-btn" id="playerModalViewTeamBtn">
                     View Roster &rarr;
                 </button>
             </div>
         </div>
     </div>
+
+    <dialog id="adminAddPlayerDialog" class="admin-add-player-dialog" aria-labelledby="adminAddPlayerTitle">
+        <form id="adminAddPlayerForm" class="admin-add-player-form">
+            <header class="admin-add-player-header">
+                <div>
+                    <span class="nba-badge">NBA HUB ADMIN</span>
+                    <h2 id="adminAddPlayerTitle">Add a player</h2>
+                    <p>Place a player on an NBA team or save them as a free agent.</p>
+                </div>
+                <button type="button" id="closeAdminAddPlayer" class="admin-add-player-close" aria-label="Close add player form">×</button>
+            </header>
+            <div class="admin-add-player-grid">
+                <fieldset>
+                    <legend>Player details</legend>
+                    <div class="admin-add-player-fields">
+                        <label>Full name<input name="name" minlength="2" maxlength="80" required placeholder="Player name"></label>
+                        <label>Team<select name="team_id" id="adminPlayerTeam"><option value="">Free agent</option></select></label>
+                        <label>Position<input name="position" maxlength="12" placeholder="G / F / C"></label>
+                        <label>Contract type<select name="contract_type"><option value="Standard">Standard</option><option value="Two-Way">Two-Way</option></select></label>
+                        <label>Jersey number<input name="jersey_number" maxlength="4" placeholder="3"></label>
+                        <label>Headshot or card image URL<input name="headshot_url" maxlength="2048" type="url" placeholder="https://..."></label>
+                        <label>2026–27 salary (USD)<input name="salary" type="number" min="0" step="1" placeholder="Optional"></label>
+                        <label>Contract years remaining<input name="contract_years_remaining" type="number" min="0" max="15" placeholder="Optional"></label>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Season stats</legend>
+                    <div class="admin-add-player-fields admin-add-player-fields--stats">
+                        <label>GP<input name="gp" type="number" min="0"></label>
+                        <label>PTS<input name="pts" type="number" min="0" max="100" step="0.1"></label>
+                        <label>REB<input name="reb" type="number" min="0" max="50" step="0.1"></label>
+                        <label>AST<input name="ast" type="number" min="0" max="30" step="0.1"></label>
+                        <label>STL<input name="stl" type="number" min="0" max="10" step="0.1"></label>
+                        <label>BLK<input name="blk" type="number" min="0" max="15" step="0.1"></label>
+                        <label>TOV<input name="tov" type="number" min="0" max="15" step="0.1"></label>
+                        <label>FG%<input name="fg" type="number" min="0" max="100" step="0.1"></label>
+                        <label>3P%<input name="fg3" type="number" min="0" max="100" step="0.1"></label>
+                        <label>FT%<input name="ft" type="number" min="0" max="100" step="0.1"></label>
+                    </div>
+                </fieldset>
+            </div>
+            <p id="adminAddPlayerStatus" class="admin-add-player-status" role="status"></p>
+            <footer class="admin-add-player-actions">
+                <button type="button" id="cancelAdminAddPlayer" class="admin-add-player-cancel">Cancel</button>
+                <button type="submit" id="submitAdminAddPlayer" class="admin-add-player-submit">Add player</button>
+            </footer>
+        </form>
+    </dialog>
 
     <dialog id="boxScoreDialog" class="box-score-dialog" aria-labelledby="boxScoreTitle">
         <div class="box-score-dialog__header">
@@ -584,6 +632,8 @@
 
     <script src="nba-player-ids.js?v=20261104"></script>
     <script src="player-headshots.js?v=20261104"></script>
-    <script src="app.js?v=20261104"></script>
+    <script src="app.js?v=separate-pages-2"></script>
+    <script src="hub-pages.js?v=separate-pages-2"></script>
+    <script src="shared-auth.js?v=20261121-global-guest"></script>
 </body>
 </html>

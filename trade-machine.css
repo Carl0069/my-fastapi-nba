@@ -112,6 +112,77 @@ h1 {
   background: rgba(247, 185, 85, 0.12);
 }
 
+.trade-site-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trade-site-nav a {
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #aeb9c8;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.trade-site-nav a:hover,
+.trade-site-nav a.is-active {
+  border-color: rgba(214, 53, 69, 0.42);
+  background: rgba(214, 53, 69, 0.12);
+  color: #fff;
+}
+
+.trade-home {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.trade-home__hero {
+  min-height: 210px;
+  display: flex;
+  align-items: center;
+  padding: 34px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    linear-gradient(90deg, rgba(11, 18, 32, 0.96) 0%, rgba(11, 18, 32, 0.68) 55%, rgba(11, 18, 32, 0.25) 100%),
+    radial-gradient(circle at 82% 35%, rgba(214, 53, 69, 0.38), transparent 25%);
+  box-shadow: var(--shadow);
+}
+
+.trade-home__hero h2 {
+  margin: 8px 0 8px;
+  max-width: 620px;
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.trade-home__hero p:not(.trade-trending__eyebrow) {
+  max-width: 560px;
+  margin: 0;
+  color: #aab6c5;
+  line-height: 1.55;
+}
+
+.trade-home__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.trade-home__rumors {
+  margin: 0;
+}
+
+.trade-rumor-card {
+  cursor: default;
+}
+
 .layout {
   display: grid;
   grid-template-columns: 360px minmax(0, 1fr);
@@ -444,6 +515,31 @@ h1 {
 }
 
 @media (max-width: 600px) {
+  .trade-site-topbar,
+  .topbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .trade-site-nav {
+    width: 100%;
+    order: 3;
+    overflow-x: auto;
+  }
+
+  .trade-site-nav a {
+    white-space: nowrap;
+  }
+
+  .trade-home__hero {
+    min-height: 190px;
+    padding: 24px 18px;
+  }
+
+  .trade-home__hero h2 {
+    font-size: 36px;
+  }
+
   .topbar {
     align-items: flex-start;
     flex-direction: column;
@@ -1350,6 +1446,34 @@ body {
 
 .eyebrow {
   letter-spacing: 0.08em;
+}
+
+.two-way-section-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  margin: 10px -1px 0;
+  border: 1px solid rgba(111, 211, 158, 0.16);
+  border-right: 0;
+  border-left: 0;
+  padding: 0 12px;
+  background: linear-gradient(90deg, rgba(63, 150, 105, 0.12), rgba(63, 150, 105, 0.02));
+}
+
+.two-way-section-heading span {
+  color: #9be0b5;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.two-way-section-heading small {
+  color: #8297a4;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
 }
 
 h1 {
@@ -4189,36 +4313,36 @@ body {
   color: color-mix(in srgb, var(--team-secondary) 60%, white);
 }
 
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="ATL"] { --team-primary: #c8102e; --team-secondary: #fdb927; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="BOS"] { --team-primary: #007a33; --team-secondary: #ba9653; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="BKN"] { --team-primary: #171717; --team-secondary: #e8e8e8; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="CHA"] { --team-primary: #1d1160; --team-secondary: #00a5ad; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="CHI"] { --team-primary: #ce1141; --team-secondary: #e8e8e8; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="CLE"] { --team-primary: #6f263d; --team-secondary: #ffb81c; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="DAL"] { --team-primary: #00538c; --team-secondary: #b8c4ca; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="DEN"] { --team-primary: #0e2240; --team-secondary: #fec524; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="DET"] { --team-primary: #c8102e; --team-secondary: #1d42ba; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="GSW"] { --team-primary: #1d428a; --team-secondary: #ffc72c; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="HOU"] { --team-primary: #ce1141; --team-secondary: #c4ced4; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="IND"] { --team-primary: #002d62; --team-secondary: #fdbb30; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="LAC"] { --team-primary: #c8102e; --team-secondary: #1d428a; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="LAL"] { --team-primary: #552583; --team-secondary: #fdb927; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="MEM"] { --team-primary: #5d76a9; --team-secondary: #f5b112; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="MIA"] { --team-primary: #98002e; --team-secondary: #f9a01b; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="MIL"] { --team-primary: #00471b; --team-secondary: #eee1c6; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="MIN"] { --team-primary: #0c2340; --team-secondary: #78be20; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="NOP"] { --team-primary: #0c2340; --team-secondary: #c8102e; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="NYK"] { --team-primary: #006bb6; --team-secondary: #f58426; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="OKC"] { --team-primary: #007ac1; --team-secondary: #ef3b24; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="ORL"] { --team-primary: #0077c0; --team-secondary: #c4ced4; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="PHI"] { --team-primary: #006bb6; --team-secondary: #ed174c; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="PHX"] { --team-primary: #1d1160; --team-secondary: #e56020; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="POR"] { --team-primary: #e03a3e; --team-secondary: #e8e8e8; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="SAC"] { --team-primary: #5a2d81; --team-secondary: #63727a; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="SAS"] { --team-primary: #626c72; --team-secondary: #c4ced4; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="TOR"] { --team-primary: #ce1141; --team-secondary: #a1a1a4; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="UTA"] { --team-primary: #002b5c; --team-secondary: #f9a01b; }
-:is(.team-card, .player-profile-dialog, .review-team)[data-team-theme="WAS"] { --team-primary: #002b5c; --team-secondary: #e31837; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="ATL"] { --team-primary: #c8102e; --team-secondary: #fdb927; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="BOS"] { --team-primary: #007a33; --team-secondary: #ba9653; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="BKN"] { --team-primary: #171717; --team-secondary: #e8e8e8; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="CHA"] { --team-primary: #1d1160; --team-secondary: #00a5ad; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="CHI"] { --team-primary: #ce1141; --team-secondary: #e8e8e8; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="CLE"] { --team-primary: #6f263d; --team-secondary: #ffb81c; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="DAL"] { --team-primary: #00538c; --team-secondary: #b8c4ca; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="DEN"] { --team-primary: #0e2240; --team-secondary: #fec524; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="DET"] { --team-primary: #c8102e; --team-secondary: #1d42ba; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="GSW"] { --team-primary: #1d428a; --team-secondary: #ffc72c; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="HOU"] { --team-primary: #ce1141; --team-secondary: #c4ced4; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="IND"] { --team-primary: #002d62; --team-secondary: #fdbb30; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="LAC"] { --team-primary: #c8102e; --team-secondary: #1d428a; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="LAL"] { --team-primary: #552583; --team-secondary: #fdb927; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="MEM"] { --team-primary: #5d76a9; --team-secondary: #f5b112; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="MIA"] { --team-primary: #98002e; --team-secondary: #f9a01b; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="MIL"] { --team-primary: #00471b; --team-secondary: #eee1c6; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="MIN"] { --team-primary: #0c2340; --team-secondary: #78be20; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="NOP"] { --team-primary: #0c2340; --team-secondary: #c8102e; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="NYK"] { --team-primary: #006bb6; --team-secondary: #f58426; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="OKC"] { --team-primary: #007ac1; --team-secondary: #ef3b24; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="ORL"] { --team-primary: #0077c0; --team-secondary: #c4ced4; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="PHI"] { --team-primary: #006bb6; --team-secondary: #ed174c; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="PHX"] { --team-primary: #1d1160; --team-secondary: #e56020; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="POR"] { --team-primary: #e03a3e; --team-secondary: #e8e8e8; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="SAC"] { --team-primary: #5a2d81; --team-secondary: #63727a; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="SAS"] { --team-primary: #626c72; --team-secondary: #c4ced4; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="TOR"] { --team-primary: #ce1141; --team-secondary: #a1a1a4; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="UTA"] { --team-primary: #002b5c; --team-secondary: #f9a01b; }
+:is(.team-card, .player-profile-dialog, .review-team, .community-trade-team, .sign-trade-dialog)[data-team-theme="WAS"] { --team-primary: #002b5c; --team-secondary: #e31837; }
 
 .review-team__badge[hidden],
 .review-team__logo[hidden] {
@@ -6575,6 +6699,16 @@ h1 {
   letter-spacing: 0.015em;
 }
 
+.guest-trade-notice {
+  color: #9ab0bb;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.guest-trade-notice[hidden] {
+  display: none;
+}
+
 .player-profile-dialog {
   --team-primary: #536a79;
   --team-secondary: #57d6c5;
@@ -6829,6 +6963,128 @@ h1 {
   gap: 6px;
 }
 
+.asset-tabs {
+  gap: clamp(8px, 1.4vw, 18px);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.asset-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.asset-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.cap-assets {
+  padding: 14px;
+}
+
+.cap-assets__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cap-assets__heading h3 {
+  margin: 0 0 4px;
+  color: #e5edf1;
+  font-size: 11px;
+}
+
+.cap-assets__heading p {
+  max-width: 470px;
+  margin: 0;
+  color: #8b9ca7;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.cap-assets__heading > span {
+  flex: 0 0 auto;
+  color: #80929e;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 7px;
+  text-align: right;
+}
+
+.cap-assets__list {
+  display: grid;
+}
+
+.cap-asset-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 9px;
+  border-top: 1px solid rgba(133, 158, 171, 0.13);
+}
+
+.cap-asset-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.cap-asset-row__detail {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.cap-asset-row__detail > strong {
+  color: #e6edf1;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.cap-asset-row__detail > span,
+.cap-asset-row__detail > small {
+  color: #82949f;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.cap-asset-row__amount {
+  flex: 0 0 auto;
+  color: #e7eef2;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+  .asset-period {
+    display: none;
+  }
+
+  .asset-tabs {
+    gap: 13px;
+  }
+
+  .cap-assets {
+    padding: 11px 9px;
+  }
+
+  .cap-assets__heading {
+    display: grid;
+    gap: 6px;
+  }
+
+  .cap-assets__heading > span {
+    text-align: left;
+  }
+
+  .cap-asset-row {
+    padding-inline: 5px;
+  }
+}
+
 .player-profile__stat {
   display: grid;
   min-height: 58px;
@@ -6861,6 +7117,364 @@ h1 {
   color: #92a4ad;
   font-size: 9px;
   line-height: 1.5;
+}
+
+.player-career-dialog {
+  width: min(1060px, calc(100vw - 28px));
+  max-height: min(94dvh, 900px);
+  overflow: auto;
+  padding: 0;
+}
+
+.player-career-profile {
+  --career-accent: var(--team-primary, #315c7c);
+  color: #e7edf1;
+  background: #191d22;
+}
+
+.player-career-profile__header {
+  display: grid;
+  min-height: 94px;
+  grid-template-columns: 58px minmax(0, 1fr) 44px 34px;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 20px;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--career-accent) 84%, #09121c), #12171d);
+}
+
+.player-career-profile__headshot {
+  width: 58px;
+  height: 58px;
+  border: 2px solid rgba(255,255,255,.62);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 18%;
+  background: #28323b;
+}
+
+.player-career-profile__identity {
+  min-width: 0;
+}
+
+.player-career-profile__identity > span {
+  color: rgba(255,255,255,.77);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.player-career-profile__identity h2 {
+  margin: 2px 0 3px;
+  color: #fff;
+  font-size: clamp(20px, 4vw, 27px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+}
+
+.player-career-profile__identity p {
+  margin: 0;
+  color: rgba(255,255,255,.84);
+  font-size: 12px;
+}
+
+.player-career-profile__logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.player-career-profile__close {
+  width: 34px;
+  height: 34px;
+}
+
+.player-career-profile__summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 14px 18px 7px;
+  overflow: hidden;
+  border: 1px solid #343b42;
+  border-radius: 11px;
+  background: #171b20;
+}
+
+.player-career-profile__summary > div {
+  display: grid;
+  min-height: 80px;
+  align-content: center;
+  justify-items: center;
+  gap: 3px;
+  padding: 7px 4px;
+  border-right: 1px solid #343b42;
+  text-align: center;
+}
+
+.player-career-profile__summary > div:nth-child(5n) {
+  border-right: 0;
+}
+
+.player-career-profile__summary > div:nth-child(n+6) {
+  border-top: 1px solid #343b42;
+}
+
+.player-career-profile__summary strong {
+  color: #f0f3f5;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-career-profile__summary span {
+  color: #9ca8b6;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .07em;
+}
+
+.player-career-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 18px;
+  border-bottom: 1px solid #343b42;
+}
+
+.player-career-tabs button,
+.player-career-table-tools button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #b6bec7;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.player-career-tabs button.is-active,
+.player-career-table-tools button.is-active {
+  border-bottom-color: #fa5c28;
+  color: #f3f5f6;
+}
+
+.player-career-profile__body {
+  min-height: 250px;
+  padding: 16px 20px 20px;
+}
+
+.player-career-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.player-career-info-grid > div {
+  display: grid;
+  min-height: 67px;
+  align-content: start;
+  gap: 5px;
+  padding: 11px;
+  border-radius: 9px;
+  background: #111519;
+}
+
+.player-career-info-grid span,
+.player-career-section h3 {
+  color: #929eac;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.player-career-info-grid strong {
+  color: #e4e9ed;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.player-career-section {
+  margin-top: 17px;
+}
+
+.player-career-section h3 {
+  margin: 0 0 8px;
+}
+
+.player-career-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.player-career-chips span,
+.player-career-team-history article {
+  padding: 6px 9px;
+  border: 1px solid #343b42;
+  border-radius: 999px;
+  color: #d3dae0;
+  background: #1d2228;
+  font-size: 10px;
+}
+
+.player-career-team-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.player-career-team-history article {
+  display: grid;
+  gap: 3px;
+  min-width: 82px;
+  border-radius: 8px;
+}
+
+.player-career-team-history article span {
+  color: #9ba6b3;
+  font-size: 9px;
+}
+
+.player-career-note,
+.player-career-empty {
+  margin: 12px 0 0;
+  color: #9ba6b3;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.player-career-table-tools {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #343b42;
+}
+
+.player-career-table-tools button {
+  min-height: 32px;
+  padding-inline: 8px;
+  font-size: 10px;
+}
+
+.player-career-table-scroll {
+  max-height: 52dvh;
+  overflow: auto;
+  border: 1px solid #343b42;
+  border-radius: 8px;
+}
+
+.player-career-table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: collapse;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.player-career-table th,
+.player-career-table td {
+  padding: 9px 7px;
+  border-bottom: 1px solid #30363c;
+  text-align: right;
+}
+
+.player-career-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #98a4b2;
+  background: #20252b;
+  font-size: 9px;
+  letter-spacing: .04em;
+}
+
+.player-career-table th:first-child,
+.player-career-table td:nth-child(2) {
+  text-align: left;
+}
+
+.player-career-profile__footer {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px solid #30363c;
+  background: #111519;
+}
+
+.player-career-profile__footer a {
+  color: #d8e0e5;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.player-career-profile__footer .button {
+  min-height: 36px;
+}
+
+@media (max-width: 600px) {
+  .player-career-dialog {
+    width: calc(100vw - 16px);
+    max-height: 96dvh;
+  }
+
+  .player-career-profile__header {
+    min-height: 78px;
+    grid-template-columns: 46px minmax(0, 1fr) 30px;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .player-career-profile__headshot {
+    width: 46px;
+    height: 46px;
+  }
+
+  .player-career-profile__logo {
+    display: none;
+  }
+
+  .player-career-profile__identity > span {
+    font-size: 8px;
+  }
+
+  .player-career-profile__identity p {
+    font-size: 10px;
+  }
+
+  .player-career-profile__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 10px 9px 5px;
+  }
+
+  .player-career-profile__summary > div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .player-career-profile__summary > div:nth-child(n+3) {
+    border-top: 1px solid #343b42;
+  }
+
+  .player-career-tabs {
+    margin-inline: 9px;
+  }
+
+  .player-career-tabs button {
+    padding-inline: 7px;
+    font-size: 9px;
+  }
+
+  .player-career-profile__body {
+    padding: 12px 10px 14px;
+  }
+
+  .player-career-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 600px) {
@@ -7133,6 +7747,360 @@ h1 {
   }
 }
 
+.trade-sliders-dialog,
+.trade-admin-dialog {
+  width: min(620px, calc(100vw - 24px));
+  max-height: 88dvh;
+  overflow: hidden;
+  border: 1px solid #36454d;
+  border-radius: 14px;
+  padding: 0;
+  color: #edf3f4;
+  background: #111b22;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+}
+
+.trade-sliders-dialog::backdrop,
+.trade-admin-dialog::backdrop {
+  background: rgba(5, 10, 13, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.trade-sliders-form,
+.trade-admin-shell {
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+
+.trade-sliders-header,
+.trade-admin-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #29373e;
+  background: linear-gradient(120deg, #19262d, #111a20);
+}
+
+.trade-sliders-header h2,
+.trade-admin-header h2 {
+  margin: 4px 0 5px;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+
+.trade-sliders-header p:not(.eyebrow),
+.trade-admin-header p {
+  margin: 0;
+  color: #98a8af;
+  font-size: 11px;
+}
+
+.trade-sliders-grid {
+  display: grid;
+  gap: 8px;
+  padding: 14px 22px;
+}
+
+.trade-sliders-grid label {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #2d3d45;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #151f25;
+}
+
+.trade-sliders-grid label > span {
+  display: grid;
+  gap: 3px;
+}
+
+.trade-sliders-grid strong {
+  color: #edf3f4;
+  font-size: 12px;
+}
+
+.trade-sliders-grid small {
+  color: #8e9fa7;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.trade-sliders-grid input[type="checkbox"] {
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  flex: 0 0 auto;
+  border: 1px solid #52636b;
+  border-radius: 999px;
+  background: #26343b;
+  cursor: pointer;
+  transition: 160ms ease;
+}
+
+.trade-sliders-grid input[type="checkbox"]::before {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 2px;
+  border-radius: 50%;
+  background: #aebbc1;
+  content: "";
+  transition: 160ms ease;
+}
+
+.trade-sliders-grid input[type="checkbox"]:checked {
+  border-color: #57d6c5;
+  background: #22564f;
+}
+
+.trade-sliders-grid input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
+  background: #95eee0;
+}
+
+.review-post-fields {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  gap: 10px;
+  margin: 0 18px 14px;
+  padding: 12px;
+  border: 1px solid #2d3d45;
+  border-radius: 10px;
+  background: #151f25;
+}
+
+.review-post-fields label {
+  display: grid;
+  gap: 6px;
+  color: #b8c5ca;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.review-post-fields input,
+.review-post-fields textarea {
+  width: 100%;
+  border: 1px solid #3a4d55;
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: #edf3f4;
+  background: #10191f;
+  font: inherit;
+  font-size: 11px;
+  resize: vertical;
+}
+
+.review-post-fields input {
+  min-height: 40px;
+}
+
+.review-post-fields textarea {
+  min-height: 72px;
+}
+
+.trade-sliders-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 22px 18px;
+  border-top: 1px solid #29373e;
+  background: rgba(17, 27, 34, 0.96);
+  backdrop-filter: blur(8px);
+}
+
+.trade-admin-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 18px 0;
+}
+
+.trade-admin-tabs button {
+  min-height: 36px;
+  border: 1px solid #33444d;
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #aebcc2;
+  background: #18232a;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.trade-admin-tabs button.is-active {
+  border-color: #57d6c5;
+  color: #d8faf4;
+  background: #1d4540;
+}
+
+.trade-admin-status {
+  min-height: 18px;
+  margin: 10px 18px 0;
+  color: #91a1a9;
+  font-size: 10px;
+}
+
+.trade-admin-panel {
+  display: grid;
+  gap: 8px;
+  padding: 10px 18px 18px;
+}
+
+.trade-admin-card,
+.trade-admin-audit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #2b3b43;
+  border-radius: 9px;
+  padding: 10px;
+  background: #172229;
+}
+
+.trade-admin-card > div:first-child,
+.trade-admin-audit {
+  display: grid;
+  gap: 3px;
+}
+
+.trade-admin-card strong,
+.trade-admin-audit strong {
+  color: #edf3f4;
+  font-size: 11px;
+}
+
+.trade-admin-card small,
+.trade-admin-audit small,
+.trade-admin-empty {
+  color: #91a1a9;
+  font-size: 9px;
+}
+
+.trade-admin-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.trade-admin-card__actions button {
+  min-height: 30px;
+  border: 1px solid #3a4d55;
+  border-radius: 6px;
+  padding: 0 8px;
+  color: #cbd6da;
+  background: #1e2c33;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.trade-admin-card__actions button.is-danger {
+  border-color: #7f3940;
+  color: #ffaaa9;
+  background: #3a2024;
+}
+
+.trade-admin-rumor-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #2b3b43;
+  border-radius: 9px;
+  padding: 10px;
+  background: #172229;
+}
+
+.trade-admin-rumor-form label {
+  display: grid;
+  gap: 5px;
+  color: #aebcc2;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.trade-admin-rumor-form input {
+  min-height: 36px;
+  border: 1px solid #3a4d55;
+  border-radius: 7px;
+  padding: 0 8px;
+  color: #edf3f4;
+  background: #111b22;
+  font: inherit;
+  font-size: 10px;
+}
+
+.trade-admin-rumor-form .button {
+  align-self: end;
+  min-height: 36px;
+}
+
+.trade-admin-rumor-list {
+  display: grid;
+  gap: 6px;
+}
+
+.trade-admin-rumor {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #2b3b43;
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: #172229;
+}
+
+.trade-admin-rumor__rank {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: #10171d;
+  background: #d2a956;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.trade-admin-rumor > div {
+  display: grid;
+  gap: 2px;
+}
+
+.trade-admin-rumor strong {
+  color: #edf3f4;
+  font-size: 10px;
+}
+
+.trade-admin-rumor small {
+  color: #91a1a9;
+  font-size: 9px;
+}
+
+.trade-admin-rumor button {
+  min-height: 32px;
+  border: 1px solid #7f3940;
+  border-radius: 6px;
+  color: #ffaaa9;
+  background: #3a2024;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .roster-player__stats { color: #b7c5c7; font-size: 11px; line-height: 1.45; white-space: normal; }
 .trending-player__name { font-size: 11px; }
 .trending-player__team-name { font-size: 9px; }
@@ -7176,6 +8144,25 @@ h1 {
   font-weight: 700;
 }
 
+.roster-row:not(.roster-row--header) > .roster-salary {
+  display: grid;
+  min-width: 0;
+  justify-items: end;
+  gap: 3px;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.contract-years-label {
+  max-width: 100%;
+  color: #aab8bf;
+  font-size: 9px;
+  font-weight: 550;
+  line-height: 1.25;
+  text-align: right;
+  white-space: normal;
+}
+
 .roster-action .trade-toggle {
   min-width: 68px;
   min-height: 36px;
@@ -7194,5 +8181,2349 @@ h1 {
   .roster-salary,
   .roster-row:not(.roster-row--header) > .roster-salary {
     font-size: 11px;
+  }
+
+  .contract-years-label {
+    font-size: 8px;
+  }
+}
+
+.community-feed {
+  margin-top: 24px;
+  padding: clamp(16px, 2.4vw, 26px);
+  border: 1px solid #293741;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(87, 214, 197, 0.08), transparent 34%),
+    linear-gradient(120deg, rgba(19, 28, 36, 0.98), rgba(12, 19, 25, 0.98));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+}
+
+.community-feed__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.community-feed__heading h2 {
+  margin: 0;
+  color: #eaf1f4;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-size: clamp(19px, 2vw, 25px);
+  letter-spacing: -0.04em;
+}
+
+.community-feed__note {
+  margin: 7px 0 0;
+  color: #91a1a9;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.community-feed__status {
+  flex: 0 0 auto;
+  color: #8da0a8;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.community-trades {
+  display: grid;
+  gap: 12px;
+}
+
+.community-feed-empty {
+  display: grid;
+  gap: 5px;
+  padding: 22px;
+  border: 1px dashed #35454f;
+  border-radius: 11px;
+  color: #90a0a8;
+  font-size: 12px;
+}
+
+.community-feed-empty strong {
+  color: #dce5e9;
+  font-size: 14px;
+}
+
+.community-trade-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #293b45;
+  border-radius: 12px;
+  background: rgba(18, 29, 37, 0.86);
+}
+
+.community-trade-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.community-trade-card__byline {
+  margin: 0 0 5px;
+  color: #8799a2;
+  font-size: 10px;
+}
+
+.community-trade-card__header h3 {
+  margin: 0;
+  color: #edf3f4;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.community-trade-assets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 13px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.community-trade-assets li {
+  padding: 6px 8px;
+  border: 1px solid #30434d;
+  border-radius: 7px;
+  color: #bdcbd0;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.community-trade-feedback {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(0, 1.3fr);
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.community-rating {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.community-rating > strong {
+  color: #f4d58c;
+  font-size: 12px;
+}
+
+.community-rating__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.community-rating-button {
+  min-width: 34px;
+  min-height: 30px;
+  border: 1px solid #364852;
+  border-radius: 7px;
+  color: #d8c28c;
+  background: #192831;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.community-rating-button:hover,
+.community-rating-button:focus-visible {
+  border-color: #dfc77f;
+  background: #263638;
+}
+
+.community-rating-button.is-selected {
+  border-color: #dfc77f;
+  background: #dfc77f;
+  color: #18232a;
+}
+
+.community-rating-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.community-comments h4 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 8px;
+  color: #dce5e9;
+  font-size: 11px;
+}
+
+.community-comments h4 span {
+  color: #91a1a9;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.community-comments ul {
+  display: grid;
+  gap: 7px;
+  max-height: 170px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.community-comments li {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #b7c5ca;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.community-comments li strong {
+  color: #91d6cb;
+  font-size: 10px;
+}
+
+.community-comments__empty {
+  margin: 0 0 8px;
+  color: #82939b;
+  font-size: 10px;
+}
+
+.community-comment-form {
+  display: flex;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.community-comment-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid #354650;
+  border-radius: 8px;
+  color: #e7eef0;
+  background: #111d24;
+  font: inherit;
+  font-size: 11px;
+}
+
+.community-comment-form input:focus-visible {
+  outline: 2px solid #57d6c5;
+  outline-offset: 1px;
+}
+
+.community-comment-form .button {
+  min-height: 38px;
+  padding-inline: 12px;
+  font-size: 10px;
+}
+
+.community-comment-form button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 650px) {
+  .review-post-fields {
+    grid-template-columns: 1fr;
+    margin-inline: 10px;
+  }
+  .community-trade-post {
+    margin-inline: 14px;
+  }
+  .community-feed__heading {
+    display: grid;
+  }
+
+  .community-trade-feedback {
+    grid-template-columns: 1fr;
+  }
+}
+
+.community-topbar {
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.community-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.community-feed--standalone {
+  max-width: 1120px;
+  margin: clamp(24px, 5vw, 56px) auto;
+  padding: clamp(18px, 3vw, 32px);
+  border-radius: 20px;
+}
+
+.community-feed--standalone .community-feed__heading {
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.community-feed--standalone .community-feed__heading h2 {
+  margin-top: 6px;
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.community-feed__tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.community-feed__tools .button,
+.community-load-more {
+  min-height: 40px;
+}
+
+.community-trades {
+  gap: 16px;
+}
+
+.community-trade-card {
+  padding: clamp(16px, 2.4vw, 24px);
+  border-radius: 16px;
+}
+
+.community-trade-card__header h3 {
+  font-size: clamp(16px, 1.8vw, 20px);
+}
+
+.community-trade-post {
+  display: grid;
+  gap: 7px;
+  margin: 0 18px;
+  padding: 16px 0 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.community-trade-post h3 {
+  margin: 0;
+  color: #f2f6f7;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-size: clamp(20px, 2.2vw, 28px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.community-trade-post p {
+  margin: 0;
+  color: #bcc8cd;
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.community-trade-card__header {
+  align-items: center;
+  padding: 18px 22px 14px;
+  background: linear-gradient(100deg, rgba(26, 40, 72, 0.52), rgba(9, 17, 31, 0.12));
+}
+
+.community-trade-card__header > div:first-child {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.community-trade-card__avatar {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 2px solid #27405f;
+  border-radius: 50%;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(86, 196, 210, 0.38), transparent 34%),
+    linear-gradient(145deg, #163b63, #09182d);
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px #111a29;
+}
+
+.community-trade-card__creator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+  color: #edf3f4;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-size: 15px;
+}
+
+.community-trade-card__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.community-trade-card__share,
+.community-trade-card__more {
+  min-height: 36px;
+  border: 0;
+  color: #dfe6ea;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.community-trade-card__share {
+  padding: 0 10px;
+  border-left: 1px solid rgba(148, 163, 184, 0.1);
+  border-right: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.community-trade-card__more {
+  padding-inline: 8px;
+  letter-spacing: 0.08em;
+}
+
+.community-trade-card__byline {
+  margin: 0 0 5px;
+  color: #92a6b7;
+  font-size: 10px;
+}
+
+.community-trade-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  color: #8095a7;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.community-trade-card__meta span:first-child {
+  color: #e0b05d;
+}
+
+.community-trade-card__meta span + span::before {
+  content: "·";
+  margin-right: 7px;
+  color: #526879;
+}
+
+.community-trade-post {
+  padding: 16px 22px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: linear-gradient(100deg, rgba(20, 30, 72, 0.22), transparent);
+}
+
+.community-trade-post h3 {
+  max-width: 980px;
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.06;
+}
+
+.community-trade-post p {
+  max-width: 1120px;
+  color: #d0dae4;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.community-trade-verdict-panel {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 22px 14px;
+  min-height: 94px;
+  border: 1px solid rgba(55, 190, 132, 0.26);
+  border-left: 3px solid #31c27a;
+  border-radius: 12px;
+  padding: 14px 18px;
+  background:
+    radial-gradient(circle at 100% 20%, rgba(37, 157, 99, 0.12), transparent 35%),
+    linear-gradient(120deg, #0d1a2a, #101b2b);
+}
+
+.community-trade-verdict-panel--fail {
+  border-color: rgba(239, 93, 93, 0.28);
+  border-left-color: #ef5d5d;
+  background:
+    radial-gradient(circle at 100% 20%, rgba(176, 50, 50, 0.12), transparent 35%),
+    linear-gradient(120deg, #161826, #101b2b);
+}
+
+.community-trade-verdict-panel--attention {
+  border-color: rgba(242, 183, 91, 0.3);
+  border-left-color: #f2b75b;
+  background:
+    radial-gradient(circle at 100% 20%, rgba(168, 112, 31, 0.12), transparent 35%),
+    linear-gradient(120deg, #171a25, #101b2b);
+}
+
+.community-trade-verdict-panel__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  color: #07110b;
+  background: #35d07f;
+  font-size: 21px;
+  font-weight: 950;
+}
+
+.community-trade-verdict-panel--fail .community-trade-verdict-panel__icon {
+  color: #fff;
+  background: #ef5d5d;
+}
+
+.community-trade-verdict-panel--attention .community-trade-verdict-panel__icon {
+  color: #1a1407;
+  background: #f2b75b;
+}
+
+.community-trade-verdict-panel strong {
+  color: #77dfa9;
+  font-size: 18px;
+}
+
+.community-trade-verdict-panel strong span {
+  color: #edf3f4;
+}
+
+.community-trade-verdict-panel--fail strong {
+  color: #ff8989;
+}
+
+.community-trade-verdict-panel--attention strong {
+  color: #f5c879;
+}
+
+.community-trade-verdict-panel p {
+  max-width: 760px;
+  margin: 4px 0 0;
+  color: #91a9bc;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.community-trade-verdict-panel__tools {
+  display: flex;
+  gap: 7px;
+}
+
+.community-trade-tool {
+  min-height: 34px;
+  border: 1px solid #46566b;
+  border-radius: 999px;
+  padding: 0 10px;
+  color: #dce5eb;
+  background: #18243a;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.trade-snapshot-dialog {
+  width: min(1120px, calc(100vw - 24px));
+  max-height: 94dvh;
+  overflow: hidden;
+  border: 1px solid #344b60;
+  border-radius: 14px;
+  padding: 0;
+  color: #edf3f4;
+  background: #101925;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.62);
+}
+
+.trade-snapshot-dialog::backdrop {
+  background: rgba(4, 9, 16, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.trade-snapshot-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #2a3d4c;
+}
+
+.trade-snapshot-dialog__header p {
+  margin: 0 0 3px;
+  color: #d7b66a;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.trade-snapshot-dialog__header h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.trade-snapshot-dialog__header button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #3a4b5a;
+  border-radius: 50%;
+  color: #cfd9de;
+  background: #172433;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.trade-snapshot-dialog__sizes {
+  display: flex;
+  gap: 7px;
+  padding: 10px 14px 0;
+  background: #101925;
+}
+
+.trade-snapshot-dialog__sizes button {
+  min-height: 36px;
+  border: 1px solid #35495a;
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #9bb0c1;
+  background: #0e1925;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.trade-snapshot-dialog__sizes button.is-active {
+  border-color: #c9082a;
+  color: #fff;
+  background: #c9082a;
+}
+
+.trade-snapshot-dialog__preview {
+  padding: 14px;
+  background: #0b111a;
+}
+
+.trade-snapshot-dialog__preview canvas {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 68dvh;
+  margin: 0 auto;
+  border: 1px solid #26394a;
+  border-radius: 8px;
+  background: #0b1421;
+}
+
+.trade-snapshot-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 16px;
+}
+
+.community-trade-assets li {
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+.community-trade-feedback {
+  padding-top: 16px;
+}
+
+.community-load-more {
+  display: block;
+  margin: 20px auto 0;
+}
+
+.community-load-more[hidden] {
+  display: none;
+}
+
+.community-trades {
+  gap: 12px;
+}
+
+.community-trade-card {
+  overflow: hidden;
+  padding: 0;
+  border-color: #29333c;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #151c23, #10161c);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+}
+
+.community-trade-card__header {
+  align-items: center;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.community-trade-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 5px;
+  color: #a7b5bd;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.community-trade-card__meta span:first-child {
+  color: #f0b15a;
+}
+
+.community-trade-card__meta span + span::before {
+  content: "·";
+  margin-right: 8px;
+  color: #5a6972;
+}
+
+.community-trade-card__byline {
+  margin: 0;
+  color: #7f909a;
+  font-size: 10px;
+}
+
+.community-trade-verdict {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid rgba(61, 190, 132, 0.28);
+  border-radius: 999px;
+  color: #83e3b2;
+  background: rgba(31, 137, 91, 0.12);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.community-trade-verdict::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.community-trade-verdict--fail {
+  border-color: rgba(239, 93, 93, 0.28);
+  color: #ff8989;
+  background: rgba(176, 50, 50, 0.12);
+}
+
+.community-trade-verdict--attention {
+  border-color: rgba(242, 183, 91, 0.3);
+  color: #f5c879;
+  background: rgba(168, 112, 31, 0.12);
+}
+
+.community-trade-summary {
+  padding: 2px 18px 8px;
+}
+
+.community-trade-team {
+  display: grid;
+  grid-template-columns: 34px minmax(128px, 0.5fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 11px;
+  min-height: 56px;
+  padding: 8px 0 8px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  border-left: 2px solid color-mix(in srgb, var(--team-primary, #56717f) 76%, transparent);
+}
+
+.community-trade-team:last-child {
+  border-bottom: 0;
+}
+
+.community-trade-team__brand {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.community-trade-team__brand img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.community-trade-team__fallback {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: #d7e0e5;
+  background: #29353e;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.community-trade-team__name {
+  overflow: hidden;
+  color: #e6edf0;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-trade-team__assets {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+}
+
+.community-trade-player {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: #e2e8eb;
+  font-size: 11px;
+}
+
+.community-trade-player__transaction {
+  color: #f0a27e;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.community-trade-player__headshot,
+.community-trade-player__fallback {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(196, 209, 216, 0.22);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 20%;
+  background: #202a32;
+}
+
+.community-trade-player__fallback {
+  display: grid;
+  place-items: center;
+  color: #f2c56d;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.community-trade-player__headshot[hidden],
+.community-trade-player__fallback[hidden],
+.community-trade-team__fallback[hidden] {
+  display: none;
+}
+
+.community-trade-pick {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid rgba(137, 154, 164, 0.19);
+  border-radius: 999px;
+  color: #c9d4d9;
+  background: rgba(255, 255, 255, 0.035);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.community-trade-pick__mark {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border-radius: 50%;
+  color: #10171d;
+  background: #d2a956;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.community-trade-action {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  padding: 6px 9px;
+  border: 1px solid rgba(240, 162, 126, 0.26);
+  border-radius: 8px;
+  background: rgba(240, 162, 126, 0.06);
+}
+
+.community-trade-action strong {
+  color: #e7d4ca;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.community-trade-action small {
+  color: #ba9d8e;
+  font-size: 8px;
+}
+
+.community-trade-team__empty {
+  color: #6f7e87;
+  font-size: 10px;
+}
+
+.community-trade-feedback {
+  margin: 0 18px;
+  padding: 12px 0 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+@media (max-width: 650px) {
+  .community-trade-card__header {
+    padding: 13px 14px 11px;
+  }
+
+  .community-trade-summary {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .community-trade-team {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 8px 10px;
+    padding-left: 8px;
+  }
+
+  .community-trade-team__assets {
+    grid-column: 2;
+    padding-bottom: 2px;
+  }
+
+  .community-trade-feedback {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+}
+
+@media (max-width: 650px) {
+  .community-topbar {
+    align-items: flex-start;
+    margin-inline: -10px;
+  }
+
+  .community-topbar__actions {
+    width: 100%;
+  }
+
+  .community-topbar__actions .button {
+    width: 100%;
+  }
+
+  .community-feed--standalone {
+    margin: 20px 0;
+    padding: 16px;
+  }
+
+  .community-feed--standalone .community-feed__heading {
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .community-feed__tools {
+    justify-content: space-between;
+  }
+
+  .community-feed__status {
+    max-width: 60%;
+    line-height: 1.4;
+  }
+}
+
+.asset-action-menu {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  color: #e8eef1;
+}
+
+.asset-action-menu > summary {
+  display: grid;
+  min-height: 31px;
+  place-items: center;
+  padding: 0 8px;
+  border: 1px solid rgba(151, 169, 172, 0.28);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  color: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.asset-action-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.asset-action-menu[open] > summary {
+  border-color: color-mix(in srgb, var(--team-primary, #57d6c5) 65%, #53616a);
+}
+
+.asset-action-menu__items {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  display: grid;
+  width: max-content;
+  min-width: 190px;
+  max-width: min(250px, calc(100vw - 32px));
+  padding: 5px;
+  border: 1px solid #39464e;
+  border-radius: 9px;
+  background: #141a1e;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+}
+
+.asset-action-menu--above .asset-action-menu__items {
+  top: auto;
+  bottom: calc(100% + 5px);
+}
+
+.asset-action-menu__items {
+  max-height: min(320px, 60dvh);
+  overflow: auto;
+}
+
+.asset-action-menu--mobile .asset-action-menu__items {
+  position: fixed;
+  top: auto;
+  right: 12px;
+  bottom: 12px;
+  z-index: 20;
+  width: min(250px, calc(100vw - 24px));
+  max-height: min(60dvh, 430px);
+}
+
+.asset-action-menu__items button {
+  min-height: 34px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #e5ecef;
+  font: inherit;
+  font-size: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.asset-action-menu__items button:hover:not(:disabled),
+.asset-action-menu__items button:focus-visible {
+  background: rgba(87, 214, 197, 0.12);
+  outline: none;
+}
+
+.asset-action-menu__items button:disabled {
+  color: #74828a;
+  cursor: not-allowed;
+}
+
+.cap-asset-row__actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roster-action {
+  position: relative;
+  z-index: 1;
+}
+
+.asset-menu-row-open {
+  position: relative;
+  z-index: 8;
+}
+
+.roster-row--waived .roster-salary {
+  color: #e8ad9e;
+}
+
+.roster-row--waived .trade-toggle {
+  opacity: 0.45;
+}
+
+#frontOfficeContent {
+  display: grid;
+  min-height: min(520px, 85dvh);
+}
+
+.front-office-form {
+  display: grid;
+  min-height: inherit;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.front-office-form__body {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  overflow: auto;
+  padding: 18px 22px;
+}
+
+.front-office-form__body label {
+  display: grid;
+  gap: 6px;
+  color: #b6c3c9;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.front-office-form__body [hidden] {
+  display: none !important;
+}
+
+.front-office-form__body input,
+.front-office-form__body select,
+.player-compare__select select {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #3b4b55;
+  border-radius: 7px;
+  background: #11171b;
+  color: #eef4f6;
+  font: inherit;
+}
+
+.front-office-form__note {
+  margin: 0;
+  color: #91a1a9;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.front-office-form .sign-trade-footer {
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+}
+
+#frontOfficeDialog {
+  width: min(700px, calc(100vw - 20px));
+  max-width: none;
+  max-height: 92dvh;
+  overflow: hidden;
+  padding: 0;
+}
+
+.front-office-form[data-action="waive"] {
+  min-height: min(650px, 92dvh);
+}
+
+.waive-dialog-header {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 40px 32px;
+  align-items: center;
+  gap: 10px;
+  min-height: 96px;
+  padding: 12px 18px;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--team-primary, #7d213e) 85%, #1a1018), #370b1d);
+}
+
+.waive-dialog-header__player {
+  width: 52px;
+  height: 52px;
+  border: 2px solid rgba(255,255,255,.62);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 18%;
+  background: #222b33;
+}
+
+.waive-dialog-header__logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.waive-dialog-header .sign-trade-header__identity > span {
+  color: rgba(255,255,255,.78);
+  font-size: 9px;
+  letter-spacing: .1em;
+}
+
+.waive-dialog-header .sign-trade-header__identity h2 {
+  margin: 2px 0;
+  color: #fff;
+  font-size: 22px;
+}
+
+.waive-dialog-header .sign-trade-header__identity p {
+  margin: 0;
+  color: rgba(255,255,255,.85);
+  font-size: 11px;
+}
+
+.waive-simulation-body {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+  padding: 16px 18px;
+}
+
+.waive-action-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.waive-action-card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.waive-action-card input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.waive-action-card > span {
+  display: grid;
+  min-height: 96px;
+  align-content: start;
+  gap: 5px;
+  padding: 11px;
+  border: 1px solid #30373d;
+  border-radius: 10px;
+  background: #111519;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.waive-action-card strong {
+  color: #e7edf1;
+  font-size: 12px;
+}
+
+.waive-action-card small {
+  color: #9aa8b4;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.waive-action-card input:checked + span,
+.waive-action-card input:focus-visible + span {
+  border-color: #f05a24;
+  box-shadow: inset 0 0 0 1px #f05a24, 0 0 0 2px rgba(240,90,36,.12);
+}
+
+.waive-guarantee-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.waive-guarantee-fields label,
+.waive-setoff-credit {
+  display: grid;
+  gap: 5px;
+  color: #aab6c1;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.waive-guarantee-fields input,
+.waive-setoff-credit input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid #3b4851;
+  border-radius: 7px;
+  background: #101519;
+  color: #f0f3f5;
+  font: inherit;
+}
+
+.waive-buyout-control:not([hidden]) {
+  display: grid;
+  gap: 7px;
+  color: #aeb9c4;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .06em;
+}
+
+.waive-buyout-control input[type="range"] {
+  width: 100%;
+  accent-color: #f05a24;
+}
+
+.waive-setoff-toggle,
+.waive-buyout-stretch:not([hidden]) {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid rgba(240,90,36,.55);
+  border-radius: 999px;
+  color: #f05a24;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.waive-setoff-toggle input,
+.waive-buyout-stretch input {
+  accent-color: #f05a24;
+}
+
+.waive-setoff-toggle strong {
+  color: #ff7441;
+}
+
+.waive-setoff-credit:not([hidden]) {
+  display: grid;
+}
+
+.waive-dead-money h3 {
+  margin: 0 0 7px;
+  color: #929eaa;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.waive-dead-money__table {
+  max-height: 125px;
+  overflow: auto;
+}
+
+.waive-dead-money table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #cbd4da;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.waive-dead-money th,
+.waive-dead-money td {
+  padding: 6px 3px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  text-align: right;
+}
+
+.waive-dead-money th:first-child {
+  text-align: left;
+}
+
+.waive-dead-money thead th {
+  color: #919eaa;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.waive-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border-radius: 9px;
+  background: #101519;
+}
+
+.waive-summary > div {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+}
+
+.waive-summary span,
+.waive-summary small {
+  color: #97a4b0;
+  font-size: 9px;
+}
+
+.waive-summary strong {
+  color: #eef2f4;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.waive-summary [data-waive-savings] {
+  color: #22d785;
+}
+
+.waive-method-note,
+.waive-setoff-note {
+  margin: 0;
+  color: #9ca9b5;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.waive-footer-note {
+  flex: 1 1 auto;
+  color: #96a9b5;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+#frontOfficeDialog .front-office-form[data-action="waive"] .sign-trade-footer {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255,255,255,.08);
+  background: #101519;
+}
+
+@media (max-width: 560px) {
+  #frontOfficeDialog {
+    width: calc(100vw - 12px);
+    max-height: 96dvh;
+  }
+
+  .waive-dialog-header {
+    grid-template-columns: 43px minmax(0, 1fr) 28px;
+    gap: 8px;
+    min-height: 82px;
+    padding: 10px;
+  }
+
+  .waive-dialog-header__player {
+    width: 43px;
+    height: 43px;
+  }
+
+  .waive-dialog-header__logo {
+    display: none;
+  }
+
+  .waive-dialog-header .sign-trade-header__identity h2 {
+    font-size: 18px;
+  }
+
+  .waive-simulation-body {
+    gap: 9px;
+    padding: 12px 10px;
+  }
+
+  .waive-action-options {
+    gap: 5px;
+  }
+
+  .waive-action-card > span {
+    min-height: 112px;
+    padding: 8px 7px;
+  }
+
+  .waive-action-card strong {
+    font-size: 10px;
+  }
+
+  .waive-action-card small {
+    font-size: 8px;
+  }
+
+  .waive-guarantee-fields {
+    gap: 6px;
+  }
+
+  .waive-summary {
+    gap: 5px;
+    padding: 8px;
+  }
+
+  .waive-summary strong {
+    font-size: 12px;
+  }
+
+  .waive-summary span,
+  .waive-summary small {
+    font-size: 8px;
+  }
+
+  .waive-footer-note {
+    flex-basis: 100%;
+  }
+}
+
+.player-compare {
+  padding-bottom: 15px;
+}
+
+.player-compare .player-profile__header h2 {
+  margin: 3px 0 0;
+  color: #f0f5f7;
+  font-size: 20px;
+}
+
+.player-compare__select {
+  display: grid;
+  gap: 7px;
+  margin: 16px 18px 10px;
+  color: #a8b7be;
+  font-size: 10px;
+}
+
+.player-compare__teams,
+.player-compare__stats > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  padding: 9px 18px;
+}
+
+.player-compare__teams > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.player-compare__teams strong,
+.player-compare__stats strong {
+  overflow: hidden;
+  color: #edf4f6;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.player-compare__teams span,
+.player-compare__stats > div > span {
+  color: #8fa0a8;
+  font-size: 9px;
+}
+
+.player-compare__stats {
+  display: grid;
+  margin: 6px 10px 0;
+  border-top: 1px solid rgba(151, 169, 172, 0.15);
+}
+
+.player-compare__stats > div {
+  grid-template-columns: minmax(85px, 0.8fr) minmax(0, 1fr) minmax(0, 1fr);
+  border-bottom: 1px solid rgba(151, 169, 172, 0.11);
+}
+
+.sign-trade-dialog {
+  width: min(700px, calc(100vw - 28px));
+  max-width: none;
+  max-height: min(880px, 92dvh);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #35414a;
+  border-radius: 18px;
+  background: #171a1f;
+  color: #f1f3f5;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.72);
+}
+
+.sign-trade-dialog[open] {
+  display: block;
+  animation: dialog-arrive 220ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.sign-trade-dialog::backdrop {
+  background: rgba(3, 7, 11, 0.78);
+  backdrop-filter: blur(5px);
+}
+
+#signTradeContent {
+  display: grid;
+  height: min(820px, 92dvh);
+  max-height: 92dvh;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.sign-trade-header {
+  display: grid;
+  min-height: 88px;
+  grid-template-columns: 58px minmax(0, 1fr) 38px 34px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(110deg, rgba(28, 91, 137, 0.78), rgba(15, 50, 75, 0.94)),
+    #12334d;
+}
+
+.sign-trade-header__portrait {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.58);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.sign-trade-header__portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sign-trade-header__fallback {
+  color: #fff;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.sign-trade-header__identity {
+  min-width: 0;
+}
+
+.sign-trade-header__identity > span {
+  display: block;
+  overflow: hidden;
+  color: rgba(244, 249, 253, 0.8);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sign-trade-header__identity h2 {
+  margin: 2px 0 1px;
+  font-size: clamp(17px, 3vw, 22px);
+  line-height: 1.15;
+}
+
+.sign-trade-header__identity p {
+  margin: 0;
+  color: rgba(244, 249, 253, 0.82);
+  font-size: 12px;
+}
+
+.sign-trade-header__team-logo,
+.sign-trade-team-logo {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  object-fit: contain;
+}
+
+.sign-trade-header .icon-button {
+  width: 34px;
+  height: 34px;
+  color: #f5f7f8;
+  font-size: 25px;
+}
+
+.sign-trade-form {
+  min-height: 0;
+  overflow: auto;
+  padding: 20px 22px 24px;
+  scrollbar-color: #46515a #171a1f;
+  scrollbar-width: thin;
+}
+
+.sign-trade-section-label {
+  display: block;
+  margin: 0 0 10px;
+  color: #9da8b5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.sign-trade-rights {
+  margin-bottom: 18px;
+}
+
+.sign-trade-rights-card {
+  display: flex;
+  min-height: 66px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 15px;
+  border: 1px solid #ed5a2a;
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgba(232, 82, 36, 0.14), rgba(255, 255, 255, 0.02));
+}
+
+.sign-trade-rights-card strong {
+  font-size: 14px;
+}
+
+.sign-trade-rights-card span {
+  color: #acb5bf;
+  font-size: 12px;
+}
+
+.sign-trade-destination {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: #9da8b5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.sign-trade-destination select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #343b43;
+  border-radius: 9px;
+  background: #20242a;
+  color: #f1f3f5;
+  font: inherit;
+  letter-spacing: normal;
+}
+
+.sign-trade-terms {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px 24px;
+  align-items: end;
+}
+
+.sign-trade-control {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.sign-trade-control--seasons {
+  grid-column: 1 / -1;
+}
+
+.sign-trade-years {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sign-trade-year {
+  min-width: 48px;
+  min-height: 37px;
+  padding: 0 13px;
+  border: 1px solid #343b43;
+  border-radius: 999px;
+  background: #1d2025;
+  color: #c8cdd3;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sign-trade-year:hover {
+  border-color: #7f8993;
+}
+
+.sign-trade-year.is-active {
+  border-color: #f45b2a;
+  background: #f45b2a;
+  color: #fff;
+}
+
+.sign-trade-salary-range {
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  accent-color: #f45b2a;
+  cursor: pointer;
+}
+
+.sign-trade-salary-input {
+  width: min(240px, 100%);
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #3c444d;
+  border-radius: 9px;
+  background: #1d2025;
+  color: #f1f3f5;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sign-trade-raise-control {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  padding-bottom: 7px;
+}
+
+.sign-trade-raise-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #e3e7eb;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.sign-trade-raise-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.sign-trade-raise-toggle__switch {
+  position: relative;
+  width: 44px;
+  height: 25px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #454b52;
+  transition: background 150ms ease;
+}
+
+.sign-trade-raise-toggle__switch::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  content: "";
+  transition: transform 150ms ease;
+}
+
+.sign-trade-raise-toggle input:checked + .sign-trade-raise-toggle__switch {
+  background: #f45b2a;
+}
+
+.sign-trade-raise-toggle input:checked + .sign-trade-raise-toggle__switch::after {
+  transform: translateX(19px);
+}
+
+.sign-trade-raise-toggle input:focus-visible + .sign-trade-raise-toggle__switch {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.sign-trade-raise-note {
+  color: #8d98a4;
+  font-size: 10px;
+}
+
+.sign-trade-estimate {
+  margin: 20px 0;
+  padding: 10px 12px;
+  border-left: 3px solid #c99a52;
+  border-radius: 0 8px 8px 0;
+  background: rgba(201, 154, 82, 0.08);
+  color: #c8b99c;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.sign-trade-preview h3 {
+  margin-bottom: 8px;
+}
+
+.sign-trade-schedule {
+  display: grid;
+}
+
+.sign-trade-schedule__row {
+  display: grid;
+  min-height: 43px;
+  grid-template-columns: minmax(80px, 0.8fr) minmax(120px, 1fr) minmax(86px, 0.7fr);
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+}
+
+.sign-trade-schedule__row > span {
+  color: #d7dce1;
+  font-weight: 600;
+}
+
+.sign-trade-schedule__row strong {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sign-trade-schedule__row small {
+  color: #909aa5;
+  text-align: right;
+}
+
+.sign-trade-preview__totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sign-trade-preview__totals > div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.sign-trade-preview__totals span {
+  color: #929ca7;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.sign-trade-preview__totals strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sign-trade-preview__totals strong.is-over {
+  color: #ff8875;
+}
+
+.sign-trade-form__error {
+  color: #ff8875;
+  font-size: 12px;
+}
+
+.sign-trade-footer {
+  position: relative;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px solid #303840;
+  background: #14171b;
+}
+
+.sign-trade-footer > span {
+  color: #83b9e8;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sign-trade-footer > div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sign-trade-footer .button {
+  min-height: 39px;
+  padding-inline: 15px;
+}
+
+.sign-trade-footer .button--add {
+  border-color: #f45b2a;
+  border-radius: 999px;
+  background: #f45b2a;
+  color: #fff;
+  font-weight: 750;
+}
+
+.sign-trade-footer .button--add:hover:not(:disabled) {
+  background: #ff6a39;
+}
+
+@media (max-width: 600px) {
+  .sign-trade-dialog {
+    width: calc(100vw - 16px);
+    max-height: 94dvh;
+    border-radius: 14px;
+  }
+
+  #signTradeContent {
+    height: 94dvh;
+    max-height: 94dvh;
+  }
+
+  .sign-trade-header {
+    min-height: 76px;
+    grid-template-columns: 46px minmax(0, 1fr) 28px 30px;
+    gap: 10px;
+    padding: 11px 12px;
+  }
+
+  .sign-trade-header__portrait {
+    width: 46px;
+    height: 46px;
+  }
+
+  .sign-trade-header__team-logo,
+  .sign-trade-team-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sign-trade-header .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .sign-trade-header__identity > span {
+    font-size: 9px;
+  }
+
+  .sign-trade-header__identity p {
+    font-size: 10px;
+  }
+
+  .sign-trade-form {
+    padding: 17px 14px 20px;
+  }
+
+  .sign-trade-terms {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .sign-trade-control--seasons {
+    grid-column: auto;
+  }
+
+  .sign-trade-raise-control {
+    padding-bottom: 0;
+  }
+
+  .sign-trade-preview__totals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sign-trade-preview__totals > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .sign-trade-footer {
+    min-height: 61px;
+    padding: 8px 10px;
+  }
+
+  .sign-trade-footer > span {
+    font-size: 10px;
+  }
+
+  .sign-trade-footer > div {
+    gap: 5px;
+  }
+
+  .sign-trade-footer .button {
+    min-height: 36px;
+    padding-inline: 10px;
+    font-size: 11px;
+  }
+}
+
+.team-card {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--team-primary, #35617a) 30%, #343f43);
+  background: linear-gradient(155deg, #1d242a, #13191e 70%);
+}
+
+.team-card__topline {
+  padding: 8px 12px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--team-primary, #35617a) 30%, #15202a), #141a1f);
+}
+
+.team-card__identity {
+  padding: 10px 12px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--team-primary, #35617a) 18%, #15202a), #182129);
+}
+
+.team-metrics {
+  background: #10161c;
+}
+
+.team-payroll-track {
+  padding: 11px 13px 10px;
+  border-bottom: 1px solid rgba(133, 158, 171, .14);
+  background: #121920;
+}
+
+.team-payroll-track__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.team-payroll-track__heading span {
+  color: #95a5b1;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.team-payroll-track__heading strong {
+  color: #eef4f7;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-payroll-track__heading i {
+  padding-inline: 4px;
+  color: var(--team-secondary, #8cb8c9);
+  font-style: normal;
+}
+
+.team-payroll-track__bar {
+  position: relative;
+  height: 8px;
+  overflow: visible;
+  border-radius: 999px;
+  background: #343e47;
+}
+
+.team-payroll-track__bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--team-primary, #346d89), var(--team-secondary, #97c3d0));
+}
+
+.team-payroll-track__mark {
+  position: absolute;
+  top: -3px;
+  z-index: 1;
+  width: 2px;
+  height: 14px;
+  border: 1px solid #d5e0e5;
+  background: #16212a;
+}
+
+.team-payroll-track__mark--cap { border-color: #9dcfae; }
+.team-payroll-track__mark--first { border-color: #e7c372; }
+.team-payroll-track__mark--second { border-color: #fa7e75; }
+
+.team-payroll-track p {
+  margin: 7px 0 0;
+  color: #aab9c5;
+  font-size: 10px;
+}
+
+.team-move-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(133, 158, 171, .12);
+  background: #151d24;
+}
+
+.team-move-summary section {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.team-move-summary section > span {
+  color: #91a1ac;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.team-move-summary section > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.team-move-summary section > div > span {
+  max-width: 100%;
+  padding: 5px 8px;
+  overflow: hidden;
+  border: 1px solid rgba(142, 165, 177, .2);
+  border-radius: 999px;
+  background: rgba(5, 10, 14, .35);
+  color: #d7e1e7;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-move-summary small {
+  color: #778793;
+  font-size: 9px;
+}
+
+.team-cap-outlook {
+  background: #121920;
+}
+
+.player-career-dialog {
+  width: min(1060px, calc(100vw - 28px));
+  max-height: min(94dvh, 900px);
+  overflow: auto;
+  padding: 0;
+}
+
+#frontOfficeDialog.sign-trade-dialog {
+  width: min(700px, calc(100vw - 20px));
+  max-width: none;
+  max-height: 92dvh;
+  padding: 0;
+  overflow: hidden;
+}
+
+#frontOfficeDialog #frontOfficeContent {
+  height: min(760px, 92dvh);
+  min-height: 0;
+}
+
+#frontOfficeDialog .front-office-form[data-action="waive"] {
+  height: 100%;
+  min-height: 0;
+}
+
+#frontOfficeDialog .waive-dialog-header {
+  grid-template-columns: 52px minmax(0, 1fr) 40px 32px;
+  min-height: 96px;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--team-primary, #7d213e) 88%, #111519), color-mix(in srgb, var(--team-primary, #7d213e) 55%, #101519));
+}
+
+#frontOfficeDialog .front-office-form[data-action="waive"] .front-office-form__body {
+  min-height: 0;
+  padding: 0;
+}
+
+#frontOfficeDialog .waive-simulation-body {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+  padding: 16px 18px;
+}
+
+#frontOfficeDialog .front-office-form[data-action="waive"] .sign-trade-footer {
+  min-height: 62px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255,255,255,.08);
+  background: #101519;
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    margin-inline: 0;
+  }
+
+  .team-payroll-track {
+    padding-inline: 9px;
+  }
+
+  .team-payroll-track__heading strong {
+    font-size: 12px;
+  }
+
+  .team-move-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .player-career-dialog {
+    width: calc(100vw - 16px);
+    max-height: 96dvh;
+  }
+
+  #frontOfficeDialog.sign-trade-dialog {
+    width: calc(100vw - 12px);
+    max-height: 96dvh;
+  }
+
+  #frontOfficeDialog #frontOfficeContent {
+    height: min(850px, 96dvh);
+  }
+
+  #frontOfficeDialog .waive-dialog-header {
+    grid-template-columns: 43px minmax(0, 1fr) 28px;
+    min-height: 82px;
+    padding: 10px;
+  }
+
+  #frontOfficeDialog .waive-dialog-header__player {
+    width: 43px;
+    height: 43px;
+  }
+
+  #frontOfficeDialog .waive-dialog-header__logo {
+    display: none;
+  }
+
+  #frontOfficeDialog .waive-simulation-body {
+    gap: 9px;
+    padding: 12px 10px;
   }
 }
