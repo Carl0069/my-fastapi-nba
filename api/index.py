@@ -11,7 +11,7 @@ import time
 import unicodedata
 from pathlib import Path
 from threading import Lock
-from typing import Callable, List, Optional, Literal
+from typing import Any, Callable, List, Optional, Literal
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
@@ -55,6 +55,14 @@ class PlayerStat(BaseModel):
     name: str = Field(..., min_length=1, description="Player full name")
     pos: str = Field(..., description="Court position")
     contract_type: Optional[str] = Field(default=None, description="Contract type label, such as Two-Way")
+    contract_years_remaining: Optional[int] = Field(
+        default=None,
+        ge=0,
+        le=15,
+        description="Remaining contract years from the static Supabase player snapshot",
+    )
+    contract_source: Optional[str] = Field(default=None, description="Source of the saved contract data")
+    contract_data_as_of: Optional[str] = Field(default=None, description="Date of the saved contract snapshot")
     stats_season: str = Field(default="2026-27", description="Season represented by the player stats")
     stats_as_of: Optional[str] = Field(default=None, description="Date through which the stats are recorded")
     stats_source: Optional[str] = Field(default=None, description="Source used for the saved player stats")
@@ -160,6 +168,89 @@ class CommunityChallengeUpdate(BaseModel):
             raise ValueError("Selected player IDs must not be blank.")
         return normalized
 
+
+class AdminPlayerCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=80)
+    full_name: Optional[str] = Field(default=None, max_length=80)
+    team_id: Optional[int] = Field(default=None, ge=1, le=30)
+    position: str = Field(default="", max_length=12)
+    contract_type: Optional[Literal["Standard", "Two-Way"]] = None
+    jersey_number: Optional[str] = Field(default=None, max_length=4)
+    headshot_url: Optional[str] = Field(default=None, max_length=2048)
+    salary: Optional[int] = Field(default=None, ge=0)
+    contract_years_remaining: Optional[int] = Field(default=None, ge=0, le=15)
+    gp: Optional[int] = Field(default=None, ge=0)
+    pts: Optional[float] = Field(default=None, ge=0, le=100)
+    reb: Optional[float] = Field(default=None, ge=0, le=50)
+    ast: Optional[float] = Field(default=None, ge=0, le=30)
+    stl: Optional[float] = Field(default=None, ge=0, le=10)
+    blk: Optional[float] = Field(default=None, ge=0, le=15)
+    tov: Optional[float] = Field(default=None, ge=0, le=15)
+    fg: Optional[float] = Field(default=None, ge=0, le=100)
+    fg3: Optional[float] = Field(default=None, ge=0, le=100)
+    ft: Optional[float] = Field(default=None, ge=0, le=100)
+
+    @field_validator("name", "full_name")
+    @classmethod
+    def normalize_optional_player_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        return value.strip() or None
+
+
+class AdminTeamUpdate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=80)
+    abbreviation: str = Field(..., min_length=2, max_length=3)
+    conference: Literal["Eastern", "Western"]
+    division: str = Field(..., min_length=2, max_length=40)
+    is_active: bool = True
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class AdminDraftPickUpdate(BaseModel):
+    team_id: int = Field(..., ge=1, le=30)
+    pick_order: int = Field(..., ge=1, le=500)
+    year: int = Field(..., ge=2026, le=2040)
+    round: Literal[1, 2]
+    original_owner: str = Field(..., min_length=2, max_length=80)
+    is_swap: bool = False
+    protection: Optional[str] = Field(default=None, max_length=80)
+    details: str = Field(default="", max_length=500)
+
+
+class OfficialChallengeCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=48)
+    description: str = Field(default="", max_length=220)
+    rule_type: Literal[
+        "all", "scorers", "playmakers", "rebounders", "guards",
+        "forwards", "bigs", "defenders", "triple_threat",
+        "sharpshooters", "ironmen", "stocks", "low_turnovers", "balanced"
+    ]
+    difficulty: Literal["Easy", "Medium", "Hard"] = "Medium"
+    icon: str = Field(default="🏆", min_length=1, max_length=8)
+
+    @field_validator("title")
+    @classmethod
+    def normalize_official_title(cls, value: str) -> str:
+        normalized = value.strip()
+        if not 3 <= len(normalized) <= 48:
+            raise ValueError("Title must contain between 3 and 48 non-whitespace characters.")
+        return normalized
+
+    @field_validator("description")
+    @classmethod
+    def normalize_official_description(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("icon")
+    @classmethod
+    def require_official_icon(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("This field cannot be blank.")
+        return normalized
+
+
 class Team(BaseModel):
     id: int = Field(..., ge=1, le=30, description="Unique team identifier")
     name: str = Field(..., min_length=2, description="Team full name")
@@ -193,9 +284,9 @@ def verify_api_key(x_api_key: Optional[str] = Header(default=None)):
 SUPABASE_BEARER = HTTPBearer(auto_error=False)
 
 
-def verify_supabase_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(SUPABASE_BEARER),
-) -> UUID:
+def _load_supabase_auth_user(
+    credentials: Optional[HTTPAuthorizationCredentials],
+) -> tuple[UUID, dict]:
     if credentials is None or credentials.scheme.casefold() != "bearer":
         raise HTTPException(
             status_code=401,
@@ -254,13 +345,43 @@ def verify_supabase_user(
         ) from error
 
     try:
-        return UUID(user["id"])
+        user_id = UUID(user["id"])
     except (KeyError, TypeError, ValueError) as error:
         logger.error("Supabase Auth response did not contain a valid user ID.")
         raise HTTPException(
             status_code=502,
             detail="Supabase authentication returned an invalid user.",
         ) from error
+    return user_id, user
+
+
+def _is_supabase_admin(user: dict) -> bool:
+    app_metadata = user.get("app_metadata") or {}
+    if str(app_metadata.get("role") or "").lower() == "admin":
+        return True
+    email = str(user.get("email") or "").strip().lower()
+    admin_emails = {
+        item.strip().lower()
+        for item in os.environ.get("ADMIN_EMAILS", "").split(",")
+        if item.strip()
+    }
+    return email in admin_emails
+
+
+def verify_supabase_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(SUPABASE_BEARER),
+) -> UUID:
+    user_id, _ = _load_supabase_auth_user(credentials)
+    return user_id
+
+
+def verify_supabase_admin(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(SUPABASE_BEARER),
+) -> UUID:
+    user_id, user = _load_supabase_auth_user(credentials)
+    if not _is_supabase_admin(user):
+        raise HTTPException(status_code=403, detail="Administrator access is required.")
+    return user_id
 
 
 def supabase_rest_request(
@@ -372,6 +493,8 @@ def get_team_catalog() -> list[dict]:
         for row in player_rows:
             if not isinstance(row, dict) or not isinstance(row.get("metadata"), dict):
                 raise ValueError("A player catalog row is missing its metadata.")
+            if row.get("team_id") is None:
+                continue
             team_id = int(row["team_id"])
             player_metadata = row["metadata"]
             player_payload = player_metadata.get("player")
@@ -456,7 +579,11 @@ def get_team_catalog() -> list[dict]:
     return copy.deepcopy(catalog)
 
 
-def supabase_cache_read(resource_type: str, cache_key: str) -> Optional[dict]:
+def supabase_cache_read(
+    resource_type: str,
+    cache_key: str,
+    allow_expired: bool = False,
+) -> Optional[dict]:
     if not supabase_cache_available():
         return None
     try:
@@ -474,7 +601,11 @@ def supabase_cache_read(resource_type: str, cache_key: str) -> Optional[dict]:
                 expires_datetime = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
             except ValueError:
                 expires_datetime = None
-            if expires_datetime is not None and expires_datetime <= datetime.now(timezone.utc):
+            if (
+                expires_datetime is not None
+                and expires_datetime <= datetime.now(timezone.utc)
+                and not allow_expired
+            ):
                 return None
         payload = record.get("payload")
         return payload if isinstance(payload, dict) else {"value": payload}
@@ -548,6 +679,13 @@ def supabase_cached_fetch(
 NBA_STATS_CACHE_TTL_SECONDS = 900
 NBA_STATS_CACHE: dict = {}
 NBA_STATS_LOCK = Lock()
+NBA_TEAM_STATS_THROUGH = "2026-11-20"
+NBA_STATIC_STATS_PATH = Path(__file__).resolve().parent / "data" / "nba_player_stats_20261120.json"
+NBA_STATIC_STATS_CACHE: Optional[dict] = None
+NBA_STATIC_STATS_LOCK = Lock()
+NBA_CAP_DETAILS_PATH = Path(__file__).resolve().parent / "data" / "nba_cap_details_2026_27.json"
+NBA_CAP_DETAILS_CACHE: Optional[dict] = None
+NBA_CAP_DETAILS_LOCK = Lock()
 NBA_ROSTER_CACHE_TTL_SECONDS = 21600
 NBA_ROSTER_CACHE: dict = {}
 NBA_ROSTER_LOCK = Lock()
@@ -578,6 +716,9 @@ NBA_TEAM_JERSEY_CACHE: dict = {}
 NBA_TEAM_JERSEY_LOCK = Lock()
 ESPN_TEAM_JERSEY_CACHE: dict = {}
 ESPN_TEAM_JERSEY_LOCK = Lock()
+ESPN_TRADE_ROSTER_CACHE_TTL_SECONDS = 900
+ESPN_TRADE_ROSTER_CACHE: dict = {}
+ESPN_TRADE_ROSTER_LOCK = Lock()
 
 
 def current_nba_season(now: Optional[datetime] = None) -> str:
@@ -613,19 +754,132 @@ def normalize_player_name(name: str) -> str:
     )
 
 
-def fetch_current_nba_player_stats() -> dict:
+def load_static_nba_player_stats() -> dict:
+    global NBA_STATIC_STATS_CACHE
+
+    with NBA_STATIC_STATS_LOCK:
+        if NBA_STATIC_STATS_CACHE is None:
+            try:
+                snapshot = json.loads(NBA_STATIC_STATS_PATH.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as error:
+                logger.exception("Could not load the bundled NBA player-stat snapshot.")
+                raise RuntimeError("The bundled NBA player-stat snapshot is unavailable.") from error
+            if (
+                not isinstance(snapshot, dict)
+                or snapshot.get("season") != "2026-27"
+                or snapshot.get("as_of") != NBA_TEAM_STATS_THROUGH
+                or not isinstance(snapshot.get("players"), dict)
+                or not snapshot["players"]
+            ):
+                raise RuntimeError("The bundled NBA player-stat snapshot is invalid.")
+            NBA_STATIC_STATS_CACHE = snapshot
+
+        return copy.deepcopy(NBA_STATIC_STATS_CACHE)
+
+
+def load_static_nba_cap_details() -> dict:
+    global NBA_CAP_DETAILS_CACHE
+
+    with NBA_CAP_DETAILS_LOCK:
+        if NBA_CAP_DETAILS_CACHE is None:
+            try:
+                snapshot = json.loads(NBA_CAP_DETAILS_PATH.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as error:
+                logger.exception("Could not load the bundled NBA cap-details snapshot.")
+                raise RuntimeError("The bundled NBA cap-details snapshot is unavailable.") from error
+
+            team_data = snapshot.get("teams") if isinstance(snapshot, dict) else None
+            expected_team_ids = {str(team_id) for team_id in range(1, 31)}
+            if (
+                not isinstance(snapshot, dict)
+                or snapshot.get("season") != "2026-27"
+                or not isinstance(snapshot.get("as_of"), str)
+                or not isinstance(team_data, dict)
+                or set(team_data) != expected_team_ids
+            ):
+                raise RuntimeError("The bundled NBA cap-details snapshot is invalid.")
+
+            valid_statuses = {"verified", "none", "unavailable"}
+            for team_id, details in team_data.items():
+                if not isinstance(details, dict):
+                    raise RuntimeError(f"The bundled NBA cap details for team {team_id} are invalid.")
+                sources = details.get("sources")
+                if (
+                    not isinstance(sources, list)
+                    or not sources
+                    or any(
+                        not isinstance(source, dict)
+                        or not isinstance(source.get("name"), str)
+                        or not isinstance(source.get("url"), str)
+                        or not source["url"].startswith("https://")
+                        for source in sources
+                    )
+                ):
+                    raise RuntimeError(
+                        f"The bundled NBA cap-detail sources for team {team_id} are invalid."
+                    )
+                for field in ("exceptions", "cap_holds"):
+                    entries = details.get(field)
+                    status = details.get(f"{field}_status")
+                    if (
+                        not isinstance(entries, list)
+                        or not isinstance(status, str)
+                        or status not in valid_statuses
+                        or (status == "none" and entries)
+                        or (status == "verified" and not entries)
+                    ):
+                        raise RuntimeError(
+                            f"The bundled NBA {field} for team {team_id} are invalid."
+                        )
+                    for entry in entries:
+                        if not isinstance(entry, dict):
+                            raise RuntimeError(
+                                f"The bundled NBA {field} entry for team {team_id} is invalid."
+                            )
+                        amount = entry.get("amount")
+                        if amount is not None and (
+                            isinstance(amount, bool)
+                            or not isinstance(amount, (int, float))
+                            or amount < 0
+                        ):
+                            raise RuntimeError(
+                                f"The bundled NBA {field} amount for team {team_id} is invalid."
+                            )
+
+            NBA_CAP_DETAILS_CACHE = snapshot
+
+        return copy.deepcopy(NBA_CAP_DETAILS_CACHE)
+
+
+def fetch_current_nba_player_stats(stats_through: Optional[str] = None) -> dict:
+    if stats_through == NBA_TEAM_STATS_THROUGH:
+        snapshot = load_static_nba_player_stats()
+        return {
+            "status": "snapshot",
+            "source": snapshot["source"],
+            "season": snapshot["season"],
+            "as_of": snapshot["as_of"],
+            "last_updated": None,
+            "message": (
+                "Showing the bundled 2026-27 ESPN box-score snapshot through November 20, 2026. "
+                "These fixed stats do not require a live stats connection."
+            ),
+            "players": snapshot["players"],
+        }
+
     season = current_nba_season()
+    cache_key = f"player_stats:{season}:{stats_through or 'latest'}"
     return supabase_cached_fetch(
         "player_stats",
-        f"player_stats:{season}",
-        _fetch_stats_from_nba,
+        cache_key,
+        lambda: _fetch_stats_from_nba(stats_through),
         ttl_seconds=NBA_STATS_CACHE_TTL_SECONDS,
     )
 
 
-def _fetch_stats_from_nba() -> dict:
+def _fetch_stats_from_nba(stats_through: Optional[str] = None) -> dict:
     with NBA_STATS_LOCK:
-        return _fetch_current_nba_player_stats()
+        return _fetch_current_nba_player_stats(stats_through)
 
 
 def fetch_current_nba_rosters() -> dict:
@@ -3523,19 +3777,26 @@ def _fetch_current_nba_rosters() -> dict:
         return snapshot
 
 
-def _fetch_current_nba_player_stats() -> dict:
+def _fetch_current_nba_player_stats(stats_through: Optional[str] = None) -> dict:
     now = time.monotonic()
     season = current_nba_season()
-    cached = NBA_STATS_CACHE.get(season)
+    cache_key = f"{season}:{stats_through or 'latest'}"
+    cached = NBA_STATS_CACHE.get(cache_key)
     if cached and cached["expires_at"] > now:
         return cached["snapshot"]
+
+    stats_date = None
+    if stats_through:
+        stats_date = datetime.strptime(stats_through, "%Y-%m-%d").date()
+        if stats_date.isoformat() != stats_through:
+            raise ValueError("Stats cutoff must use the YYYY-MM-DD format.")
 
     parameters = {
         "College": "",
         "Conference": "",
         "Country": "",
         "DateFrom": "",
-        "DateTo": "",
+        "DateTo": stats_date.strftime("%m/%d/%Y") if stats_date else "",
         "Division": "",
         "DraftPick": "",
         "DraftYear": "",
@@ -3600,6 +3861,7 @@ def _fetch_current_nba_player_stats() -> dict:
             gp = value(row, "GP")
             players[normalize_player_name(name)] = {
                 "stats_season": season,
+                "stats_as_of": stats_through,
                 "gp": int(gp) if gp is not None else None,
                 "pts": value(row, "PTS"),
                 "reb": value(row, "REB"),
@@ -3618,37 +3880,51 @@ def _fetch_current_nba_player_stats() -> dict:
             "status": status,
             "source": "NBA.com Stats",
             "season": season,
+            "as_of": stats_through,
             "last_updated": updated_at,
-            "message": "" if players else f"No {season} regular-season player stats have been published yet.",
+            "message": (
+                ""
+                if players
+                else (
+                    f"No {season} regular-season player stats through {stats_through} have been published yet."
+                    if stats_through
+                    else f"No {season} regular-season player stats have been published yet."
+                )
+            ),
             "players": players,
         }
-        NBA_STATS_CACHE[season] = {
+        NBA_STATS_CACHE[cache_key] = {
             "expires_at": now + NBA_STATS_CACHE_TTL_SECONDS,
             "snapshot": snapshot,
         }
         return snapshot
     except (HTTPError, URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
-        logger.warning("NBA stats refresh failed for %s: %s", season, error)
+        logger.warning("NBA stats refresh failed for %s through %s: %s", season, stats_through, error)
         previous = cached["snapshot"] if cached else None
         if previous and previous.get("players"):
             snapshot = {
                 **previous,
                 "status": "stale",
-                "message": f"NBA.com Stats is unavailable; showing the last successful {season} update.",
+                "message": (
+                    f"NBA.com Stats is unavailable; showing the last successful {season} update"
+                    f"{f' through {stats_through}' if stats_through else ''}."
+                ),
             }
         else:
             snapshot = {
                 "status": "unavailable",
                 "source": "NBA.com Stats",
                 "season": season,
+                "as_of": stats_through,
                 "last_updated": None,
                 "message": (
-                    f"NBA.com Stats could not provide {season} player stats; "
+                    f"NBA.com Stats could not provide {season} player stats"
+                    f"{f' through {stats_through}' if stats_through else ''}; "
                     "prior-season stats are not being substituted."
                 ),
                 "players": {},
             }
-        NBA_STATS_CACHE[season] = {
+        NBA_STATS_CACHE[cache_key] = {
             "expires_at": now + 60,
             "snapshot": snapshot,
         }
@@ -3833,17 +4109,53 @@ def _fetch_current_nba_odds() -> dict:
 
 def build_teams_response() -> dict:
     response_teams = copy.deepcopy(get_team_catalog())
-    season = "2026-27"
-    as_of = "2026-11-11"
+    season = current_nba_season()
+    free_agents = []
+    if supabase_cache_available():
+        try:
+            free_agent_rows = supabase_rest_request(
+                "nba_players?select=id,name,position,jersey_number,metadata&team_id=is.null&is_active=eq.true&order=name.asc"
+            )
+            if isinstance(free_agent_rows, list):
+                for row in free_agent_rows:
+                    metadata = row.get("metadata") if isinstance(row, dict) else None
+                    player_payload = metadata.get("player") if isinstance(metadata, dict) else None
+                    if not isinstance(player_payload, dict):
+                        continue
+                    free_agents.append({
+                        **player_payload,
+                        "name": row["name"],
+                        "pos": row.get("position") or player_payload.get("pos", ""),
+                        "jersey_number": row.get("jersey_number"),
+                        "id": row["id"],
+                        "stats_status": "snapshot",
+                    })
+        except HTTPException:
+            logger.warning("Could not load free-agent rows from Supabase.")
+    snapshot_players = [
+        player
+        for team in response_teams
+        for player in team.get("starters_2026_27", []) + team.get("bench_2026_27", [])
+    ] + free_agents
+    stats_as_of = next(
+        (player.get("stats_as_of") for player in snapshot_players if player.get("stats_as_of")),
+        None,
+    )
+    stats_source = next(
+        (player.get("stats_source") for player in snapshot_players if player.get("stats_source")),
+        "Supabase nba_players snapshot",
+    )
     for team in response_teams:
         team_players = team.get("starters_2026_27", []) + team.get("bench_2026_27", [])
         for player in team_players:
             player["stats_status"] = "snapshot"
+        team["roster_2026_27"] = team_players
+        featured_star = normalize_player_name(team.get("featured_star", ""))
 
         featured_player = next(
             (
                 player for player in team_players
-                if normalize_player_name(player["name"]) == normalize_player_name(team["featured_star"])
+                if normalize_player_name(player.get("name", "")) == featured_star
             ),
             None,
         )
@@ -3854,28 +4166,33 @@ def build_teams_response() -> dict:
                 f"{points:.1f} PPG, {rebounds:.1f} RPG"
                 if isinstance(points, (int, float))
                 and isinstance(rebounds, (int, float))
-                else f"{season} stats through Nov. 11"
+                else f"{season} stats through Nov. 20"
             )
         else:
-            team["headline_stat"] = f"{season} stats unavailable as of Nov. 11"
+            team["headline_stat"] = f"{season} stats unavailable in the Supabase snapshot"
 
-    snapshot_info = {
+    stats_info = {
         "status": "snapshot",
-        "source": "Supabase database",
+        "source": stats_source,
         "season": season,
-        "as_of": as_of,
-        "message": "Rosters and regular-season player stats are the saved November 11, 2026 Philippine-time snapshot.",
-        "last_updated": None,
+        "as_of": stats_as_of,
+        "message": "Current-season player stats are read from the Supabase nba_players snapshot.",
+        "last_updated": stats_as_of,
+    }
+    roster_info = {
+        "status": "snapshot",
+        "source": "Supabase nba_teams and nba_players",
+        "season": season,
+        "last_updated": stats_as_of,
+        "message": "Roster and current-season stats are read from the static Supabase catalog.",
     }
 
     return {
         "count": len(response_teams),
         "teams": response_teams,
-        "stats": snapshot_info,
-        "roster": {
-            **snapshot_info,
-            "message": "Team rosters are the saved November 11, 2026 Philippine-time snapshot.",
-        },
+        "free_agents": free_agents,
+        "stats": stats_info,
+        "roster": roster_info,
     }
 
 
@@ -3942,6 +4259,398 @@ def search_teams(q: str = Query(..., min_length=1)):
 @app.get("/api/v1/teams", dependencies=[Depends(verify_api_key)])
 def get_teams():
     return build_teams_response()
+
+
+def _espn_contract_amount(value: object) -> Optional[float]:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        if isinstance(value, (int, float)):
+            amount = float(value)
+        else:
+            cleaned = re.sub(r"[^0-9.]", "", str(value))
+            amount = float(cleaned) if cleaned else 0.0
+    except (TypeError, ValueError):
+        return None
+    return amount if amount > 0 else None
+
+
+def _espn_contract_years_remaining(value: object) -> Optional[int]:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        years = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if isinstance(value, float) and not value.is_integer():
+        return None
+    return years if 0 <= years <= 15 else None
+
+
+def _fetch_current_espn_trade_rosters() -> dict:
+    season = current_nba_season()
+    now = time.monotonic()
+    with ESPN_TRADE_ROSTER_LOCK:
+        cached = ESPN_TRADE_ROSTER_CACHE.get(season)
+        if cached and cached["expires_at"] > now:
+            return copy.deepcopy(cached["snapshot"])
+
+        try:
+            teams_payload = _request_nba_json(
+                "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams?limit=1000"
+            )
+            sports = teams_payload.get("sports")
+            leagues = sports[0].get("leagues") if isinstance(sports, list) and sports else None
+            espn_teams = leagues[0].get("teams") if isinstance(leagues, list) and leagues else None
+            if not isinstance(espn_teams, list):
+                raise ValueError("ESPN team response did not contain NBA teams.")
+
+            team_rows = supabase_rest_request("nba_teams?select=id,abbreviation")
+            if not isinstance(team_rows, list) or len(team_rows) != 30:
+                raise ValueError("Supabase team abbreviations are unavailable.")
+            team_ids_by_abbreviation = {
+                _canonical_nba_tricode(row.get("abbreviation")): int(row["id"])
+                for row in team_rows
+                if isinstance(row, dict) and row.get("abbreviation") and row.get("id") is not None
+            }
+
+            roster_requests = []
+            for entry in espn_teams:
+                team_data = entry.get("team") if isinstance(entry, dict) else None
+                if not isinstance(team_data, dict):
+                    continue
+                abbreviation = _canonical_nba_tricode(team_data.get("abbreviation"))
+                database_team_id = team_ids_by_abbreviation.get(abbreviation)
+                espn_team_id = str(team_data.get("id") or "")
+                if database_team_id is not None and espn_team_id:
+                    roster_requests.append((database_team_id, espn_team_id))
+            if len(roster_requests) != 30:
+                raise ValueError("ESPN and Supabase team abbreviations did not match all 30 teams.")
+
+            def fetch_roster(team_request: tuple[int, str]) -> tuple[int, dict]:
+                database_team_id, espn_team_id = team_request
+                roster_payload = _request_nba_json(
+                    f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{espn_team_id}/roster"
+                )
+                if not isinstance(roster_payload.get("athletes"), list):
+                    raise ValueError(f"ESPN roster for team {espn_team_id} is missing athletes.")
+                return database_team_id, roster_payload
+
+            roster_payloads = {}
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                futures = {
+                    executor.submit(fetch_roster, team_request): team_request[0]
+                    for team_request in roster_requests
+                }
+                for future in as_completed(futures):
+                    team_id, roster_payload = future.result()
+                    roster_payloads[team_id] = roster_payload
+
+            rosters_by_team = {}
+            salaries_by_team = {}
+            update_timestamps = []
+            for team_id, roster_payload in roster_payloads.items():
+                roster_players = []
+                team_salary = 0.0
+                for athlete in roster_payload["athletes"]:
+                    if not isinstance(athlete, dict):
+                        continue
+                    contract = athlete.get("contract")
+                    salary = _espn_contract_amount(
+                        contract.get("salary") if isinstance(contract, dict) else None
+                    )
+                    contract_years_remaining = _espn_contract_years_remaining(
+                        contract.get("yearsRemaining") if isinstance(contract, dict) else None
+                    )
+                    if salary is not None:
+                        team_salary += salary
+
+                    raw_contract_type = str(
+                        athlete.get("contractType")
+                        or athlete.get("contract_type")
+                        or (contract.get("contractType") if isinstance(contract, dict) else "")
+                        or ""
+                    ).strip()
+                    name = str(athlete.get("displayName") or athlete.get("fullName") or "").strip()
+                    if not name:
+                        continue
+
+                    position = athlete.get("position")
+                    if isinstance(position, dict):
+                        position = position.get("abbreviation") or position.get("name")
+                    roster_players.append({
+                        "name": name,
+                        "position": str(position or ""),
+                        "salary": int(salary) if salary is not None else None,
+                        "contract_years_remaining": contract_years_remaining,
+                        "contract_type": (
+                            "Two-Way"
+                            if "two-way" in raw_contract_type.casefold()
+                            else raw_contract_type or None
+                        ),
+                    })
+                rosters_by_team[str(team_id)] = roster_players
+                salaries_by_team[str(team_id)] = int(team_salary)
+                timestamp = roster_payload.get("timestamp")
+                if isinstance(timestamp, str) and timestamp.strip():
+                    update_timestamps.append(timestamp)
+
+            if len(rosters_by_team) != 30:
+                raise ValueError("ESPN did not provide a complete 30-team roster set.")
+            snapshot = {
+                "status": "fresh",
+                "source": "ESPN current NBA roster and contract feed",
+                "season": season,
+                "last_updated": max(update_timestamps) if update_timestamps else None,
+                "teams": rosters_by_team,
+                "team_salaries": salaries_by_team,
+                "message": (
+                    "All players listed in each ESPN team roster are included. Current contract salaries "
+                    "are used when ESPN provides them; otherwise the saved catalog salary is used when available."
+                ),
+            }
+            ESPN_TRADE_ROSTER_CACHE[season] = {
+                "expires_at": now + ESPN_TRADE_ROSTER_CACHE_TTL_SECONDS,
+                "snapshot": snapshot,
+            }
+            return copy.deepcopy(snapshot)
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError, KeyError, TypeError) as error:
+            logger.warning("ESPN trade roster refresh failed for %s: %s", season, error)
+            if cached and cached.get("snapshot", {}).get("teams"):
+                stale_snapshot = {
+                    **cached["snapshot"],
+                    "status": "stale",
+                    "message": "ESPN is unavailable; showing the last successful current roster and contract update.",
+                }
+                ESPN_TRADE_ROSTER_CACHE[season] = {
+                    "expires_at": now + 60,
+                    "snapshot": stale_snapshot,
+                }
+                return copy.deepcopy(stale_snapshot)
+            raise HTTPException(
+                status_code=503,
+                detail="ESPN current roster and contract data is temporarily unavailable.",
+            ) from error
+
+
+def get_current_espn_trade_rosters() -> dict:
+    season = current_nba_season()
+    resource_type = "trade_machine_rosters"
+    cache_key = f"trade_machine_rosters:all_players:{season}"
+    try:
+        return supabase_cached_fetch(
+            resource_type,
+            cache_key,
+            _fetch_current_espn_trade_rosters,
+            ttl_seconds=ESPN_TRADE_ROSTER_CACHE_TTL_SECONDS,
+        )
+    except HTTPException:
+        stale = supabase_cache_read(resource_type, cache_key, allow_expired=True)
+        if not isinstance(stale, dict) or not stale.get("teams"):
+            raise
+        return {
+            **stale,
+            "status": "stale",
+            "message": "ESPN is unavailable; showing the last successful cached roster and contract update.",
+        }
+
+
+def load_static_nba_player_profile_catalog() -> dict:
+    if not supabase_cache_available():
+        raise HTTPException(
+            status_code=503,
+            detail="Static player contracts require Supabase. Run the nba_player_profiles migration.",
+        )
+    try:
+        rows = supabase_rest_request(
+            "nba_player_profiles?select=nba_player_id,player_name,player_name_key,contract_payload,contract_as_of&order=player_name_key.asc"
+        )
+    except HTTPException as exc:
+        upstream_error = exc.__cause__
+        if (
+            exc.status_code == 502
+            and isinstance(upstream_error, HTTPError)
+            and upstream_error.code == 404
+        ):
+            logger.warning(
+                "Supabase player profile table is not installed; using the roster catalog for available salary data."
+            )
+            return {
+                "profiles": {},
+                "last_updated": None,
+                "status": "unavailable",
+                "message": (
+                    "Static player contracts are not installed; available salary values come from the Supabase roster catalog."
+                ),
+            }
+        raise
+    except Exception as exc:
+        logger.exception("Supabase static player contract read failed.")
+        raise HTTPException(
+            status_code=502,
+            detail="Supabase could not load the static player contract snapshot.",
+        ) from exc
+    if not isinstance(rows, list):
+        raise HTTPException(status_code=502, detail="Supabase returned an invalid player profile response.")
+    if not rows:
+        return {
+            "profiles": {},
+            "last_updated": None,
+            "status": "unavailable",
+            "message": (
+                "The static player contract snapshot is empty; available salary values come from the Supabase roster catalog."
+            ),
+        }
+
+    profiles = {}
+    timestamps = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise HTTPException(status_code=502, detail="Supabase returned an invalid player profile row.")
+        name_key = str(row.get("player_name_key") or "")
+        contract = row.get("contract_payload")
+        if not name_key or not isinstance(contract, dict):
+            raise HTTPException(status_code=502, detail="A Supabase player profile row is incomplete.")
+        profiles[name_key] = {
+            "nba_player_id": row.get("nba_player_id"),
+            "player_name": str(row.get("player_name") or ""),
+            "contract": contract,
+        }
+        if row.get("contract_as_of"):
+            timestamps.append(str(row["contract_as_of"]))
+    return {
+        "profiles": profiles,
+        "last_updated": max(timestamps) if timestamps else None,
+        "status": "snapshot",
+        "message": "Roster and contract data are read from static Supabase snapshots.",
+    }
+
+
+def build_current_trade_machine_response() -> dict:
+    catalog = get_team_catalog()
+    cap_snapshot = load_static_nba_cap_details()
+    season = current_nba_season()
+    first_future_pick_year = datetime.now(timezone.utc).year + (
+        1 if datetime.now(timezone.utc).month >= 7 else 0
+    )
+    stats_as_of = None
+    contract_data_as_of = None
+    contract_years_count = 0
+    roster_player_count = 0
+
+    teams = []
+    for team in catalog:
+        team_id = str(team["id"])
+        cap_details = cap_snapshot["teams"][team_id]
+        current_roster = team.get("starters_2026_27", []) + team.get("bench_2026_27", [])
+        roster_players = []
+        team_payroll = 0.0
+        for roster_player in current_roster:
+            name = roster_player.get("name", "").strip()
+            normalized_name = normalize_player_name(name)
+            if not normalized_name:
+                continue
+            roster_player_count += 1
+            player = dict(roster_player)
+            salary = player.get("salary")
+            salary_source = "Supabase catalog" if salary is not None else None
+            if isinstance(salary, (int, float)) and not isinstance(salary, bool):
+                team_payroll += float(salary)
+            stats_as_of = stats_as_of or player.get("stats_as_of")
+            years_remaining = _espn_contract_years_remaining(
+                player.get("contract_years_remaining")
+            )
+            if years_remaining is not None:
+                contract_years_count += 1
+            contract_data_as_of = contract_data_as_of or player.get("contract_data_as_of")
+            player.update({
+                "name": name,
+                "salary": salary,
+                "salary_source": salary_source,
+                "contract_years_remaining": years_remaining,
+                "contract_source": player.get("contract_source"),
+                "contract_data_as_of": player.get("contract_data_as_of"),
+                "contract_note": (
+                    "Static Supabase contract snapshot; years remaining does not determine extension eligibility."
+                    if years_remaining is not None
+                    else "Contract years are not available in the Supabase snapshot."
+                ),
+                "stats_season": player.get("stats_season", season),
+                "stats_source": player.get("stats_source", "Supabase nba_players snapshot"),
+                "stats_status": "snapshot",
+            })
+            roster_players.append(player)
+
+        team_payload = {
+            **team,
+            "starters_2026_27": roster_players[:5],
+            "bench_2026_27": roster_players[5:],
+            "total_salary": int(round(team_payroll)),
+            "draft_picks": [
+                pick for pick in team.get("draft_picks", [])
+                if int(pick.get("year", 0)) >= first_future_pick_year
+            ],
+            "cap_exceptions": cap_details["exceptions"],
+            "cap_holds": cap_details["cap_holds"],
+            "cap_data_status": {
+                "exceptions": cap_details["exceptions_status"],
+                "cap_holds": cap_details["cap_holds_status"],
+            },
+            "cap_data_as_of": cap_snapshot["as_of"],
+            "cap_data_sources": cap_details["sources"],
+        }
+        teams.append(team_payload)
+
+    return {
+        "status": "snapshot",
+        "count": len(teams),
+        "teams": teams,
+        "roster": {
+            "status": "snapshot",
+            "contracts_status": (
+                "snapshot"
+                if contract_years_count == roster_player_count
+                else "partial"
+                if contract_years_count
+                else "unavailable"
+            ),
+            "source": "Supabase nba_players snapshot",
+            "season": season,
+            "last_updated": contract_data_as_of,
+            "contract_years_available": contract_years_count,
+            "contract_years_total": roster_player_count,
+            "message": (
+                f"Contract years are available for {contract_years_count} of {roster_player_count} roster players in the Supabase snapshot."
+            ),
+        },
+        "stats": {
+            "status": "snapshot",
+            "source": "Supabase nba_players snapshot",
+            "season": season,
+            "as_of": stats_as_of,
+            "last_updated": stats_as_of,
+            "message": "Current-season stats are read from the static Supabase player catalog.",
+        },
+        "picks": {
+            "source": "Supabase nba_draft_picks catalog",
+            "first_future_year": first_future_pick_year,
+            "message": (
+                f"Only picks from {first_future_pick_year} onward are included. "
+                "Pick ownership is sourced from the configured Supabase catalog."
+            ),
+        },
+        "cap_data": {
+            "season": cap_snapshot["season"],
+            "as_of": cap_snapshot["as_of"],
+            "sources": cap_snapshot.get("sources", []),
+        },
+    }
+
+
+@app.get("/api/v1/trade-machine/teams", dependencies=[Depends(verify_api_key)])
+def get_current_trade_machine_teams():
+    return build_current_trade_machine_response()
+
 
 @app.get("/api/v1/schedule", dependencies=[Depends(verify_api_key)])
 def get_schedule(season: Optional[str] = Query(default=None)):
@@ -4241,7 +4950,173 @@ def get_team(team_id: int):
 COMMUNITY_CHALLENGE_FIELDS = (
     "id,title,description,creator,rule_type,selected_player_ids,created_at"
 )
+OFFICIAL_CHALLENGE_FIELDS = (
+    "id,title,description,rule_type,difficulty,icon,created_at"
+)
 COMMUNITY_CHALLENGE_PAGE_SIZE = 1000
+TRADE_MACHINE_FEED_PAGE_SIZE = 50
+TRADE_MACHINE_PAYLOAD_MAX_BYTES = 250_000
+
+
+class TradeMachineSavedTradeCreate(BaseModel):
+    payload: dict[str, Any]
+    client_id: Optional[str] = Field(default=None, min_length=1, max_length=128)
+
+    @field_validator("client_id")
+    @classmethod
+    def normalize_client_id(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Client ID cannot be blank.")
+        return normalized
+
+    @field_validator("payload")
+    @classmethod
+    def validate_trade_payload(cls, value: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(value.get("teams"), list) or not 2 <= len(value["teams"]) <= 5:
+            raise ValueError("A trade must include between two and five teams.")
+        post_title = str(value.get("postTitle") or "").strip()
+        post_explanation = str(value.get("postExplanation") or "").strip()
+        if not 3 <= len(post_title) <= 100:
+            raise ValueError("A community post title must contain between 3 and 100 characters.")
+        if not 10 <= len(post_explanation) <= 1000:
+            raise ValueError("A community post explanation must contain between 10 and 1000 characters.")
+        value["postTitle"] = post_title
+        value["postExplanation"] = post_explanation
+        if not isinstance(value.get("players"), list) or not isinstance(value.get("picks"), list):
+            raise ValueError("Trade players and picks must be lists.")
+        if any(not isinstance(team, dict) or not str(team.get("name") or "").strip() for team in value["teams"]):
+            raise ValueError("Every trade team must include a name.")
+        if any(not isinstance(player, dict) or not str(player.get("name") or "").strip() for player in value["players"]):
+            raise ValueError("Every traded player must include a name.")
+        if any(not isinstance(pick, dict) for pick in value["picks"]):
+            raise ValueError("Every traded pick must be an object.")
+        front_office_actions = value.get("frontOfficeActions", [])
+        if not isinstance(front_office_actions, list) or len(front_office_actions) > 150:
+            raise ValueError("Front-office actions must be a list of at most 150 items.")
+        team_by_id = {
+            team.get("id"): team
+            for team in value["teams"]
+            if isinstance(team.get("id"), int) and not isinstance(team.get("id"), bool)
+        }
+        allowed_actions = {
+            "waived", "stretched", "buyout", "extension-estimate", "re-signed", "rights-renounced"
+        }
+        for action in front_office_actions:
+            if not isinstance(action, dict) or action.get("actionType") not in allowed_actions:
+                raise ValueError("Every front-office action must use a supported action type.")
+            if (
+                not isinstance(action.get("teamId"), int)
+                or isinstance(action.get("teamId"), bool)
+                or action["teamId"] not in team_by_id
+            ):
+                raise ValueError("Every front-office action must reference a team in the proposal.")
+            if not str(action.get("playerName") or "").strip():
+                raise ValueError("Every front-office action must include a player name.")
+            action_type = action["actionType"]
+            if action_type in {"waived", "stretched", "buyout"}:
+                amounts = (action.get("currentYearDeadMoney"), action.get("totalGuaranteed"))
+                if any(
+                    not isinstance(amount, int) or isinstance(amount, bool) or not 0 <= amount <= 300_000_000
+                    for amount in amounts
+                ):
+                    raise ValueError("Front-office dead-money amounts must be valid non-negative integers.")
+                charge_years = action.get("chargeYears")
+                if (
+                    not isinstance(charge_years, int)
+                    or isinstance(charge_years, bool)
+                    or not 1 <= charge_years <= 11
+                ):
+                    raise ValueError("Dead-money charge years must be between one and eleven.")
+                buyout_percent = action.get("buyoutPercent", 0)
+                set_off_credit = action.get("setOffCredit", 0)
+                if (
+                    not isinstance(buyout_percent, int)
+                    or isinstance(buyout_percent, bool)
+                    or not 0 <= buyout_percent <= 100
+                    or not isinstance(set_off_credit, int)
+                    or isinstance(set_off_credit, bool)
+                    or not 0 <= set_off_credit <= action["totalGuaranteed"]
+                ):
+                    raise ValueError("Buyout percentage and set-off credit must be valid.")
+                schedule = action.get("schedule")
+                if schedule is not None and (
+                    not isinstance(schedule, list)
+                    or len(schedule) != charge_years
+                    or any(
+                        not isinstance(season, dict)
+                        or not str(season.get("season") or "").strip()
+                        or not isinstance(season.get("salary"), int)
+                        or isinstance(season.get("salary"), bool)
+                        or not 0 <= season["salary"] <= 300_000_000
+                        for season in schedule
+                    )
+                ):
+                    raise ValueError("Dead-money schedule must include one valid amount per charge season.")
+            elif action_type == "extension-estimate":
+                years = action.get("years")
+                schedule = action.get("schedule")
+                if not isinstance(years, int) or isinstance(years, bool) or not 1 <= years <= 4:
+                    raise ValueError("Extension estimates must cover one to four years.")
+                if not isinstance(schedule, list) or len(schedule) != years or any(
+                    not isinstance(season, dict)
+                    or not str(season.get("season") or "").strip()
+                    or not isinstance(season.get("salary"), int)
+                    or isinstance(season.get("salary"), bool)
+                    or not 0 <= season["salary"] <= 100_000_000
+                    for season in schedule
+                ):
+                    raise ValueError("Extension estimates must include a valid salary schedule.")
+            elif (
+                not isinstance(action.get("salary"), int)
+                or isinstance(action.get("salary"), bool)
+                or not 0 <= action["salary"] <= 100_000_000
+            ):
+                raise ValueError("Cap-hold actions must include a valid salary amount.")
+        if not value["players"] and not value["picks"] and not front_office_actions:
+            raise ValueError("A proposal must include a player, draft pick, or front-office action.")
+        if not isinstance(value.get("tradeState"), dict):
+            raise ValueError("Trade state is required to reopen a saved trade.")
+        try:
+            payload_size = len(json.dumps(value, allow_nan=False, separators=(",", ":")).encode("utf-8"))
+        except (TypeError, ValueError) as error:
+            raise ValueError("Trade data must contain valid JSON values.") from error
+        if payload_size > TRADE_MACHINE_PAYLOAD_MAX_BYTES:
+            raise ValueError("Trade data is too large to save.")
+        return value
+
+
+class TradeMachineCommentCreate(BaseModel):
+    comment: str = Field(..., min_length=1, max_length=500)
+
+    @field_validator("comment")
+    @classmethod
+    def normalize_comment(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Comment cannot be blank.")
+        return normalized
+
+
+class TradeMachineRatingCreate(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+
+
+class TradeModerationUpdate(BaseModel):
+    moderation_status: Literal["active", "featured", "verified", "rejected", "locked"] = "active"
+    is_featured: Optional[bool] = None
+    is_pinned: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    comments_locked: Optional[bool] = None
+
+
+class TradeRumorCreate(BaseModel):
+    player_name: str = Field(..., min_length=2, max_length=80)
+    team_name: str = Field(default="", max_length=80)
+    team_abbreviation: str = Field(default="", max_length=3)
+    rank: int = Field(default=1, ge=1, le=100)
 
 
 @app.get("/api/v1/auth/config")
@@ -4259,6 +5134,788 @@ def get_supabase_auth_config():
     }
 
 
+class AuthProfileUpdate(BaseModel):
+    username: str = Field(..., min_length=2, max_length=24)
+    display_name: Optional[str] = Field(default=None, max_length=48)
+    avatar_url: Optional[str] = Field(default=None, max_length=2048)
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        return normalize_auth_username(value)
+
+
+class AuthSettingsUpdate(BaseModel):
+    settings: dict[str, object]
+
+
+class AuthSignupRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=24)
+    email: str = Field(..., min_length=3, max_length=254)
+    password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        return normalize_auth_username(value)
+
+
+class AuthLoginRequest(BaseModel):
+    username: str = Field(..., min_length=2, max_length=254)
+    password: str = Field(..., min_length=8, max_length=128)
+
+
+def normalize_auth_username(value: str) -> str:
+    normalized = value.strip().lower()
+    allowed = "abcdefghijklmnopqrstuvwxyz0123456789_-"
+    if (
+        not 3 <= len(normalized) <= 24
+        or normalized[0] not in "abcdefghijklmnopqrstuvwxyz0123456789"
+        or any(character not in allowed for character in normalized)
+    ):
+        raise ValueError("Username must be 3–24 characters using letters, numbers, underscores, or hyphens.")
+    return normalized
+
+
+def validate_auth_settings(app_id: str, settings: dict[str, object]) -> dict[str, object]:
+    if app_id == "nba_hub":
+        allowed = {
+            "theme", "favoriteTeam", "defaultSeason", "standingsConference",
+            "schedulePhase", "compactCards", "reduceMotion",
+        }
+        if settings.keys() - allowed:
+            raise HTTPException(status_code=422, detail="NBA Hub settings contain unsupported fields.")
+        theme = settings.get("theme", "default")
+        favorite_team = settings.get("favoriteTeam", "")
+        default_season = settings.get("defaultSeason", "")
+        standings_conference = settings.get("standingsConference", "Western")
+        schedule_phase = settings.get("schedulePhase", "all")
+        compact_cards = settings.get("compactCards", False)
+        reduce_motion = settings.get("reduceMotion", False)
+        if not isinstance(theme, str) or theme not in {"default", "high-contrast"}:
+            raise HTTPException(status_code=422, detail="Invalid NBA Hub theme.")
+        if not isinstance(favorite_team, str) or len(favorite_team) > 80:
+            raise HTTPException(status_code=422, detail="Invalid favorite team.")
+        if not isinstance(default_season, str) or (
+            default_season and (
+                len(default_season) != 7
+                or default_season[4] != "-"
+                or not default_season[:4].isdigit()
+                or not default_season[5:].isdigit()
+            )
+        ):
+            raise HTTPException(status_code=422, detail="Invalid default season.")
+        if not isinstance(standings_conference, str) or standings_conference not in {"Eastern", "Western"}:
+            raise HTTPException(status_code=422, detail="Invalid default standings conference.")
+        if not isinstance(schedule_phase, str) or schedule_phase not in {"all", "preseason", "regular", "playoffs"}:
+            raise HTTPException(status_code=422, detail="Invalid default schedule phase.")
+        if not isinstance(compact_cards, bool) or not isinstance(reduce_motion, bool):
+            raise HTTPException(status_code=422, detail="Invalid NBA Hub display preference.")
+        return {
+            "theme": theme,
+            "favoriteTeam": favorite_team,
+            "defaultSeason": default_season,
+            "standingsConference": standings_conference,
+            "schedulePhase": schedule_phase,
+            "compactCards": compact_cards,
+            "reduceMotion": reduce_motion,
+        }
+
+    if app_id == "trade_machine":
+        allowed = {
+            "salaryCap", "firstApron", "secondApron", "minimumTeamSalary",
+        "compact", "salaryDisplay", "showHeadshots",
+        "salaryMatching", "apronHardCaps", "minimumTeamSalaryFloor",
+        "signAndTradeRules", "protectedPickRules", "rosterSizeRules",
+        }
+        if settings.keys() - allowed:
+            raise HTTPException(status_code=422, detail="Trade Machine settings contain unsupported fields.")
+        defaults = {
+            "salaryCap": 164_961_000,
+            "firstApron": 209_015_000,
+            "secondApron": 221_686_000,
+            "minimumTeamSalary": 148_465_000,
+        }
+        amounts: dict[str, int] = {}
+        for key, default in defaults.items():
+            value = settings.get(key, default)
+            if isinstance(value, bool) or not isinstance(value, int) or not 1_000_000 <= value <= 1_000_000_000:
+                raise HTTPException(status_code=422, detail=f"Invalid Trade Machine setting: {key}.")
+            amounts[key] = value
+        if not amounts["minimumTeamSalary"] <= amounts["salaryCap"] <= amounts["firstApron"] <= amounts["secondApron"]:
+            raise HTTPException(status_code=422, detail="Trade Machine thresholds must increase from minimum salary to second apron.")
+        compact = settings.get("compact", False)
+        salary_display = settings.get("salaryDisplay", "auto")
+        show_headshots = settings.get("showHeadshots", True)
+        trade_rule_keys = {
+            "salaryMatching", "apronHardCaps", "minimumTeamSalaryFloor",
+            "signAndTradeRules", "protectedPickRules", "rosterSizeRules",
+        }
+        trade_rules = {
+            key: settings.get(key, True)
+            for key in trade_rule_keys
+        }
+        if not isinstance(compact, bool) or not isinstance(show_headshots, bool):
+            raise HTTPException(status_code=422, detail="Invalid compact display setting.")
+        if any(not isinstance(value, bool) for value in trade_rules.values()):
+            raise HTTPException(status_code=422, detail="Invalid Trade Machine trade slider.")
+        if not isinstance(salary_display, str) or salary_display not in {"auto", "full", "compact"}:
+            raise HTTPException(status_code=422, detail="Invalid salary display preference.")
+        return {
+            **amounts,
+            "compact": compact,
+            "salaryDisplay": salary_display,
+            "showHeadshots": show_headshots,
+            **trade_rules,
+        }
+
+    if app_id == "build_15":
+        allowed = {"playerSort", "compactCards", "showStats", "showPlayerImages"}
+        if settings.keys() - allowed:
+            raise HTTPException(status_code=422, detail="Build $15 settings contain unsupported fields.")
+        player_sort = settings.get("playerSort", "random")
+        compact_cards = settings.get("compactCards", False)
+        show_stats = settings.get("showStats", True)
+        show_player_images = settings.get("showPlayerImages", True)
+        if not isinstance(player_sort, str) or player_sort not in {"random", "name", "points"}:
+            raise HTTPException(status_code=422, detail="Invalid player sorting preference.")
+        if not all(isinstance(value, bool) for value in (compact_cards, show_stats, show_player_images)):
+            raise HTTPException(status_code=422, detail="Invalid Build $15 display preference.")
+        return {
+            "playerSort": player_sort,
+            "compactCards": compact_cards,
+            "showStats": show_stats,
+            "showPlayerImages": show_player_images,
+        }
+
+    raise HTTPException(status_code=422, detail="Invalid application ID.")
+
+
+def supabase_auth_request(path: str, payload: dict) -> dict:
+    supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    publishable_key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    if not supabase_url or not publishable_key:
+        raise HTTPException(status_code=503, detail="Supabase sign-in is not configured.")
+
+    request = Request(
+        f"{supabase_url}/auth/v1/{path.lstrip('/')}",
+        data=json.dumps(payload).encode("utf-8"),
+        method="POST",
+        headers={
+            "apikey": publishable_key,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except HTTPError as error:
+        error_body = error.read().decode("utf-8", errors="replace")
+        try:
+            error_payload = json.loads(error_body)
+        except json.JSONDecodeError:
+            error_payload = {}
+        detail = (
+            error_payload.get("msg")
+            or error_payload.get("message")
+            or error_payload.get("error_description")
+            or "Supabase authentication failed."
+        )
+        if error.code == 429:
+            status_code = 429
+        elif path.startswith("token?") and error.code in (400, 401, 403):
+            status_code = 401
+        elif 400 <= error.code < 500:
+            status_code = 400
+        else:
+            status_code = 503
+        raise HTTPException(status_code=status_code, detail=detail) from error
+    except URLError as error:
+        logger.error("Supabase Auth is unreachable: %s", error.reason)
+        raise HTTPException(status_code=503, detail="Supabase authentication is temporarily unavailable.") from error
+    except (TimeoutError, OSError) as error:
+        logger.error("Supabase Auth request failed (%s).", type(error).__name__)
+        raise HTTPException(status_code=503, detail="Supabase authentication is temporarily unavailable.") from error
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        logger.error("Supabase Auth returned an invalid response.")
+        raise HTTPException(status_code=502, detail="Supabase authentication returned an invalid response.") from error
+
+    if not isinstance(result, dict):
+        raise HTTPException(status_code=502, detail="Supabase authentication returned an invalid response.")
+    return result
+
+
+@app.post("/api/v1/auth/signup")
+def signup_with_username(
+    account: AuthSignupRequest,
+    app_id: str = "nba_hub",
+):
+    if app_id not in {"nba_hub", "trade_machine", "build_15"}:
+        raise HTTPException(status_code=422, detail="Invalid application ID.")
+
+    matches = supabase_rest_request(
+        f"app_profiles?app_id=eq.{app_id}&username=eq.{account.username}&select=user_id&limit=1",
+    )
+    if matches:
+        raise HTTPException(status_code=409, detail="That username is already in use for this app.")
+
+    result = supabase_auth_request(
+        "signup",
+        {
+            "email": account.email.strip().lower(),
+            "password": account.password,
+            "data": {"username": account.username},
+        },
+    )
+    user = result.get("user") or result
+    if user.get("identities") == []:
+        raise HTTPException(status_code=409, detail="An account with that email already exists. Sign in instead.")
+    try:
+        user_id = UUID(str(user["id"]))
+    except (KeyError, TypeError, ValueError) as error:
+        raise HTTPException(status_code=502, detail="Supabase did not return a valid user for the new account.") from error
+
+    supabase_rest_request(
+        "app_profiles",
+        method="POST",
+        payload={
+            "user_id": str(user_id),
+            "app_id": app_id,
+            "role": "user",
+            "username": account.username,
+            "email": account.email.strip().lower(),
+        },
+    )
+    session = result.get("session") or result
+    return {
+        "user": user,
+        "access_token": session.get("access_token"),
+        "refresh_token": session.get("refresh_token"),
+        "expires_in": session.get("expires_in"),
+        "expires_at": session.get("expires_at"),
+    }
+
+
+@app.post("/api/v1/auth/login")
+def login_with_username(
+    credentials: AuthLoginRequest,
+    app_id: str = "nba_hub",
+):
+    if app_id not in {"nba_hub", "trade_machine", "build_15"}:
+        raise HTTPException(status_code=422, detail="Invalid application ID.")
+
+    identifier = credentials.username.strip()
+    if "@" in identifier:
+        email = identifier.lower()
+    else:
+        username = normalize_auth_username(identifier)
+        matches = supabase_rest_request(
+            f"app_profiles?app_id=eq.{app_id}&username=eq.{username}&select=email&limit=1",
+        )
+        email = str(matches[0].get("email") or "").strip().lower() if matches else ""
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    try:
+        return supabase_auth_request(
+            "token?grant_type=password",
+            {"email": email, "password": credentials.password},
+        )
+    except HTTPException as error:
+        if error.status_code == 401:
+            raise HTTPException(status_code=401, detail="Invalid username or password.") from error
+        raise
+
+
+@app.get("/api/v1/auth/session")
+def get_supabase_auth_session(
+    user_id: UUID = Depends(verify_supabase_user),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(SUPABASE_BEARER),
+    app_id: str = "nba_hub",
+):
+    allowed_app_ids = {"nba_hub", "trade_machine", "build_15"}
+    if app_id not in allowed_app_ids:
+        raise HTTPException(status_code=422, detail="Invalid application ID.")
+
+    supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    request = Request(
+        f"{supabase_url}/auth/v1/user",
+        headers={
+            "apikey": service_key,
+            "Authorization": f"Bearer {credentials.credentials}",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            user = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        logger.error("Could not load the authenticated Supabase user.")
+        raise HTTPException(
+            status_code=503,
+            detail="The user session could not be loaded.",
+        ) from error
+
+    email = str(user.get("email") or "").strip().lower()
+    user_metadata = user.get("user_metadata") or {}
+    try:
+        metadata_username = normalize_auth_username(
+            str(user_metadata.get("username") or "")[:24]
+        )
+    except ValueError:
+        metadata_username = ""
+    role = "admin" if _is_supabase_admin(user) else "user"
+
+    existing = supabase_rest_request(
+        f"app_profiles?user_id=eq.{user_id}&app_id=eq.{app_id}&select=username,display_name,avatar_url,settings",
+    )
+    try:
+        existing_username = normalize_auth_username(
+            str(existing[0].get("username") or "")
+        ) if existing else ""
+    except ValueError:
+        existing_username = ""
+    username = existing_username or metadata_username
+    profile_payload = {
+        "user_id": str(user_id),
+        "app_id": app_id,
+        "email": email,
+        "role": role,
+        "username": username or None,
+    }
+    if existing:
+        supabase_rest_request(
+            f"app_profiles?user_id=eq.{user_id}&app_id=eq.{app_id}",
+            method="PATCH",
+            payload={
+                "email": email,
+                "role": role,
+                "username": username or None,
+            },
+        )
+    else:
+        supabase_rest_request(
+            "app_profiles",
+            method="POST",
+            payload=profile_payload,
+        )
+
+    return {
+        "id": str(user_id),
+        "email": email,
+        "role": role,
+        "username": username,
+        "display_name": str(existing[0].get("display_name") or "") if existing else "",
+        "avatar_url": str(existing[0].get("avatar_url") or "") if existing else "",
+        "settings": (existing[0].get("settings") or {}) if existing else {},
+    }
+
+
+@app.post("/api/v1/auth/profile")
+def update_supabase_auth_profile(
+    profile: AuthProfileUpdate,
+    user_id: UUID = Depends(verify_supabase_user),
+    app_id: str = "nba_hub",
+):
+    if app_id not in {"nba_hub", "trade_machine", "build_15"}:
+        raise HTTPException(status_code=422, detail="Invalid application ID.")
+
+    conflicts = supabase_rest_request(
+        f"app_profiles?app_id=eq.{app_id}&username=eq.{profile.username}"
+        f"&user_id=neq.{user_id}&select=user_id&limit=1",
+    )
+    if conflicts:
+        raise HTTPException(status_code=409, detail="That username is already in use for this app.")
+
+    existing = supabase_rest_request(
+        f"app_profiles?user_id=eq.{user_id}&app_id=eq.{app_id}&select=user_id",
+    )
+    display_name = str(profile.display_name or "").strip() or profile.username
+    profile_payload = {
+        "username": profile.username,
+        "display_name": display_name[:48],
+        "avatar_url": str(profile.avatar_url or "").strip()[:2048] or None,
+    }
+    if existing:
+        supabase_rest_request(
+            f"app_profiles?user_id=eq.{user_id}&app_id=eq.{app_id}",
+            method="PATCH",
+            payload={
+                **profile_payload,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+    else:
+        raise HTTPException(
+            status_code=409,
+            detail="Sign in again before setting your username.",
+        )
+    return {
+        "username": profile.username,
+        "display_name": display_name[:48],
+        "avatar_url": profile_payload["avatar_url"],
+    }
+
+
+@app.post("/api/v1/auth/settings")
+def update_supabase_auth_settings(
+    request: AuthSettingsUpdate,
+    user_id: UUID = Depends(verify_supabase_user),
+    app_id: str = "nba_hub",
+):
+    settings = validate_auth_settings(app_id, request.settings)
+    existing = supabase_rest_request(
+        f"app_profiles?user_id=eq.{user_id}&app_id=eq.{app_id}&select=user_id",
+    )
+    if not existing:
+        raise HTTPException(status_code=409, detail="Sign in again before saving app settings.")
+    supabase_rest_request(
+        f"app_profiles?user_id=eq.{user_id}&app_id=eq.{app_id}",
+        method="PATCH",
+        payload={
+            "settings": settings,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    return {"settings": settings}
+
+
+@app.post("/api/v1/admin/players", status_code=201)
+def add_admin_player(
+    player: AdminPlayerCreate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    name = player.name.strip()
+    full_name = (player.full_name or name).strip()
+    normalized_name = normalize_player_name(name)
+    if not normalized_name:
+        raise HTTPException(status_code=422, detail="A valid player name is required.")
+
+    team_id = player.team_id
+    if team_id is not None:
+        teams = supabase_rest_request(
+            f"nba_teams?select=id&id=eq.{team_id}&limit=1"
+        )
+        if not isinstance(teams, list) or not teams:
+            raise HTTPException(status_code=422, detail="The selected NBA team does not exist.")
+
+    player_id = (
+        f"{team_id}:{normalized_name}"
+        if team_id is not None
+        else f"free-agent:{normalized_name}"
+    )
+    existing = supabase_rest_request(
+        f"nba_players?select=id&id=eq.{quote(player_id, safe='')}&limit=1"
+    )
+    if isinstance(existing, list) and existing:
+        raise HTTPException(
+            status_code=409,
+            detail="A player with this name and team is already in the roster.",
+        )
+
+    stats_season = current_nba_season()
+    player_payload = {
+        "name": name,
+        "headshot_url": str(player.headshot_url or "").strip() or None,
+        "pos": player.position.strip(),
+        "contract_type": player.contract_type if player.contract_type == "Two-Way" else None,
+        "contract_years_remaining": player.contract_years_remaining,
+        "contract_source": (
+            "NBA Hub admin static entry"
+            if player.contract_years_remaining is not None
+            else None
+        ),
+        "contract_data_as_of": datetime.now(timezone.utc).isoformat()
+        if player.contract_years_remaining is not None
+        else None,
+        "stats_season": stats_season,
+        "stats_as_of": datetime.now(timezone.utc).date().isoformat(),
+        "stats_source": "NBA Hub admin static entry",
+        "gp": player.gp,
+        "pts": player.pts,
+        "reb": player.reb,
+        "ast": player.ast,
+        "stl": player.stl,
+        "blk": player.blk,
+        "tov": player.tov,
+        "fg": player.fg,
+        "fg3": player.fg3,
+        "ft": player.ft,
+        "salary": player.salary,
+    }
+    metadata = {
+        "is_starter": False,
+        "roster_order": 99,
+        "player": player_payload,
+        "admin_added": True,
+        "admin_added_by": str(user_id),
+        "admin_added_at": datetime.now(timezone.utc).isoformat(),
+    }
+    rows = supabase_rest_request(
+        "nba_players",
+        method="POST",
+        payload={
+            "id": player_id,
+            "team_id": team_id,
+            "name": name,
+            "full_name": full_name,
+            "position": player.position.strip() or None,
+            "jersey_number": player.jersey_number,
+            "is_active": True,
+            "metadata": metadata,
+        },
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="The player could not be saved.")
+
+    global TEAM_CATALOG_CACHE
+    with TEAM_CATALOG_LOCK:
+        TEAM_CATALOG_CACHE = None
+    _log_admin_action(
+        user_id, "nba_hub", "create", "player",
+        player_id, None, metadata,
+    )
+    return {
+        "status": "created",
+        "player": {
+            "id": player_id,
+            "team_id": team_id,
+            "name": name,
+            "position": player.position.strip() or None,
+            "metadata": metadata,
+        },
+    }
+
+
+@app.patch("/api/v1/admin/players/{player_id:path}")
+def edit_admin_player(
+    player_id: str,
+    player: AdminPlayerCreate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    name = player.name.strip()
+    normalized_name = normalize_player_name(name)
+    if not normalized_name:
+        raise HTTPException(status_code=422, detail="A valid player name is required.")
+
+    existing = supabase_rest_request(
+        f"nba_players?select=id,team_id,name,full_name,position,jersey_number,metadata"
+        f"&id=eq.{quote(player_id, safe='')}&limit=1"
+    )
+    if not isinstance(existing, list) or not existing:
+        raise HTTPException(status_code=404, detail="The player was not found.")
+
+    old_row = existing[0]
+    old_metadata = old_row.get("metadata") if isinstance(old_row.get("metadata"), dict) else {}
+    old_player_payload = old_metadata.get("player") if isinstance(old_metadata.get("player"), dict) else {}
+    team_id = player.team_id
+    if team_id is not None:
+        teams = supabase_rest_request(f"nba_teams?select=id&id=eq.{team_id}&limit=1")
+        if not isinstance(teams, list) or not teams:
+            raise HTTPException(status_code=422, detail="The selected NBA team does not exist.")
+
+    new_player_id = (
+        f"{team_id}:{normalized_name}"
+        if team_id is not None
+        else f"free-agent:{normalized_name}"
+    )
+    if new_player_id != player_id:
+        duplicate = supabase_rest_request(
+            f"nba_players?select=id&id=eq.{quote(new_player_id, safe='')}&limit=1"
+        )
+        if isinstance(duplicate, list) and duplicate:
+            raise HTTPException(
+                status_code=409,
+                detail="A player with this name and team is already in the roster.",
+            )
+
+    player_payload = {
+        **old_player_payload,
+        "name": name,
+        "headshot_url": str(player.headshot_url or "").strip() or None,
+        "pos": player.position.strip(),
+        "contract_type": (
+            player.contract_type
+            if player.contract_type == "Two-Way"
+            else None
+        ),
+        "contract_years_remaining": player.contract_years_remaining,
+        "contract_source": (
+            "NBA Hub admin static entry"
+            if player.contract_years_remaining is not None
+            else None
+        ),
+        "contract_data_as_of": datetime.now(timezone.utc).isoformat()
+        if player.contract_years_remaining is not None
+        else None,
+        "stats_season": current_nba_season(),
+        "stats_as_of": datetime.now(timezone.utc).date().isoformat(),
+        "stats_source": "NBA Hub admin static entry",
+        "gp": player.gp,
+        "pts": player.pts,
+        "reb": player.reb,
+        "ast": player.ast,
+        "stl": player.stl,
+        "blk": player.blk,
+        "tov": player.tov,
+        "fg": player.fg,
+        "fg3": player.fg3,
+        "ft": player.ft,
+        "salary": player.salary,
+    }
+    metadata = {
+        **old_metadata,
+        "player": player_payload,
+        "is_starter": bool(old_metadata.get("is_starter", False)),
+        "roster_order": int(old_metadata.get("roster_order", 99)),
+        "admin_edited": True,
+        "admin_edited_by": str(user_id),
+        "admin_edited_at": datetime.now(timezone.utc).isoformat(),
+    }
+    rows = supabase_rest_request(
+        f"nba_players?id=eq.{quote(player_id, safe='')}",
+        method="PATCH",
+        payload={
+            "id": new_player_id,
+            "team_id": team_id,
+            "name": name,
+            "full_name": (player.full_name or name).strip(),
+            "position": player.position.strip() or None,
+            "jersey_number": player.jersey_number,
+            "is_active": True,
+            "metadata": metadata,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="The player could not be updated.")
+
+    global TEAM_CATALOG_CACHE
+    with TEAM_CATALOG_LOCK:
+        TEAM_CATALOG_CACHE = None
+    _log_admin_action(
+        user_id, "nba_hub", "update", "player",
+        new_player_id, old_metadata, metadata,
+    )
+    return {
+        "status": "updated",
+        "player": {
+            "id": new_player_id,
+            "team_id": team_id,
+            "name": name,
+            "position": player.position.strip() or None,
+            "metadata": metadata,
+        },
+    }
+
+
+@app.patch("/api/v1/admin/teams/{team_id}")
+def update_admin_team(
+    team_id: int,
+    team: AdminTeamUpdate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        f"nba_teams?select=id,name,abbreviation,conference,division,is_active,metadata&id=eq.{team_id}&limit=1"
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=404, detail="Team not found.")
+    before = rows[0]
+    metadata = {
+        **(before.get("metadata") if isinstance(before.get("metadata"), dict) else {}),
+        **team.metadata,
+    }
+    updated = supabase_rest_request(
+        f"nba_teams?id=eq.{team_id}",
+        method="PATCH",
+        payload={
+            "name": team.name.strip(),
+            "abbreviation": team.abbreviation.strip().upper(),
+            "conference": team.conference,
+            "division": team.division.strip(),
+            "is_active": team.is_active,
+            "metadata": metadata,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not isinstance(updated, list) or not updated:
+        raise HTTPException(status_code=502, detail="Team could not be updated.")
+    global TEAM_CATALOG_CACHE
+    with TEAM_CATALOG_LOCK:
+        TEAM_CATALOG_CACHE = None
+    _log_admin_action(
+        user_id, "nba_hub", "update", "team",
+        str(team_id), before, updated[0],
+    )
+    return {"status": "updated", "team": updated[0]}
+
+
+@app.post("/api/v1/admin/draft-picks", status_code=201)
+def add_admin_draft_pick(
+    pick: AdminDraftPickUpdate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        "nba_draft_picks",
+        method="POST",
+        payload={
+            "team_id": pick.team_id,
+            "pick_order": pick.pick_order,
+            "year": pick.year,
+            "round": pick.round,
+            "original_owner": pick.original_owner.strip(),
+            "is_swap": pick.is_swap,
+            "protection": pick.protection,
+            "details": pick.details.strip(),
+        },
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="Draft pick could not be added.")
+    _log_admin_action(
+        user_id, "trade_machine", "create", "draft_pick",
+        str(rows[0].get("id") or ""), None, rows[0],
+    )
+    return {"status": "created", "pick": rows[0]}
+
+
+@app.patch("/api/v1/admin/draft-picks/{team_id}/{pick_order}")
+def update_admin_draft_pick(
+    team_id: int,
+    pick_order: int,
+    pick: AdminDraftPickUpdate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    existing = supabase_rest_request(
+        f"nba_draft_picks?select=*&team_id=eq.{team_id}&pick_order=eq.{pick_order}&limit=1"
+    )
+    if not isinstance(existing, list) or not existing:
+        raise HTTPException(status_code=404, detail="Draft pick not found.")
+    before = existing[0]
+    updated = supabase_rest_request(
+        f"nba_draft_picks?team_id=eq.{team_id}&pick_order=eq.{pick_order}",
+        method="PATCH",
+        payload={
+            "team_id": pick.team_id,
+            "pick_order": pick.pick_order,
+            "year": pick.year,
+            "round": pick.round,
+            "original_owner": pick.original_owner.strip(),
+            "is_swap": pick.is_swap,
+            "protection": pick.protection,
+            "details": pick.details.strip(),
+        },
+    )
+    if not isinstance(updated, list) or not updated:
+        raise HTTPException(status_code=502, detail="Draft pick could not be updated.")
+    _log_admin_action(
+        user_id, "trade_machine", "update", "draft_pick",
+        f"{team_id}:{pick_order}", before, updated[0],
+    )
+    return {"status": "updated", "pick": updated[0]}
+
+
 def _validate_challenge_player_ids(player_ids: List[str]) -> None:
     if len(set(player_ids)) != len(player_ids):
         raise HTTPException(status_code=422, detail="Selected player IDs must be unique.")
@@ -4272,6 +5929,38 @@ def _validate_challenge_player_ids(player_ids: List[str]) -> None:
             status_code=422,
             detail="One or more selected player IDs are not in the NBA player pool.",
         )
+
+
+@app.get("/api/v1/official-challenges", dependencies=[Depends(verify_api_key)])
+def get_official_challenges():
+    result = supabase_rest_request(
+        f"official_challenges?select={OFFICIAL_CHALLENGE_FIELDS}&order=created_at.desc"
+    )
+    if not isinstance(result, list):
+        raise HTTPException(
+            status_code=502,
+            detail="Official challenge storage returned an unexpected response.",
+        )
+    return {"count": len(result), "challenges": result}
+
+
+@app.post("/api/v1/official-challenges", status_code=201)
+def create_official_challenge(
+    challenge: OfficialChallengeCreate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    record = {
+        **challenge.model_dump(),
+        "created_by": str(user_id),
+    }
+    result = supabase_rest_request(
+        "official_challenges",
+        method="POST",
+        payload=record,
+    )
+    if not isinstance(result, list) or not result:
+        raise HTTPException(status_code=502, detail="Official challenge was not saved.")
+    return result[0]
 
 
 @app.get("/api/v1/community-challenges", dependencies=[Depends(verify_api_key)])
@@ -4350,8 +6039,18 @@ def create_community_challenge(
     user_id: UUID = Depends(verify_supabase_user),
 ):
     _validate_challenge_player_ids(challenge.selected_player_ids)
+    profile_rows = supabase_rest_request(
+        f"app_profiles?user_id=eq.{user_id}&app_id=eq.build_15&select=username",
+    )
+    creator_username = str(profile_rows[0].get("username") or "").strip() if profile_rows else ""
+    if not creator_username:
+        raise HTTPException(
+            status_code=409,
+            detail="Set a username in your Build a $15 Team account settings before creating a challenge.",
+        )
     record = {
         **challenge.model_dump(),
+        "creator": creator_username,
         "owner_id": str(user_id),
     }
     result = supabase_rest_request(
@@ -4414,130 +6113,545 @@ def delete_community_challenge(
     return {"status": "deleted", "challenge": result[0]}
 
 
+def _trade_machine_username(user_id: UUID) -> str:
+    rows = supabase_rest_request(
+        f"app_profiles?user_id=eq.{user_id}&app_id=eq.trade_machine&select=username"
+    )
+    username = str(rows[0].get("username") or "").strip() if isinstance(rows, list) and rows else ""
+    return username or "NBA fan"
+
+
+def _serialize_trade_machine_row(row: dict) -> dict:
+    payload = row.get("payload")
+    if not isinstance(payload, dict) or not row.get("id") or not row.get("created_at"):
+        raise HTTPException(
+            status_code=502,
+            detail="Trade storage returned an invalid saved trade.",
+        )
+    return {
+        **payload,
+        "id": str(row["id"]),
+        "createdAt": row["created_at"],
+        "creator": str(row.get("creator_username") or "NBA fan"),
+    }
+
+
+def _serialize_trade_machine_community_row(row: dict) -> dict:
+    trade = _serialize_trade_machine_row(row)
+    return {
+        key: trade.get(key)
+        for key in (
+            "id",
+            "createdAt",
+            "creator",
+            "verdict",
+            "verdictStatus",
+            "teams",
+            "players",
+            "picks",
+            "frontOfficeActions",
+            "validation",
+            "postTitle",
+            "postExplanation",
+        )
+    } | {
+        "isFeatured": bool(row.get("is_featured", False)),
+        "isPinned": bool(row.get("is_pinned", False)),
+        "isVerified": bool(row.get("is_verified", False)),
+        "moderationStatus": str(row.get("moderation_status") or "active"),
+        "commentsLocked": bool(row.get("comments_locked", False)),
+    }
+
+
+def _trade_machine_trade_exists(trade_id: UUID) -> None:
+    rows = supabase_rest_request(
+        f"trade_machine_trades?id=eq.{trade_id}&select=id&limit=1"
+    )
+    if not isinstance(rows, list):
+        raise HTTPException(
+            status_code=502,
+            detail="Trade storage returned an unexpected response.",
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Trade not found.")
+
+
+def _log_admin_action(
+    actor_id: UUID,
+    app_id: str,
+    action: str,
+    entity_type: str,
+    entity_id: Optional[str] = None,
+    before: Optional[dict] = None,
+    after: Optional[dict] = None,
+) -> None:
+    supabase_rest_request(
+        "admin_audit_log",
+        method="POST",
+        payload={
+            "actor_id": str(actor_id),
+            "app_id": app_id,
+            "action": action,
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "before_payload": before,
+            "after_payload": after,
+        },
+    )
+
+
+@app.get("/api/v1/trade-machine/saved-trades")
+def get_trade_machine_saved_trades(
+    user_id: UUID = Depends(verify_supabase_user),
+):
+    rows = []
+    offset = 0
+    while True:
+        page = supabase_rest_request(
+            "trade_machine_trades?"
+            f"owner_id=eq.{user_id}&select=id,creator_username,payload,created_at"
+            f"&order=created_at.desc&limit={TRADE_MACHINE_FEED_PAGE_SIZE}&offset={offset}"
+        )
+        if not isinstance(page, list):
+            raise HTTPException(
+                status_code=502,
+                detail="Trade storage returned an unexpected response.",
+            )
+        rows.extend(page)
+        if len(page) < TRADE_MACHINE_FEED_PAGE_SIZE:
+            break
+        offset += len(page)
+    return {"count": len(rows), "trades": [_serialize_trade_machine_row(row) for row in rows]}
+
+
+@app.post("/api/v1/trade-machine/trades", status_code=201)
+def create_trade_machine_trade(
+    request: TradeMachineSavedTradeCreate,
+    user_id: UUID = Depends(verify_supabase_user),
+):
+    client_id = request.client_id
+    if client_id:
+        existing = supabase_rest_request(
+            "trade_machine_trades?"
+            f"owner_id=eq.{user_id}&client_id=eq.{quote(client_id, safe='')}"
+            "&select=id,creator_username,payload,created_at&limit=1"
+        )
+        if not isinstance(existing, list):
+            raise HTTPException(
+                status_code=502,
+                detail="Trade storage returned an unexpected response.",
+            )
+        if existing:
+            return {"trade": _serialize_trade_machine_row(existing[0])}
+
+    record = {
+        "owner_id": str(user_id),
+        "client_id": client_id,
+        "creator_username": _trade_machine_username(user_id),
+        "payload": request.payload,
+    }
+    rows = supabase_rest_request(
+        "trade_machine_trades",
+        method="POST",
+        payload=record,
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="Trade was not saved.")
+    return {"trade": _serialize_trade_machine_row(rows[0])}
+
+
+@app.delete("/api/v1/trade-machine/saved-trades/{trade_id}")
+def delete_trade_machine_saved_trade(
+    trade_id: UUID,
+    user_id: UUID = Depends(verify_supabase_user),
+):
+    rows = supabase_rest_request(
+        f"trade_machine_trades?id=eq.{trade_id}&owner_id=eq.{user_id}",
+        method="DELETE",
+        prefer="return=representation",
+    )
+    if not isinstance(rows, list):
+        raise HTTPException(
+            status_code=502,
+            detail="Trade storage returned an unexpected response.",
+        )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Trade not found.")
+    return {"status": "deleted", "id": str(trade_id)}
+
+
+@app.get("/api/v1/trade-machine/trades")
+def get_trade_machine_community_trades(
+    limit: int = Query(default=20, ge=1, le=TRADE_MACHINE_FEED_PAGE_SIZE),
+    offset: int = Query(default=0, ge=0),
+):
+    rows = supabase_rest_request(
+        "trade_machine_trades?"
+        "select=id,creator_username,payload,created_at,is_featured,is_pinned,is_verified,"
+        "moderation_status,comments_locked"
+        f"&order=created_at.desc&limit={limit}&offset={offset}"
+    )
+    if not isinstance(rows, list):
+        raise HTTPException(
+            status_code=502,
+            detail="Trade storage returned an unexpected response.",
+        )
+    if not rows:
+        return {"count": 0, "trades": []}
+
+    trade_ids = [str(UUID(row["id"])) for row in rows]
+    trade_filter = f"in.({','.join(trade_ids)})"
+    comments = supabase_rest_request(
+        "trade_machine_comments?"
+        f"trade_id={trade_filter}&select=id,trade_id,creator_username,comment,created_at"
+        "&order=created_at.asc&limit=1000"
+    )
+    ratings = supabase_rest_request(
+        "trade_machine_ratings?"
+        f"trade_id={trade_filter}&select=trade_id,rating&limit=5000"
+    )
+    if not isinstance(comments, list) or not isinstance(ratings, list):
+        raise HTTPException(
+            status_code=502,
+            detail="Trade feedback storage returned an unexpected response.",
+        )
+
+    comments_by_trade: dict[str, list[dict]] = {}
+    for comment in comments:
+        trade_key = str(comment["trade_id"])
+        comments_by_trade.setdefault(trade_key, []).append({
+            "id": str(comment["id"]),
+            "creator": str(comment.get("creator_username") or "NBA fan"),
+            "comment": str(comment["comment"]),
+            "created_at": comment["created_at"],
+        })
+
+    ratings_by_trade: dict[str, list[int]] = {}
+    for rating in ratings:
+        ratings_by_trade.setdefault(str(rating["trade_id"]), []).append(int(rating["rating"]))
+
+    trades = []
+    for row in rows:
+        trade = _serialize_trade_machine_community_row(row)
+        trade_ratings = ratings_by_trade.get(trade["id"], [])
+        trade["rating_average"] = round(sum(trade_ratings) / len(trade_ratings), 1) if trade_ratings else None
+        trade["rating_count"] = len(trade_ratings)
+        trade["comments"] = comments_by_trade.get(trade["id"], [])
+        trades.append(trade)
+    return {"count": len(trades), "trades": trades}
+
+
+@app.patch("/api/v1/admin/trade-machine/trades/{trade_id}")
+def moderate_admin_trade(
+    trade_id: UUID,
+    update: TradeModerationUpdate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        f"trade_machine_trades?select=id,creator_username,payload,is_featured,is_pinned,"
+        f"is_verified,moderation_status,comments_locked&id=eq.{trade_id}&limit=1"
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=404, detail="Trade not found.")
+    before = rows[0]
+    payload = {
+        "moderation_status": update.moderation_status,
+        "is_featured": update.is_featured if update.is_featured is not None else update.moderation_status == "featured",
+        "is_pinned": update.is_pinned if update.is_pinned is not None else before.get("is_pinned", False),
+        "is_verified": update.is_verified if update.is_verified is not None else update.moderation_status == "verified",
+        "comments_locked": update.comments_locked if update.comments_locked is not None else update.moderation_status == "locked",
+        "moderated_at": datetime.now(timezone.utc).isoformat(),
+        "moderated_by": str(user_id),
+    }
+    updated = supabase_rest_request(
+        f"trade_machine_trades?id=eq.{trade_id}",
+        method="PATCH",
+        payload=payload,
+    )
+    if not isinstance(updated, list) or not updated:
+        raise HTTPException(status_code=502, detail="Trade moderation could not be saved.")
+    _log_admin_action(
+        user_id, "trade_machine", "moderate", "trade",
+        str(trade_id), before, updated[0],
+    )
+    return {"status": "updated", "trade": updated[0]}
+
+
+@app.delete("/api/v1/admin/trade-machine/trades/{trade_id}")
+def remove_admin_trade(
+    trade_id: UUID,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        f"trade_machine_trades?select=id,creator_username,payload&id=eq.{trade_id}&limit=1"
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=404, detail="Trade not found.")
+    before = rows[0]
+    deleted = supabase_rest_request(
+        f"trade_machine_trades?id=eq.{trade_id}",
+        method="DELETE",
+    )
+    _log_admin_action(
+        user_id, "trade_machine", "delete", "trade",
+        str(trade_id), before, None,
+    )
+    return {"status": "deleted", "id": str(trade_id)}
+
+
+@app.delete("/api/v1/admin/trade-machine/comments/{comment_id}")
+def remove_admin_comment(
+    comment_id: UUID,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        f"trade_machine_comments?select=id,trade_id,owner_id,creator_username,comment,created_at"
+        f"&id=eq.{comment_id}&limit=1"
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=404, detail="Comment not found.")
+    before = rows[0]
+    supabase_rest_request(
+        f"trade_machine_comments?id=eq.{comment_id}",
+        method="DELETE",
+    )
+    _log_admin_action(
+        user_id, "trade_machine", "delete", "comment",
+        str(comment_id), before, None,
+    )
+    return {"status": "deleted", "id": str(comment_id)}
+
+
+@app.delete("/api/v1/admin/trade-machine/trades/{trade_id}/ratings")
+def remove_admin_ratings(
+    trade_id: UUID,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        f"trade_machine_ratings?select=trade_id,owner_id,rating&trade_id=eq.{trade_id}&limit=5000"
+    )
+    before = rows if isinstance(rows, list) else []
+    supabase_rest_request(
+        f"trade_machine_ratings?trade_id=eq.{trade_id}",
+        method="DELETE",
+    )
+    _log_admin_action(
+        user_id, "trade_machine", "delete", "ratings",
+        str(trade_id), {"ratings": before}, {"rating_count": 0},
+    )
+    return {"status": "deleted", "rating_count": len(before)}
+
+
+@app.get("/api/v1/admin/audit-log")
+def get_admin_audit_log(
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        "admin_audit_log?"
+        f"select=id,actor_id,app_id,action,entity_type,entity_id,before_payload,after_payload,created_at"
+        f"&order=created_at.desc&limit={limit}&offset={offset}"
+    )
+    if not isinstance(rows, list):
+        raise HTTPException(status_code=502, detail="Audit log could not be read.")
+    return {"count": len(rows), "entries": rows}
+
+
+@app.get("/api/v1/trade-machine/rumors")
+def get_trade_rumor_watch():
+    rows = supabase_rest_request(
+        "trade_rumor_watch?"
+        "select=id,player_name,team_name,team_abbreviation,rank,updated_at"
+        "&is_active=eq.true&order=rank.asc&limit=100"
+    )
+    if not isinstance(rows, list):
+        raise HTTPException(status_code=502, detail="Trade rumor watch could not be loaded.")
+    return {"count": len(rows), "players": rows}
+
+
+@app.post("/api/v1/admin/trade-machine/rumors", status_code=201)
+def add_trade_rumor(
+    rumor: TradeRumorCreate,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    player_name = rumor.player_name.strip()
+    existing = supabase_rest_request(
+        f"trade_rumor_watch?select=id&player_name=eq.{quote(player_name, safe='')}&limit=1"
+    )
+    if isinstance(existing, list) and existing:
+        raise HTTPException(status_code=409, detail="That player is already on the trade watch.")
+    rows = supabase_rest_request(
+        "trade_rumor_watch",
+        method="POST",
+        payload={
+            "player_name": player_name,
+            "team_name": rumor.team_name.strip(),
+            "team_abbreviation": rumor.team_abbreviation.strip().upper(),
+            "rank": rumor.rank,
+            "is_active": True,
+        },
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="Trade rumor could not be added.")
+    _log_admin_action(
+        user_id, "trade_machine", "create", "trade_rumor",
+        str(rows[0].get("id") or ""), None, rows[0],
+    )
+    return {"status": "created", "player": rows[0]}
+
+
+@app.delete("/api/v1/admin/trade-machine/rumors/{rumor_id}")
+def remove_trade_rumor(
+    rumor_id: UUID,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    rows = supabase_rest_request(
+        f"trade_rumor_watch?select=*&id=eq.{rumor_id}&limit=1"
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=404, detail="Trade rumor not found.")
+    before = rows[0]
+    supabase_rest_request(
+        f"trade_rumor_watch?id=eq.{rumor_id}",
+        method="DELETE",
+    )
+    _log_admin_action(
+        user_id, "trade_machine", "delete", "trade_rumor",
+        str(rumor_id), before, None,
+    )
+    return {"status": "deleted", "id": str(rumor_id)}
+
+
+@app.post("/api/v1/trade-machine/trades/{trade_id}/comments", status_code=201)
+def create_trade_machine_comment(
+    trade_id: UUID,
+    request: TradeMachineCommentCreate,
+    user_id: UUID = Depends(verify_supabase_user),
+):
+    trade_rows = supabase_rest_request(
+        f"trade_machine_trades?select=id,comments_locked,moderation_status&id=eq.{trade_id}&limit=1"
+    )
+    if not isinstance(trade_rows, list) or not trade_rows:
+        raise HTTPException(status_code=404, detail="Trade not found.")
+    if trade_rows[0].get("comments_locked") is True or trade_rows[0].get("moderation_status") == "locked":
+        raise HTTPException(status_code=403, detail="Comments are locked for this trade.")
+    rows = supabase_rest_request(
+        "trade_machine_comments",
+        method="POST",
+        payload={
+            "trade_id": str(trade_id),
+            "owner_id": str(user_id),
+            "creator_username": _trade_machine_username(user_id),
+            "comment": request.comment,
+        },
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="Comment was not saved.")
+    row = rows[0]
+    return {
+        "id": str(row["id"]),
+        "creator": str(row.get("creator_username") or "NBA fan"),
+        "comment": str(row["comment"]),
+        "created_at": row["created_at"],
+    }
+
+
+@app.post("/api/v1/trade-machine/trades/{trade_id}/rating")
+def rate_trade_machine_trade(
+    trade_id: UUID,
+    request: TradeMachineRatingCreate,
+    user_id: UUID = Depends(verify_supabase_user),
+):
+    _trade_machine_trade_exists(trade_id)
+    rows = supabase_rest_request(
+        "trade_machine_ratings?on_conflict=trade_id,owner_id",
+        method="POST",
+        payload={
+            "trade_id": str(trade_id),
+            "owner_id": str(user_id),
+            "rating": request.rating,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+        prefer="resolution=merge-duplicates,return=representation",
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="Rating was not saved.")
+    rating_rows = supabase_rest_request(
+        f"trade_machine_ratings?trade_id=eq.{trade_id}&select=rating&limit=5000",
+    )
+    if not isinstance(rating_rows, list):
+        raise HTTPException(status_code=502, detail="Updated rating summary could not be read.")
+    ratings = [int(row["rating"]) for row in rating_rows if isinstance(row, dict)]
+    rating_average = round(sum(ratings) / len(ratings), 1) if ratings else None
+    return {
+        "rating": int(rows[0]["rating"]),
+        "rating_average": rating_average,
+        "rating_count": len(ratings),
+    }
+
+
 @app.get("/teams")
 def get_teams_legacy():
     response = build_teams_response()
     return {"teams": response["teams"], "stats": response["stats"], "roster": response["roster"]}
 
 @app.get("/api/v1/player-career", dependencies=[Depends(verify_api_key)])
-def get_player_career(player_id: int = Query(..., ge=1), player_name: str = Query(default="")):
-    return supabase_cached_fetch(
-        "player_career",
-        f"player_career:{player_id}",
-        lambda: _fetch_player_career(player_id, player_name),
-        ttl_seconds=86400,
-    )
-
-
-def _fetch_player_career(player_id: int, player_name: str = ""):
-    """Fetch the ESPN player stats page and return a season-by-season career summary."""
-    try:
-        request = Request(
-            f"https://www.espn.com/nba/player/stats/_/id/{player_id}",
-            headers={
-                "User-Agent": "Mozilla/5.0 (compatible; NBA Hub/1.0; +https://github.com/)",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
+def get_player_career(
+    player_id: Optional[int] = Query(default=None, ge=1),
+    player_name: str = Query(default=""),
+):
+    if not supabase_cache_available():
+        raise HTTPException(
+            status_code=503,
+            detail="Static player profiles require Supabase. Run the nba_player_profiles migration.",
         )
-        with urlopen(request, timeout=20) as response:
-            page_html = response.read().decode("utf-8", errors="ignore")
-    except (HTTPError, URLError, TimeoutError, OSError) as exc:
-        logger.warning("ESPN player career fetch failed for id %s: %s", player_id, exc)
-        return {
-            "status": "unavailable",
-            "source": "ESPN",
-            "player_id": player_id,
-            "player_name": player_name,
-            "history": [],
-            "message": "Player career stats are unavailable right now.",
-        }
-
-    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", page_html, re.S | re.I)
-    season_labels = []
-    season_teams = {}
-    for row in rows:
-        cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
-        values = []
-        for cell in cells:
-            text = re.sub(r"<.*?>", " ", cell)
-            text = html_lib.unescape(text)
-            values.append(" ".join(text.split()))
-        values = [value for value in values if value]
-        if not values:
-            continue
-        if re.fullmatch(r"\d{4}-\d{2}", values[0]):
-            season_labels.append(values[0])
-            season_teams[values[0]] = values[1] if len(values) > 1 else ""
-
-    stat_rows = []
-    header_seen = False
-    for row in rows:
-        if "GP" in row and "PTS" in row and "Table__TH" in row:
-            header_seen = True
-            continue
-        if not header_seen:
-            continue
-        cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)
-        values = []
-        for cell in cells:
-            text = re.sub(r"<.*?>", " ", cell)
-            text = html_lib.unescape(text)
-            values.append(" ".join(text.split()))
-        values = [value for value in values if value]
-        if not values:
-            continue
-        first = values[0]
-        if first.lower() == "career":
-            continue
-        if not re.fullmatch(r"\d{1,3}", first) and not re.fullmatch(r"\d{1,3}\.\d", first):
-            continue
-        stat_rows.append(values)
-
-    if not season_labels or not stat_rows:
-        return {
-            "status": "fresh",
-            "source": "ESPN",
-            "player_id": player_id,
-            "player_name": player_name,
-            "history": [],
-            "message": "No career history was found for this player.",
-        }
-
-    ordered_stat_rows = list(reversed(stat_rows[-len(season_labels):]))
-    history = []
-    for season_name, row in zip(season_labels, ordered_stat_rows):
-        if len(row) < 18:
-            continue
-        try:
-            history.append({
-                "season": season_name,
-                "team": season_teams.get(season_name, ""),
-                "gp": int(row[0]) if row[0].isdigit() else None,
-                "gs": int(row[1]) if len(row) > 1 and row[1].isdigit() else None,
-                "min": float(row[2]) if len(row) > 2 and row[2] not in ("", "-") else None,
-                "fg": row[3] if len(row) > 3 else None,
-                "fg_pct": float(row[4]) if len(row) > 4 and row[4] not in ("", "-") else None,
-                "fg3": row[5] if len(row) > 5 else None,
-                "fg3_pct": float(row[6]) if len(row) > 6 and row[6] not in ("", "-") else None,
-                "ft": row[7] if len(row) > 7 else None,
-                "ft_pct": float(row[8]) if len(row) > 8 and row[8] not in ("", "-") else None,
-                "reb": float(row[11]) if len(row) > 11 and row[11] not in ("", "-") else None,
-                "ast": float(row[12]) if len(row) > 12 and row[12] not in ("", "-") else None,
-                "blk": float(row[13]) if len(row) > 13 and row[13] not in ("", "-") else None,
-                "stl": float(row[14]) if len(row) > 14 and row[14] not in ("", "-") else None,
-                "tov": float(row[16]) if len(row) > 16 and row[16] not in ("", "-") else None,
-                "pts": float(row[17]) if len(row) > 17 and row[17] not in ("", "-") else None,
-            })
-        except ValueError:
-            continue
-
+    if player_id is None and not player_name.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Provide an NBA player ID or player name.",
+        )
+    try:
+        select = (
+            "nba_player_profiles?select=nba_player_id,player_name,career_payload,contract_payload,career_as_of,contract_as_of,updated_at"
+        )
+        rows = []
+        if player_id is not None:
+            rows = supabase_rest_request(
+                f"{select}&nba_player_id=eq.{player_id}&limit=1"
+            )
+        if (player_id is None or not rows) and player_name.strip():
+            name_key = quote(normalize_player_name(player_name), safe="")
+            rows = supabase_rest_request(
+                f"{select}&player_name_key=eq.{name_key}&limit=1"
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Supabase static player profile read failed.")
+        raise HTTPException(
+            status_code=502,
+            detail="Supabase could not load the static player profile.",
+        ) from exc
+    if not isinstance(rows, list):
+        raise HTTPException(status_code=502, detail="Supabase returned an invalid player profile response.")
+    if not rows:
+        raise HTTPException(status_code=404, detail="No static NBA player profile was found.")
+    row = rows[0]
+    career_payload = row.get("career_payload")
+    contract_payload = row.get("contract_payload")
+    if not isinstance(career_payload, dict) or not isinstance(contract_payload, dict):
+        raise HTTPException(status_code=502, detail="The static player profile row is incomplete.")
     return {
-        "status": "fresh",
-        "source": "ESPN",
-        "player_id": player_id,
-        "player_name": player_name or None,
-        "history": history,
+        **career_payload,
+        "player_id": row.get("nba_player_id"),
+        "player_name": str(row.get("player_name") or player_name or ""),
+        "contract": contract_payload,
+        "career_as_of": row.get("career_as_of"),
+        "contract_as_of": row.get("contract_as_of"),
+        "updated_at": row.get("updated_at"),
     }
+
 
 @app.get("/api/v1/health")
 def health_check_v1():
@@ -4587,14 +6701,21 @@ FRONTEND_ASSETS = {
     filename: FRONTEND_ROOT / filename
     for filename in (
         "app.js",
+        "app-settings.css",
+        "app-settings.html",
+        "app-settings.js",
         "cap-space-manager.css",
         "cap-space-manager.html",
         "cap-space-manager.js",
         "index.html",
         "nba-player-ids.js",
         "player-headshots.js",
+        "shared-auth.css",
+        "shared-auth.js",
         "style.css",
         "trade-machine.css",
+        "trade-community.html",
+        "trade-community.js",
         "trade-machine.html",
         "trade-machine.js",
     )
