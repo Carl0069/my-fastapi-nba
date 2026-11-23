@@ -38,8 +38,9 @@ These are third-party estimates, not official NBA accounting. Some source balanc
    - `SUPABASE_PUBLISHABLE_KEY`: the project's publishable/anon key from Supabase Project Settings → API Keys. This key is intentionally public and is used only by the browser to sign in; never use a service-role key here.
    - `OPENAI_API_KEY` (optional): the private server-side OpenAI key used by the admin challenge generator.
    - `ADMIN_EMAILS` (optional): comma-separated Supabase account emails that should receive administrator access. A user with `app_metadata.role = "admin"` is also recognized as an administrator.
-4. In Supabase Authentication settings, enable the email sign-in provider and configure the site/redirect URLs for the deployed app.
-5. Redeploy the API after running the SQL and setting the required values; add `OPENAI_API_KEY` to enable AI challenge generation.
+4. In Supabase Authentication → URL Configuration, set the Site URL to `https://my-fastapi-nba.vercel.app` and add `https://my-fastapi-nba.vercel.app/**` to the Redirect URLs list. Add the local development origins you use (for example, `http://localhost:3000/**`) as well. Signup confirmation and password recovery links return to the app page that initiated the request.
+5. If you customized the Supabase email templates, make sure confirmation and recovery links use Supabase's `{{ .ConfirmationURL }}` or `{{ .RedirectTo }}` value rather than hard-coding `{{ .SiteURL }}`; otherwise the link may ignore the app-specific redirect.
+6. Redeploy the API after running the SQL and setting the required values; add `OPENAI_API_KEY` to enable AI challenge generation.
 
 The individual files under `supabase/migrations/` are retained for Supabase CLI users. If you use the single setup file above, do not also run those migrations separately.
 

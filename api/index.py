@@ -13,10 +13,10 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Callable, List, Optional, Literal
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, quote
+from urllib.parse import urlencode, quote, urlsplit
 from urllib.request import Request, urlopen
 from uuid import UUID
-from fastapi import FastAPI, HTTPException, Header, Query, Depends
+from fastapi import FastAPI, HTTPException, Header, Query, Depends, Request as FastAPIRequest
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -5166,6 +5166,7 @@ class AuthSignupRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=24)
     email: str = Field(..., min_length=3, max_length=254)
     password: str = Field(..., min_length=8, max_length=128)
+    redirect_to: Optional[str] = Field(default=None, max_length=2048)
 
     @field_validator("username")
     @classmethod
@@ -5304,14 +5305,22 @@ def validate_auth_settings(app_id: str, settings: dict[str, object]) -> dict[str
     raise HTTPException(status_code=422, detail="Invalid application ID.")
 
 
-def supabase_auth_request(path: str, payload: dict) -> dict:
+def supabase_auth_request(
+    path: str,
+    payload: dict,
+    redirect_to: Optional[str] = None,
+) -> dict:
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
     publishable_key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
     if not supabase_url or not publishable_key:
         raise HTTPException(status_code=503, detail="Supabase sign-in is not configured.")
 
+    request_url = f"{supabase_url}/auth/v1/{path.lstrip('/')}"
+    if redirect_to:
+        separator = "&" if "?" in request_url else "?"
+        request_url = f"{request_url}{separator}{urlencode({'redirect_to': redirect_to})}"
     request = Request(
-        f"{supabase_url}/auth/v1/{path.lstrip('/')}",
+        request_url,
         data=json.dumps(payload).encode("utf-8"),
         method="POST",
         headers={
@@ -5359,13 +5368,59 @@ def supabase_auth_request(path: str, payload: dict) -> dict:
     return result
 
 
+def validate_auth_redirect(
+    redirect_to: Optional[str],
+    request: FastAPIRequest,
+    app_id: str,
+) -> Optional[str]:
+    if not redirect_to:
+        return None
+
+    allowed_paths = {
+        "nba_hub": {"/", "/index.html", "/app-settings.html"},
+        "trade_machine": {
+            "/trade-home.html",
+            "/trade-community.html",
+            "/trade-machine.html",
+            "/app-settings.html",
+        },
+        "build_15": {"/cap-space-manager.html", "/app-settings.html"},
+    }
+    try:
+        target = urlsplit(redirect_to)
+        origin = urlsplit(request.headers.get("origin", ""))
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Invalid authentication redirect URL.") from error
+
+    if (
+        target.scheme not in {"http", "https"}
+        or not target.netloc
+        or target.username
+        or target.password
+        or target.fragment
+    ):
+        raise HTTPException(status_code=422, detail="Invalid authentication redirect URL.")
+    if (
+        not origin.scheme
+        or not origin.netloc
+        or target.scheme != origin.scheme
+        or target.netloc.casefold() != origin.netloc.casefold()
+    ):
+        raise HTTPException(status_code=422, detail="Authentication redirects must stay on the requesting app's origin.")
+    if target.path not in allowed_paths[app_id]:
+        raise HTTPException(status_code=422, detail="Authentication redirect path does not match this app.")
+    return redirect_to
+
+
 @app.post("/api/v1/auth/signup")
 def signup_with_username(
     account: AuthSignupRequest,
+    request: FastAPIRequest,
     app_id: str = "nba_hub",
 ):
     if app_id not in {"nba_hub", "trade_machine", "build_15"}:
         raise HTTPException(status_code=422, detail="Invalid application ID.")
+    redirect_to = validate_auth_redirect(account.redirect_to, request, app_id)
 
     matches = supabase_rest_request(
         f"app_profiles?app_id=eq.{app_id}&username=eq.{account.username}&select=user_id&limit=1",
@@ -5380,6 +5435,7 @@ def signup_with_username(
             "password": account.password,
             "data": {"username": account.username},
         },
+        redirect_to=redirect_to,
     )
     user = result.get("user") or result
     if user.get("identities") == []:

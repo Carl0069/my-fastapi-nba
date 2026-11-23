@@ -709,6 +709,93 @@ body[data-salary-display="compact"] .team-metrics strong .team-metric-value-comp
   display: inline !important;
 }
 
+.shared-auth-password-field {
+  display: grid;
+  gap: 6px;
+}
+
+.shared-auth-password-control {
+  position: relative;
+}
+
+.shared-auth-password-control input {
+  padding-right: 50px;
+}
+
+.shared-auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+}
+
+.shared-auth-password-toggle:hover,
+.shared-auth-password-toggle[aria-pressed="true"] {
+  background: rgba(100, 116, 139, 0.12);
+}
+
+.shared-auth-password-toggle:focus-visible,
+.shared-auth-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.shared-auth-password-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.shared-auth-password-toggle circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+.shared-auth-link {
+  justify-self: start;
+  width: fit-content;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.shared-auth-link[hidden] {
+  display: none;
+}
+
+.shared-auth-overlay--trade_machine .shared-auth-password-toggle {
+  color: #9dc8ff;
+}
+
+.shared-auth-overlay--trade_machine .shared-auth-link {
+  color: #8bc2ff;
+}
+
+.shared-auth-overlay--trade_machine .shared-auth-password-toggle:focus-visible,
+.shared-auth-overlay--trade_machine .shared-auth-link:focus-visible {
+  outline-color: #ff9a4c;
+}
+
 body[data-settings-headshots="false"] .roster-player__headshot {
   display: none !important;
 }

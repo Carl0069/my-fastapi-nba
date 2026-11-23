@@ -1,0 +1,2515 @@
+{
+  "season": "2026-27",
+  "as_of": "2026-11-22",
+  "sources": [
+    {
+      "name": "Fanspo 2026-27 NBA team cap sheets",
+      "url": "https://fanspo.com/nba/teams",
+      "coverage": "Itemized trade exceptions and player cap holds for all 30 teams."
+    },
+    {
+      "name": "JJNBA Mid-Level & Bi-Annual Tracker",
+      "url": "https://jjnba.com/cba/exceptions/",
+      "updated": "2026-11-21",
+      "coverage": "Remaining MLE and bi-annual balances; some values are rounded by the source."
+    }
+  ],
+  "teams": {
+    "1": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Anfernee Simons",
+          "description": "From Chicago Bulls",
+          "amount": 27678571,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Jaylen Brown",
+          "description": "From Philadelphia 76ers",
+          "amount": 2952348,
+          "expires_on": "2027-07-06",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Charlotte Hornets",
+          "amount": 2546675,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Josh Minott",
+          "description": null,
+          "amount": 2378870,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Chris Boucher",
+          "description": "From Utah Jazz",
+          "amount": 2296274,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Torrey Craig",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Blake Griffin",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Mfiondu Kabengele",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Max Shulga",
+          "description": "Non-Bird rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/celtics/2/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "2": {
+      "exceptions": [
+        {
+          "type": "Room mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $9,370,000).",
+          "amount": 9369000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/nets/3/cap-sheet"
+        }
+      ],
+      "cap_holds": [],
+      "exceptions_status": "verified",
+      "cap_holds_status": "none",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/nets/3/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "3": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Dalen Terry",
+          "description": "From New Orleans Pelicans",
+          "amount": 899118,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/knicks/20/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Guerschon Yabusele",
+          "description": "From Chicago Bulls",
+          "amount": 100882,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/knicks/20/cap-sheet"
+        },
+        {
+          "type": "Taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "2026-27 remaining amount; rounded where the tracker displays abbreviated values",
+          "amount": 6060000,
+          "source_name": "JJNBA MLE & Bi-Annual Tracker (updated 2026-11-21)",
+          "source_url": "https://jjnba.com/cba/exceptions/"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "P.J. Tucker",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/knicks/20/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/knicks/20/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "4": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Jared McCain",
+          "description": "From Oklahoma City Thunder",
+          "amount": 4221360,
+          "expires_on": "2027-02-04",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Eric Gordon",
+          "description": "From Memphis Grizzlies",
+          "amount": 2296274,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $2,080,000).",
+          "amount": 2077000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": null,
+          "amount": 1700000,
+          "expires_on": "2027-03-10",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $44,000).",
+          "amount": 44000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "MarJon Beauchamp",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Kyle Lowry",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Tyrese Martin",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Jeff Dowtin Jr.",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Jalen Hood-Schifino",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/sixers/23/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "5": {
+      "exceptions": [
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $15,040,000).",
+          "amount": 15044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Ochai Agbaji",
+          "description": "From Boston Celtics",
+          "amount": 6383525,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Jordan Nwora",
+          "description": "Bird rights hold",
+          "amount": 5700000,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Will Barton",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "A.J. Lawson",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        },
+        {
+          "type": "Bird",
+          "name": "Garrett Temple",
+          "description": "Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/raptors/28/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "6": {
+      "exceptions": [
+        {
+          "type": "Room mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $9,370,000).",
+          "amount": 9369000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/bulls/5/cap-sheet"
+        }
+      ],
+      "cap_holds": [],
+      "exceptions_status": "verified",
+      "cap_holds_status": "none",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/bulls/5/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "7": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Max Strus",
+          "description": "From LA Clippers",
+          "amount": 16660836,
+          "expires_on": "2027-08-20",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Lonzo Ball",
+          "description": "From Utah Jazz",
+          "amount": 10000000,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Sacramento Kings",
+          "amount": 1439674,
+          "expires_on": "2027-02-01",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Darius Garland",
+          "description": "From LA Clippers",
+          "amount": 263397,
+          "expires_on": "2027-02-04",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "2026-27 remaining amount; rounded where the tracker displays abbreviated values",
+          "amount": 6040000,
+          "source_name": "JJNBA MLE & Bi-Annual Tracker (updated 2026-11-21)",
+          "source_url": "https://jjnba.com/cba/exceptions/"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Early Bird",
+          "name": "Tristan Thompson",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Olivier Sarr",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Ed Davis",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Damian Jones",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Raul Neto",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Chuma Okeke",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Rajon Rondo",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/cavaliers/6/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "8": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Isaiah Stewart",
+          "description": "From Memphis Grizzlies",
+          "amount": 15000000,
+          "expires_on": "2027-07-08",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pistons/9/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Marcus Sasser",
+          "description": "From Dallas Mavericks",
+          "amount": 5198983,
+          "expires_on": "2027-07-08",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pistons/9/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $3,720,000).",
+          "amount": 3720994,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/pistons/9/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Malik Beasley",
+          "description": "Non-Bird rights hold",
+          "amount": 7200000,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pistons/9/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Wendell Moore Jr.",
+          "description": "Two-Way rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pistons/9/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/pistons/9/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "9": {
+      "exceptions": [
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $6,990,000).",
+          "amount": 6994000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/pacers/12/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/pacers/12/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Kam Jones",
+          "description": "From Chicago Bulls",
+          "amount": 1075459,
+          "expires_on": "2027-06-24",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pacers/12/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Two-Way",
+          "name": "Gabe York",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pacers/12/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/pacers/12/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "10": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Giannis Antetokounmpo",
+          "description": "From Miami Heat",
+          "amount": 25456566,
+          "expires_on": "2027-07-06",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/bucks/17/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $15,040,000).",
+          "amount": 15044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/bucks/17/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/bucks/17/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Bobby Portis",
+          "description": "From Miami Heat",
+          "amount": 85763,
+          "expires_on": "2027-07-06",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/bucks/17/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Thanasis Antetokounmpo",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/bucks/17/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Alex Antetokounmpo",
+          "description": "Non-Bird rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/bucks/17/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/bucks/17/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "11": {
+      "exceptions": [
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $3,380,000).",
+          "amount": 3379000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Alec Burks",
+          "description": "Non-Bird rights hold",
+          "amount": 2457009,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Josh Christopher",
+          "description": "Two-Way rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        },
+        {
+          "type": "Bird",
+          "name": "Udonis Haslem",
+          "description": "Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Jordan Mickey",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Dwyane Wade",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/heat/16/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "12": {
+      "exceptions": [
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Portland Trail Blazers",
+          "amount": 2349578,
+          "expires_on": "2027-02-01",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Ryan Nembhard",
+          "description": "From Charlotte Hornets",
+          "amount": 2150917,
+          "expires_on": "2027-09-22",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Luke Kennard",
+          "description": "From Los Angeles Lakers",
+          "amount": 1971962,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trae Young",
+          "description": "From Washington Wizards",
+          "amount": 1357993,
+          "expires_on": "2027-01-08",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $944,000).",
+          "amount": 944000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Gabe Vincent",
+          "description": "Bird rights hold",
+          "amount": 21850000,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Trent Forrest",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Wesley Matthews",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Keaton Wallace",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Dylan Windler",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "type": "—",
+          "name": "Round 2, Pick #57",
+          "description": "— rights hold",
+          "amount": 0,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/hawks/1/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "13": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "LaMelo Ball",
+          "description": "From Minnesota Timberwolves",
+          "amount": 40770520,
+          "expires_on": "2027-07-10",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Collin Sexton",
+          "description": "From Chicago Bulls",
+          "amount": 8200962,
+          "expires_on": "2027-02-04",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Dorian Finney-Smith",
+          "description": "From Atlanta Hawks",
+          "amount": 4538438,
+          "expires_on": "2027-09-22",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Mason Plumlee",
+          "description": "From Oklahoma City Thunder",
+          "amount": 2296274,
+          "expires_on": "2027-02-04",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $847,026).",
+          "amount": 847026,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Tyus Jones",
+          "description": "From Dallas Mavericks",
+          "amount": 110680,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Xavier Tillman",
+          "description": "Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/hornets/4/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "14": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Tyus Jones",
+          "description": "From Dallas Mavericks",
+          "amount": 7000000,
+          "expires_on": "2027-02-04",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/magic/22/cap-sheet"
+        },
+        {
+          "type": "Taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "2026-27 remaining amount; rounded where the tracker displays abbreviated values",
+          "amount": 6060000,
+          "source_name": "JJNBA MLE & Bi-Annual Tracker (updated 2026-11-21)",
+          "source_url": "https://jjnba.com/cba/exceptions/"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Cory Joseph",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/magic/22/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Trevelin Queen",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/magic/22/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/magic/22/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "15": {
+      "exceptions": [
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $15,040,000).",
+          "amount": 15044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Jaden Hardy",
+          "description": "From Los Angeles Lakers",
+          "amount": 6000000,
+          "expires_on": "2027-07-07",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "D'Angelo Russell",
+          "description": "From Memphis Grizzlies",
+          "amount": 5969250,
+          "expires_on": "2027-07-08",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Ian Mahinmi",
+          "description": "Bird rights hold",
+          "amount": 23175077,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Kendrick Nunn",
+          "description": "Early Bird rights hold",
+          "amount": 6825000,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Shabazz Napier",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Tomas Satoransky",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Ramon Sessions",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Sharife Cooper",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Ty Lawson",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Johnathan Williams",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Cassius Winston",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "JT Thor",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "type": "—",
+          "name": "Round 2, Pick #60",
+          "description": "— rights hold",
+          "amount": 0,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/wizards/30/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "16": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Cleveland Cavaliers",
+          "amount": 10232558,
+          "expires_on": "2027-08-20",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Hunter Tyson",
+          "description": "From Boston Celtics",
+          "amount": 2221677,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "2026-27 remaining amount; rounded where the tracker displays abbreviated values",
+          "amount": 6040000,
+          "source_name": "JJNBA MLE & Bi-Annual Tracker (updated 2026-11-21)",
+          "source_url": "https://jjnba.com/cba/exceptions/"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Justin Holiday",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "DeMarcus Cousins",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Troy Daniels",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Bird",
+          "name": "Vlatko Čančar",
+          "description": "Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Richard Jefferson",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "David Roddy",
+          "description": "Two-Way rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Markus Howard",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/nuggets/8/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "17": {
+      "exceptions": [
+        {
+          "type": "Unspecified cap exception",
+          "name": "Trade exception",
+          "description": "Fanspo lists a June 30, 2027 exception; JJNBA reports no matching remaining MLE/BAE balance.",
+          "amount": 15044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Mike Conley",
+          "description": "From Chicago Bulls",
+          "amount": 10774038,
+          "expires_on": "2027-02-03",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Rob Dillingham",
+          "description": "From Chicago Bulls",
+          "amount": 6576120,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "Unspecified cap exception",
+          "name": "Trade exception",
+          "description": "Fanspo lists a June 30, 2027 exception; JJNBA reports no matching remaining MLE/BAE balance.",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Evan Turner",
+          "description": "Bird rights hold",
+          "amount": 27909834,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Aaron Brooks",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Joe Ingles",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Greg Monroe",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Austin Rivers",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "type": "—",
+          "name": "Round 2, Pick #59",
+          "description": "— rights hold",
+          "amount": 0,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/timberwolves/18/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "18": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Atlanta Hawks",
+          "amount": 17722222,
+          "expires_on": "2027-07-19",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/thunder/21/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Isaiah Joe",
+          "description": "From Detroit Pistons",
+          "amount": 11323006,
+          "expires_on": "2027-07-06",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/thunder/21/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Aaron Wiggins",
+          "description": "From Atlanta Hawks",
+          "amount": 5764638,
+          "expires_on": "2027-07-06",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/thunder/21/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Ousmane Dieng",
+          "description": "From Charlotte Hornets",
+          "amount": 2449522,
+          "expires_on": "2027-02-04",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/thunder/21/cap-sheet"
+        },
+        {
+          "type": "Taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "2026-27 remaining amount; rounded where the tracker displays abbreviated values",
+          "amount": 210431,
+          "source_name": "JJNBA MLE & Bi-Annual Tracker (updated 2026-11-21)",
+          "source_url": "https://jjnba.com/cba/exceptions/"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Two-Way",
+          "name": "Alex Ducas",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/thunder/21/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/thunder/21/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "19": {
+      "exceptions": [
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $15,040,000).",
+          "amount": 15044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Rondae Hollis-Jefferson",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Ben McLemore",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        },
+        {
+          "type": "Two-Way · QO $2.2M",
+          "name": "Keljin Blevins",
+          "description": "Two-Way · QO $2.2M rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Ashton Hagans",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "T.J. Leaf",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/blazers/25/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "20": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Walker Kessler",
+          "description": "From Los Angeles Lakers",
+          "amount": 15054411,
+          "expires_on": "2027-07-08",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/jazz/29/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $3,040,000).",
+          "amount": 3044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/jazz/29/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Jock Landale",
+          "description": "From Memphis Grizzlies",
+          "amount": 2296274,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/jazz/29/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Kevin Love",
+          "description": "Bird rights hold",
+          "amount": 7885000,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/jazz/29/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/jazz/29/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "21": {
+      "exceptions": [
+        {
+          "type": "Unspecified cap exception",
+          "name": "Trade exception",
+          "description": "Fanspo lists a June 30, 2027 exception; JJNBA reports no matching remaining MLE/BAE balance.",
+          "amount": 15044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Unspecified cap exception",
+          "name": "Trade exception",
+          "description": "Fanspo lists a June 30, 2027 exception; JJNBA reports no matching remaining MLE/BAE balance.",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trayce Jackson-Davis",
+          "description": "From Toronto Raptors",
+          "amount": 2221677,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Matt Barnes",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Nemanja Bjelica",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Andrew Bogut",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Draft Pick",
+          "name": "Seth Curry",
+          "description": "Draft Pick rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Usman Garuba",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "JaMychal Green",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Andre Iguodala",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Jonas Jerebko",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Anthony Lamb",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "David West",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Nate Williams",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Two-Way · QO $2.2M",
+          "name": "Nico Mannion",
+          "description": "Two-Way · QO $2.2M rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Taran Armstrong",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Jerome Robinson",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "type": "—",
+          "name": "Round 2, Pick #54",
+          "description": "— rights hold",
+          "amount": 0,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/warriors/10/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "22": {
+      "exceptions": [
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Kawhi Leonard",
+          "description": "From Toronto Raptors",
+          "amount": 3168489,
+          "expires_on": "2027-09-14",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Kobe Brown",
+          "description": "From Indiana Pacers",
+          "amount": 2654880,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Chris Paul",
+          "description": "From Toronto Raptors",
+          "amount": 2296274,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Ivica Zubac",
+          "description": "From Indiana Pacers",
+          "amount": 1314427,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $1,040,000).",
+          "amount": 1044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "John Collins",
+          "description": "From Detroit Pistons",
+          "amount": 339164,
+          "expires_on": "2027-07-08",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Early Bird",
+          "name": "Nicolas Batum",
+          "description": "Early Bird rights hold",
+          "amount": 7646184,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Rodney Hood",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Patty Mills",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "TyTy Washington Jr.",
+          "description": "Two-Way rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Xavier Moon",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/clippers/13/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "23": {
+      "exceptions": [],
+      "cap_holds": [],
+      "exceptions_status": "none",
+      "cap_holds_status": "none",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/lakers/14/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "24": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Nick Richards",
+          "description": "From Chicago Bulls",
+          "amount": 5000000,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Milwaukee Bucks",
+          "amount": 2048494,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Early Bird",
+          "name": "Damion Lee",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Saben Lee",
+          "description": "Two-Way rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Isaiah Livers",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Draft Pick",
+          "name": "Bol Bol",
+          "description": "Draft Pick rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Amir Coffey",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Terrence Ross",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Isaiah Thomas",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Thaddeus Young",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Udoka Azubuike",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Gabriel Lundberg",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Ish Wainright",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/suns/24/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "25": {
+      "exceptions": [
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $15,040,000).",
+          "amount": 15044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Chicago Bulls",
+          "amount": 5426400,
+          "expires_on": "2027-02-01",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Devin Carter",
+          "description": "From Atlanta Hawks",
+          "amount": 5158080,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Jae Crowder",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Killian Hayes",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Doug McDermott",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "JaVale McGee",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Draft Pick",
+          "name": "Russell Westbrook",
+          "description": "Draft Pick rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Patrick Baldwin Jr.",
+          "description": "Two-Way rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Mason Jones",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Jordan Ford",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/kings/26/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "26": {
+      "exceptions": [
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $12,040,000).",
+          "amount": 12044000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Anthony Davis",
+          "description": "From Washington Wizards",
+          "amount": 7004114,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Jaden Hardy",
+          "description": "From Washington Wizards",
+          "amount": 2909520,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Atlanta Hawks",
+          "amount": 2150917,
+          "expires_on": "2027-07-19",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $278,017).",
+          "amount": 278017,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Early Bird",
+          "name": "Nicolo Melli",
+          "description": "Early Bird rights hold",
+          "amount": 5066667,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Kai Jones",
+          "description": "Two-Way rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Theo Pinson",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Greg Brown III",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Moses Wright",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "McKinley Wright IV",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/mavericks/7/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "27": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Dorian Finney-Smith",
+          "description": "From Atlanta Hawks",
+          "amount": 13335000,
+          "expires_on": "2027-07-06",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $8,980,000).",
+          "amount": 8980000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Non-Bird",
+          "name": "Reggie Bullock Jr.",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "type": "Bird",
+          "name": "Jeff Green",
+          "description": "Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "type": "Bird",
+          "name": "Aaron Holiday",
+          "description": "Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "type": "Bird",
+          "name": "Boban Marjanović",
+          "description": "Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Jack McVeigh",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "type": "—",
+          "name": "Round 2, Pick #39",
+          "description": "— rights hold",
+          "amount": 0,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/rockets/11/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "28": {
+      "exceptions": [
+        {
+          "type": "Trade exception",
+          "name": "Trade exception",
+          "description": "From Utah Jazz",
+          "amount": 28872920,
+          "expires_on": "2027-02-03",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/grizzlies/15/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/grizzlies/15/cap-sheet"
+        },
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $4,690,000).",
+          "amount": 4694000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/grizzlies/15/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Ja Morant",
+          "description": "From Portland Trail Blazers",
+          "amount": 2163172,
+          "expires_on": "2027-06-29",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/grizzlies/15/cap-sheet"
+        }
+      ],
+      "cap_holds": [],
+      "exceptions_status": "verified",
+      "cap_holds_status": "none",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/grizzlies/15/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "29": {
+      "exceptions": [
+        {
+          "type": "Non-taxpayer mid-level exception",
+          "name": "Remaining balance",
+          "description": "Source values differ: Fanspo lists $7,544,000; JJNBA (updated 2026-11-21) lists $7,040,000.",
+          "amount": 7544000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Jordan Hawkins",
+          "description": "From Memphis Grizzlies",
+          "amount": 7021895,
+          "expires_on": "2027-09-08",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Trade exception",
+          "name": "Jose Alvarado",
+          "description": "From New York Knicks",
+          "amount": 4500000,
+          "expires_on": "2027-02-05",
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Willy Hernangomez",
+          "description": "Bird rights hold",
+          "amount": 4642804,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Tony Snell",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Gary Clark",
+          "description": "Non-Bird rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "Jared Harper",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Two-Way",
+          "name": "James Nunnally",
+          "description": "Two-Way rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Josh Oduro",
+          "description": "Non-Bird rights hold",
+          "amount": 2185116,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/pelicans/19/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    },
+    "30": {
+      "exceptions": [
+        {
+          "type": "Bi-annual exception",
+          "name": "Remaining balance",
+          "description": "Balance cross-checked with JJNBA (updated 2026-11-21; source rounds to $5,480,000).",
+          "amount": 5477000,
+          "expires_on": "2027-06-30",
+          "source_name": "Fanspo 2026-27 cap sheet; cross-checked against JJNBA",
+          "source_url": "https://fanspo.com/nba/teams/spurs/27/cap-sheet"
+        }
+      ],
+      "cap_holds": [
+        {
+          "type": "Bird",
+          "name": "Kelly Olynyk",
+          "description": "Bird rights hold",
+          "amount": 25545732,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/spurs/27/cap-sheet"
+        },
+        {
+          "type": "Early Bird",
+          "name": "Bismack Biyombo",
+          "description": "Early Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/spurs/27/cap-sheet"
+        },
+        {
+          "type": "Non-Bird",
+          "name": "Lindy Waters III",
+          "description": "Non-Bird rights hold",
+          "amount": 2449421,
+          "source_name": "Fanspo 2026-27 cap sheet",
+          "source_url": "https://fanspo.com/nba/teams/spurs/27/cap-sheet"
+        }
+      ],
+      "exceptions_status": "verified",
+      "cap_holds_status": "verified",
+      "sources": [
+        {
+          "name": "Fanspo 2026-27 cap sheet",
+          "url": "https://fanspo.com/nba/teams/spurs/27/cap-sheet"
+        },
+        {
+          "name": "JJNBA MLE & Bi-Annual Tracker",
+          "url": "https://jjnba.com/cba/exceptions/"
+        }
+      ]
+    }
+  }
+}

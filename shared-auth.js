@@ -33,6 +33,10 @@
   let authConfig = null;
   let session = null;
   let guest = false;
+  let recoveryToken = "";
+  let recoveryStep = "";
+  let recoveryError = "";
+  let authCallbackNotice = "";
   let resolveReady;
   const ready = new Promise(resolve => {
     resolveReady = resolve;
@@ -103,7 +107,7 @@
     return authConfig;
   }
 
-  async function authRequest(path, body, accessToken = "") {
+  async function authRequest(path, body, accessToken = "", method = "POST") {
     const config = await getAuthConfig();
     const headers = {
       "Content-Type": "application/json",
@@ -111,7 +115,7 @@
     };
     if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
     const response = await fetch(`${config.supabase_url}/auth/v1/${path}`, {
-      method: "POST",
+      method,
       headers,
       body: JSON.stringify(body)
     });
@@ -204,8 +208,53 @@
     if (document.querySelector('link[href^="shared-auth.css"]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "shared-auth.css";
+    link.href = "shared-auth.css?v=shared-password-recovery-20261123";
     document.head.appendChild(link);
+  }
+
+  function updatePasswordRecoveryView(overlay) {
+    const tabs = overlay.querySelector(".shared-auth-tabs");
+    const authForm = overlay.querySelector("#sharedAuthForm");
+    const recoveryForm = overlay.querySelector("#sharedAuthRecoveryForm");
+    const profile = overlay.querySelector("#sharedAuthProfile");
+    if (!recoveryStep) {
+      recoveryForm.hidden = true;
+      return;
+    }
+
+    const emailStep = recoveryStep === "email";
+    tabs.hidden = true;
+    authForm.hidden = true;
+    recoveryForm.hidden = false;
+    profile.hidden = true;
+    overlay.querySelector("#sharedAuthClose").hidden = false;
+
+    const emailLabel = overlay.querySelector("#sharedAuthRecoveryEmailLabel");
+    const emailInput = overlay.querySelector("#sharedAuthRecoveryEmail");
+    const passwordFields = overlay.querySelector("#sharedAuthRecoveryPasswords");
+    const newPassword = overlay.querySelector("#sharedAuthNewPassword");
+    const confirmPassword = overlay.querySelector("#sharedAuthConfirmPassword");
+    const submit = overlay.querySelector("#sharedAuthRecoverySubmit");
+    const back = overlay.querySelector("#sharedAuthBackToSignIn");
+    const status = overlay.querySelector("#sharedAuthRecoveryStatus");
+
+    emailLabel.hidden = !emailStep;
+    emailInput.required = emailStep;
+    passwordFields.hidden = emailStep;
+    newPassword.required = !emailStep;
+    confirmPassword.required = !emailStep;
+    submit.textContent = emailStep ? "Send reset link" : "Update password";
+    back.textContent = emailStep ? "Back to sign in" : "Cancel";
+    overlay.querySelector("#sharedAuthTitle").textContent = emailStep
+      ? "Reset your password"
+      : "Choose a new password";
+    overlay.querySelector("#sharedAuthDescription").textContent = emailStep
+      ? "Enter the email address for your account and we’ll send a secure reset link."
+      : "Choose a new password with at least 8 characters.";
+    status.className = "shared-auth-status";
+    status.textContent = recoveryError;
+    if (recoveryError) status.classList.add("is-error");
+    recoveryError = "";
   }
 
   function ensureOverlay() {
@@ -221,7 +270,7 @@
           <span class="shared-auth-kicker">${appContext.label}</span>
           <button class="shared-auth-close" id="sharedAuthClose" type="button" aria-label="Close account panel" title="Close" hidden>×</button>
           <h2 id="sharedAuthTitle">Welcome to ${appContext.name}</h2>
-          <p>Sign in with your username, or create an account to save your profile.</p>
+          <p id="sharedAuthDescription">Sign in with your username, or create an account to save your profile.</p>
         </header>
         <div class="shared-auth-tabs" role="tablist">
           <button class="shared-auth-tab is-active" type="button" data-auth-mode="signin">Sign in</button>
@@ -238,12 +287,59 @@
           <label id="sharedAuthEmailLabel" hidden>Email
             <input id="sharedAuthEmail" type="email" autocomplete="email" maxlength="254" />
           </label>
-          <label>Password
-            <input id="sharedAuthPassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" required />
-          </label>
+          <div class="shared-auth-password-field">
+            <label for="sharedAuthPassword">Password</label>
+            <div class="shared-auth-password-control">
+              <input id="sharedAuthPassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" required />
+              <button class="shared-auth-password-toggle" type="button" data-password-toggle="sharedAuthPassword" aria-label="Show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path class="shared-auth-eye-slash" d="m4 4 16 16"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button class="shared-auth-link" id="sharedAuthForgot" type="button">Forgot password?</button>
           <p class="shared-auth-status" id="sharedAuthStatus" role="status"></p>
           <button class="shared-auth-primary" id="sharedAuthSubmit" type="submit">Sign in</button>
           <button class="shared-auth-guest" id="sharedAuthGuest" type="button">Continue as Guest</button>
+        </form>
+        <form class="shared-auth-form" id="sharedAuthRecoveryForm" hidden>
+          <label id="sharedAuthRecoveryEmailLabel" for="sharedAuthRecoveryEmail">Email
+            <input id="sharedAuthRecoveryEmail" type="email" autocomplete="email" maxlength="254" required />
+          </label>
+          <div class="shared-auth-recovery-passwords" id="sharedAuthRecoveryPasswords" hidden>
+            <div class="shared-auth-password-field">
+              <label for="sharedAuthNewPassword">New password</label>
+              <div class="shared-auth-password-control">
+                <input id="sharedAuthNewPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
+                <button class="shared-auth-password-toggle" type="button" data-password-toggle="sharedAuthNewPassword" aria-label="Show password" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path class="shared-auth-eye-slash" d="m4 4 16 16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="shared-auth-password-field">
+              <label for="sharedAuthConfirmPassword">Confirm new password</label>
+              <div class="shared-auth-password-control">
+                <input id="sharedAuthConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
+                <button class="shared-auth-password-toggle" type="button" data-password-toggle="sharedAuthConfirmPassword" aria-label="Show password" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path class="shared-auth-eye-slash" d="m4 4 16 16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="shared-auth-status" id="sharedAuthRecoveryStatus" role="status"></p>
+          <button class="shared-auth-primary" id="sharedAuthRecoverySubmit" type="submit">Send reset link</button>
+          <button class="shared-auth-link" id="sharedAuthBackToSignIn" type="button">Back to sign in</button>
         </form>
         <section class="shared-auth-profile" id="sharedAuthProfile" hidden>
           <p class="shared-auth-status" id="sharedAuthProfileStatus" role="status"></p>
@@ -267,6 +363,7 @@
     document.body.appendChild(overlay);
     overlay.querySelector("#sharedAuthClose").addEventListener("click", () => {
       overlay.hidden = true;
+      resetPasswordVisibility();
     });
 
     let mode = "signin";
@@ -274,6 +371,7 @@
     const submit = overlay.querySelector("#sharedAuthSubmit");
     const status = overlay.querySelector("#sharedAuthStatus");
     const form = overlay.querySelector("#sharedAuthForm");
+    const forgotButton = overlay.querySelector("#sharedAuthForgot");
     const signupUsername = overlay.querySelector("#sharedAuthSignupUsername");
     const signupUsernameLabel = overlay.querySelector("#sharedAuthSignupUsernameLabel");
     const identifierLabel = overlay.querySelector("#sharedAuthIdentifierLabel");
@@ -281,10 +379,33 @@
     const emailLabel = overlay.querySelector("#sharedAuthEmailLabel");
     const emailInput = overlay.querySelector("#sharedAuthEmail");
     const loginHint = overlay.querySelector("#sharedAuthLoginHint");
+    const recoveryForm = overlay.querySelector("#sharedAuthRecoveryForm");
+    const recoveryEmail = overlay.querySelector("#sharedAuthRecoveryEmail");
+    const recoveryStatus = overlay.querySelector("#sharedAuthRecoveryStatus");
+    const recoverySubmit = overlay.querySelector("#sharedAuthRecoverySubmit");
     const profileUsername = overlay.querySelector("#sharedAuthProfileUsername");
     const profileDisplayName = overlay.querySelector("#sharedAuthProfileDisplayName");
     const profileAvatar = overlay.querySelector("#sharedAuthProfileAvatar");
     const profileStatus = overlay.querySelector("#sharedAuthProfileStatus");
+    const resetPasswordVisibility = () => {
+      overlay.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
+        const input = overlay.querySelector(`#${toggle.dataset.passwordToggle}`);
+        input.type = "password";
+        toggle.setAttribute("aria-label", "Show password");
+        toggle.setAttribute("aria-pressed", "false");
+        toggle.querySelector(".shared-auth-eye-slash").hidden = false;
+      });
+    };
+    overlay.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        const input = overlay.querySelector(`#${toggle.dataset.passwordToggle}`);
+        const showPassword = input.type === "password";
+        input.type = showPassword ? "text" : "password";
+        toggle.setAttribute("aria-label", showPassword ? "Hide password" : "Show password");
+        toggle.setAttribute("aria-pressed", String(showPassword));
+        toggle.querySelector(".shared-auth-eye-slash").hidden = showPassword;
+      });
+    });
     overlay.querySelector("#sharedAuthLogout").addEventListener("click", () => {
       window.NBAHubAuth.logout();
     });
@@ -312,7 +433,15 @@
 
     tabs.forEach((tab) => {
       tab.addEventListener("click", () => {
+        resetPasswordVisibility();
         mode = tab.dataset.authMode;
+        recoveryStep = "";
+        recoveryToken = "";
+        recoveryForm.hidden = true;
+        forgotButton.hidden = mode !== "signin";
+        overlay.querySelector("#sharedAuthTitle").textContent = `Welcome to ${appContext.name}`;
+        overlay.querySelector("#sharedAuthDescription").textContent =
+          "Sign in with your username, or create an account to save your profile.";
         tabs.forEach((item) => item.classList.toggle("is-active", item === tab));
         submit.textContent = mode === "signup" ? "Create account" : "Sign in";
         signupUsernameLabel.hidden = mode !== "signup";
@@ -325,6 +454,30 @@
         status.textContent = "";
         status.className = "shared-auth-status";
       });
+    });
+
+    forgotButton.addEventListener("click", () => {
+      resetPasswordVisibility();
+      const enteredIdentifier = identifier.value.trim();
+      if (enteredIdentifier.includes("@")) recoveryEmail.value = enteredIdentifier;
+      recoveryToken = "";
+      recoveryError = "";
+      recoveryStep = "email";
+      recoveryStatus.textContent = "";
+      updatePasswordRecoveryView(overlay);
+      overlay.hidden = false;
+    });
+
+    overlay.querySelector("#sharedAuthBackToSignIn").addEventListener("click", () => {
+      resetPasswordVisibility();
+      overlay.querySelector("#sharedAuthNewPassword").value = "";
+      overlay.querySelector("#sharedAuthConfirmPassword").value = "";
+      recoveryToken = "";
+      recoveryStep = "";
+      recoveryError = "";
+      clearPasswordRecoveryUrl();
+      updateAccountButton();
+      overlay.hidden = false;
     });
 
     overlay.querySelector("#sharedAuthGuest").addEventListener("click", () => {
@@ -352,9 +505,21 @@
       status.textContent = mode === "signup" ? "Creating your account…" : "Signing in…";
       try {
         const endpoint = mode === "signup" ? "signup" : "login";
-        const body = mode === "signup"
-          ? { username, email, password }
-          : { username: loginName, password };
+        let body;
+        if (mode === "signup") {
+          const redirect = new URL(window.location.href);
+          redirect.hash = "";
+          redirect.searchParams.delete("auth_action");
+          redirect.searchParams.set("auth_action", "confirm_email");
+          body = {
+            username,
+            email,
+            password,
+            redirect_to: redirect.toString()
+          };
+        } else {
+          body = { username: loginName, password };
+        }
         const response = await fetch(
           `${API_URL}/api/v1/auth/${endpoint}?app_id=${encodeURIComponent(appContext.id)}`,
           {
@@ -387,6 +552,75 @@
       }
     });
 
+    recoveryForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      recoveryStatus.className = "shared-auth-status";
+      recoveryStatus.textContent = "";
+      if (recoveryStep === "email") {
+        const email = recoveryEmail.value.trim();
+        const redirect = new URL(window.location.href);
+        redirect.hash = "";
+        redirect.searchParams.set("auth_action", "update_password");
+        recoverySubmit.disabled = true;
+        recoveryStatus.textContent = "Sending a secure reset link…";
+        try {
+          await authRequest(
+            `recover?redirect_to=${encodeURIComponent(redirect.toString())}`,
+            { email }
+          );
+          recoveryStatus.className = "shared-auth-status is-success";
+          recoveryStatus.textContent = "If an account exists for that email, a secure reset link is on the way.";
+        } catch (error) {
+          recoveryStatus.className = "shared-auth-status is-error";
+          recoveryStatus.textContent = error instanceof Error
+            ? error.message
+            : "Could not send the password reset link.";
+        } finally {
+          recoverySubmit.disabled = false;
+        }
+        return;
+      }
+
+      const newPassword = overlay.querySelector("#sharedAuthNewPassword").value;
+      const confirmPassword = overlay.querySelector("#sharedAuthConfirmPassword").value;
+      if (!recoveryToken) {
+        recoveryStatus.className = "shared-auth-status is-error";
+        recoveryStatus.textContent = "This reset link is missing or expired. Request a new one.";
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        recoveryStatus.className = "shared-auth-status is-error";
+        recoveryStatus.textContent = "The passwords do not match.";
+        return;
+      }
+
+      recoverySubmit.disabled = true;
+      recoveryStatus.textContent = "Updating your password…";
+      try {
+        await authRequest("user", { password: newPassword }, recoveryToken, "PUT");
+        recoveryToken = "";
+        recoveryStep = "";
+        clearPasswordRecoveryUrl();
+        overlay.querySelector("#sharedAuthNewPassword").value = "";
+        overlay.querySelector("#sharedAuthConfirmPassword").value = "";
+        resetPasswordVisibility();
+        updateAccountButton();
+        overlay.hidden = false;
+        const successStatus = session
+          ? overlay.querySelector("#sharedAuthProfileStatus")
+          : status;
+        successStatus.className = "shared-auth-status is-success";
+        successStatus.textContent = "Password updated. You can now sign in with your new password.";
+      } catch (error) {
+        recoveryStatus.className = "shared-auth-status is-error";
+        recoveryStatus.textContent = error instanceof Error
+          ? error.message
+          : "Could not update your password.";
+      } finally {
+        recoverySubmit.disabled = false;
+      }
+    });
+
     return overlay;
   }
 
@@ -408,6 +642,43 @@
         : document.querySelector(".nav-container");
     if (container) container.appendChild(button);
     else document.body.appendChild(button);
+  }
+
+  function clearPasswordRecoveryUrl() {
+    const url = new URL(window.location.href);
+    if (!url.hash && !url.searchParams.has("auth_action")) return;
+    url.hash = "";
+    url.searchParams.delete("auth_action");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}`);
+  }
+
+  function restoreAuthCallback() {
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const queryParams = new URLSearchParams(window.location.search);
+    const action = queryParams.get("auth_action");
+    const params = hashParams.has("type") || hashParams.has("error")
+      ? hashParams
+      : queryParams;
+    if (params.has("error")) {
+      if (action === "confirm_email") {
+        authCallbackNotice = "This confirmation link could not be verified. Request a new confirmation email.";
+      } else {
+        recoveryStep = "email";
+        recoveryError = "This reset link could not be verified. Request a new reset email.";
+      }
+      clearPasswordRecoveryUrl();
+      return;
+    }
+    if (params.get("type") === "recovery" && params.get("access_token")) {
+      recoveryToken = params.get("access_token");
+      recoveryStep = "password";
+      clearPasswordRecoveryUrl();
+      return;
+    }
+    if (params.get("type") === "signup" && params.get("access_token")) {
+      authCallbackNotice = "Email confirmed. You can now sign in.";
+      clearPasswordRecoveryUrl();
+    }
   }
 
   function appSettingsDefaults() {
@@ -569,15 +840,15 @@
     ensureAccountButton();
     ensureSettingsButton();
     const button = document.getElementById("sharedAuthAccount");
-    if (session) {
+    if (button && session) {
       const label = session.role === "admin" ? "Admin" : "Account";
       const name = session.display_name || session.username || session.email || "";
       button.innerHTML = session.avatar_url
         ? `<img class="shared-auth-account__avatar" src="${escapeHtml(session.avatar_url)}" alt=""><span>${escapeHtml(name)}</span>`
         : `<span class="shared-auth-account__fallback">${escapeHtml(getInitials(name))}</span><span>${escapeHtml(name)}</span>`;
-    } else if (guest) {
+    } else if (button && guest) {
       button.textContent = "Guest · Sign in";
-    } else {
+    } else if (button) {
       button.textContent = "Sign in";
     }
 
@@ -585,8 +856,17 @@
     if (!overlay) return;
     const tabs = overlay.querySelector(".shared-auth-tabs");
     const form = overlay.querySelector("#sharedAuthForm");
+    const recoveryForm = overlay.querySelector("#sharedAuthRecoveryForm");
     const profile = overlay.querySelector("#sharedAuthProfile");
     const status = overlay.querySelector("#sharedAuthStatus");
+    if (recoveryStep) {
+      updatePasswordRecoveryView(overlay);
+      return;
+    }
+    recoveryForm.hidden = true;
+    overlay.querySelector("#sharedAuthTitle").textContent = `Welcome to ${appContext.name}`;
+    overlay.querySelector("#sharedAuthDescription").textContent =
+      "Sign in with your username, or create an account to save your profile.";
     if (session) {
       tabs.hidden = true;
       form.hidden = true;
@@ -627,13 +907,21 @@
   async function initialize() {
     try {
       ensureStyles();
+      restoreAuthCallback();
       loadStoredMode();
       const overlay = ensureOverlay();
       ensureAccountButton();
       applyGuestRestrictions();
       if (session) await loadSessionRole();
-      overlay.hidden = true;
+      overlay.hidden = !recoveryStep && !authCallbackNotice;
       updateAccountButton();
+      if (authCallbackNotice) {
+        const status = session
+          ? overlay.querySelector("#sharedAuthProfileStatus")
+          : overlay.querySelector("#sharedAuthStatus");
+        status.className = "shared-auth-status is-success";
+        status.textContent = authCallbackNotice;
+      }
     } finally {
       resolveReady(session);
       window.dispatchEvent(new CustomEvent("nba-hub-auth-ready"));
