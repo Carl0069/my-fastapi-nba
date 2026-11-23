@@ -35,22 +35,6 @@
         </div>
       </section>
 
-      <section class="scoreboard" aria-label="Live budget scoreboard">
-        <div class="scoreboard__budget">
-          <span class="scoreboard__label">YOUR BUDGET</span>
-          <strong id="remainingAmount">$15</strong>
-          <span class="scoreboard__sub">OF $15 LEFT</span>
-        </div>
-        <div class="scoreboard__progress">
-          <div class="progress-copy"><span id="lineupCount">0 / 5 PICKS</span><span id="spentAmount">$0 SPENT</span></div>
-          <div id="budgetProgress" class="budget-track" role="progressbar" aria-label="Fantasy budget spent" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0">
-            <span id="budgetFill"></span>
-          </div>
-          <div class="budget-ticks" aria-hidden="true"><span>$0</span><span>$5</span><span>$10</span><span>$15</span></div>
-        </div>
-        <button type="button" class="new-board-button" id="newBoard"><span aria-hidden="true">⟳</span> New board</button>
-      </section>
-
       <section class="challenge-section" aria-labelledby="officialTitle">
         <div class="section-title">
           <div class="section-title__label"><span class="title-icon title-icon--official" aria-hidden="true">♜</span><span><span class="overline">CURATED LINEUP MODES</span><h2 id="officialTitle">Official Challenges</h2></span></div>
@@ -70,6 +54,22 @@
         </div>
         <p id="communityStatus" class="community-status" role="status">Loading shared challenges…</p>
         <div class="challenge-grid" id="communityChallenges"></div>
+      </section>
+
+      <section class="scoreboard" aria-label="Live budget scoreboard">
+        <div class="scoreboard__budget">
+          <span class="scoreboard__label">YOUR BUDGET</span>
+          <strong id="remainingAmount">$15</strong>
+          <span class="scoreboard__sub">OF $15 LEFT</span>
+        </div>
+        <div class="scoreboard__progress">
+          <div class="progress-copy"><span id="lineupCount">0 / 5 PICKS</span><span id="spentAmount">$0 SPENT</span></div>
+          <div id="budgetProgress" class="budget-track" role="progressbar" aria-label="Fantasy budget spent" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0">
+            <span id="budgetFill"></span>
+          </div>
+          <div class="budget-ticks" aria-hidden="true"><span>$0</span><span>$5</span><span>$10</span><span>$15</span></div>
+        </div>
+        <button type="button" class="new-board-button" id="newBoard"><span aria-hidden="true">⟳</span> New board</button>
       </section>
 
       <section class="market-section" aria-labelledby="marketTitle">
@@ -199,6 +199,21 @@
           </label>
           <label class="form-field">Icon<input name="icon" required maxlength="8" value="🏆" aria-label="Challenge icon" /></label>
         </div>
+        <section class="official-ai-builder" aria-label="AI challenge generator">
+          <label class="form-field" for="officialChallengePrompt">Describe the challenge for AI
+            <textarea id="officialChallengePrompt" maxlength="800" rows="3" placeholder="e.g. Build a balanced challenge around elite defenders and tough lineup choices…"></textarea>
+          </label>
+          <button type="button" class="official-ai-generate" id="generateOfficialChallenge">Generate AI Draft</button>
+          <input type="hidden" name="player_tiers" value="{}" />
+        </section>
+        <section class="official-tier-review" id="officialTierReview" aria-label="Review player prices" hidden>
+          <div class="official-tier-review__heading">
+            <strong>Review player prices</strong>
+            <p id="officialTierSummary"></p>
+          </div>
+          <input class="official-tier-search" id="officialTierSearch" type="search" placeholder="Find a player or team to edit…" aria-label="Search player prices" />
+          <div class="official-tier-options" id="officialTierOptions"></div>
+        </section>
         <p id="officialChallengeFormStatus" class="official-challenge-status" role="status"></p>
         <div class="create-dialog__actions">
           <button type="button" class="cancel-create" id="cancelCreateOfficialChallenge">Cancel</button>

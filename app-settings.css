@@ -24,16 +24,16 @@ body {
 
 body[data-settings-app="trade_machine"] {
   color-scheme: dark;
-  --settings-bg: #0c1513;
-  --settings-panel: #111c1a;
-  --settings-ink: #e8f2ed;
-  --settings-muted: #a7b9ae;
-  --settings-line: #315a4d;
-  --settings-accent: #28714d;
+  --settings-bg: #050505;
+  --settings-panel: #101010;
+  --settings-ink: #eef4ff;
+  --settings-muted: #a0a6ad;
+  --settings-line: #363636;
+  --settings-accent: #ff923e;
   --settings-font: "Space Grotesk", sans-serif;
   background:
-    linear-gradient(rgba(7, 15, 13, .96), rgba(7, 15, 13, .96)),
-    repeating-linear-gradient(90deg, transparent 0 38px, rgba(143, 224, 170, .06) 39px);
+    radial-gradient(ellipse at 82% 0, rgba(99, 168, 255, .055), transparent 35rem),
+    linear-gradient(180deg, #0b0b0b, var(--settings-bg));
 }
 
 body[data-settings-app="build_15"] {
@@ -136,8 +136,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 body[data-settings-app="trade_machine"] .settings-intro h1 {
-  font-family: "IBM Plex Mono", monospace;
-  letter-spacing: -.08em;
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: -.06em;
 }
 
 body[data-settings-app="build_15"] .settings-intro h1 {
@@ -154,7 +154,7 @@ body[data-settings-app="build_15"] .settings-intro h1 {
   box-shadow: 0 14px 36px rgba(0, 0, 0, .12);
 }
 
-body[data-settings-app="trade_machine"] .settings-section { border-radius: 8px; }
+body[data-settings-app="trade_machine"] .settings-section { border-radius: 14px; }
 body[data-settings-app="build_15"] .settings-section { border-radius: 8px; }
 
 .settings-section h2 {
@@ -227,6 +227,7 @@ body[data-settings-app="build_15"] .settings-section { border-radius: 8px; }
 
 .settings-page-status.is-error { color: #ff7b82; }
 .settings-page-status.is-success { color: #64d99b; }
+body[data-settings-app="trade_machine"] .settings-page-status.is-success { color: #8bc2ff; }
 body[data-settings-app="build_15"] .settings-page-status.is-success { color: #23734d; }
 
 .settings-profile-picture {
@@ -312,8 +313,18 @@ body[data-settings-app="build_15"] .settings-page-status.is-success { color: #23
 
 body[data-settings-app="trade_machine"] .settings-save,
 body[data-settings-app="trade_machine"] .settings-cancel {
-  border-radius: 4px;
-  font-family: "IBM Plex Mono", monospace;
+  border-radius: 9px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+body[data-settings-app="trade_machine"] .settings-save:hover:not(:disabled) {
+  border-color: #ffad68;
+  background: #ffad68;
+}
+
+body[data-settings-app="trade_machine"] .settings-cancel:hover {
+  border-color: var(--settings-accent);
+  background: rgba(255, 146, 62, .08);
 }
 
 body[data-settings-app="build_15"] .settings-save,

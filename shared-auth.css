@@ -321,9 +321,9 @@
 }
 
 .shared-settings-trigger--trade_machine {
-  border-color: #315a4d;
-  color: #a7e2bb;
-  font-family: "IBM Plex Mono", monospace;
+  border-color: #345675;
+  color: #abd0ff;
+  font-family: "Space Grotesk", sans-serif;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -340,10 +340,10 @@
 }
 
 .shared-auth-account--trade_machine {
-  border-color: #315a4d;
-  background: #111c1a;
-  color: #a7e2bb;
-  font-family: "IBM Plex Mono", monospace;
+  border-color: #345675;
+  background: #0c1b30;
+  color: #c8dfff;
+  font-family: "Space Grotesk", sans-serif;
 }
 
 .shared-auth-account--build_15 {
@@ -517,76 +517,86 @@
 }
 
 .shared-auth-overlay--trade_machine {
-  --shared-auth-accent: #8fe0aa;
+  --shared-auth-accent: #8bc2ff;
   background:
-    linear-gradient(rgba(7, 15, 13, 0.86), rgba(7, 15, 13, 0.9)),
-    repeating-linear-gradient(90deg, transparent 0 38px, rgba(143, 224, 170, 0.06) 39px);
+    linear-gradient(rgba(4, 12, 24, 0.86), rgba(4, 12, 24, 0.9)),
+    repeating-linear-gradient(90deg, transparent 0 38px, rgba(99, 168, 255, 0.06) 39px);
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-card,
 .shared-settings-overlay--trade_machine .shared-settings-card {
-  border-color: #315a4d;
-  border-radius: 10px;
-  background: #111c1a;
-  color: #e8f2ed;
+  border-color: #315174;
+  border-radius: 14px;
+  background: #0c1b30;
+  color: #eef4ff;
   font-family: "Space Grotesk", sans-serif;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-header,
 .shared-settings-overlay--trade_machine .shared-settings-header {
-  background: #0c1513;
-  border-bottom: 1px solid #315a4d;
+  background: linear-gradient(120deg, #102744, #0b192d);
+  border-bottom: 1px solid #315174;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-header h2,
 .shared-settings-overlay--trade_machine .shared-settings-header h2 {
-  font-family: "IBM Plex Mono", monospace;
-  letter-spacing: -0.06em;
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: -0.055em;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-tabs {
-  background: #0b1512;
+  background: #09182b;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-tab {
-  color: #9eb4a7;
+  color: #a9bad1;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-tab.is-active {
-  background: #244b3a;
-  color: #e8f2ed;
+  background: #1a3b62;
+  color: #eef4ff;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-form label,
 .shared-auth-overlay--trade_machine .shared-auth-profile label,
 .shared-settings-overlay--trade_machine .shared-settings-form > label {
-  color: #c8d8cf;
+  color: #cfddf0;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-form input,
 .shared-auth-overlay--trade_machine .shared-auth-profile input,
 .shared-settings-overlay--trade_machine .shared-settings-form input:not([type="checkbox"]),
 .shared-settings-overlay--trade_machine .shared-settings-form select {
-  border-color: #315a4d;
-  border-radius: 5px;
-  background: #09120f;
-  color: #e8f2ed;
-  font-family: "IBM Plex Mono", monospace;
+  border-color: #345675;
+  border-radius: 8px;
+  background: #081629;
+  color: #eef4ff;
+  font-family: "Space Grotesk", sans-serif;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-primary {
-  border-radius: 5px;
-  background: #28714d;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ff9a4c, #ed7029);
+  color: #1d1720;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-guest {
-  border-color: #315a4d;
-  background: #172621;
-  color: #c8d8cf;
+  border-color: #345675;
+  background: #132744;
+  color: #cfddf0;
 }
 
 .shared-auth-overlay--trade_machine .shared-auth-hint {
-  color: #a7b9ae;
+  color: #9aacc4;
+}
+
+.shared-auth-overlay--trade_machine .shared-auth-status.is-success,
+.shared-settings-overlay--trade_machine .shared-auth-status.is-success {
+  color: #8bc2ff;
+}
+
+.shared-settings-overlay--trade_machine .shared-settings-checkbox input {
+  accent-color: #63a8ff;
 }
 
 .shared-auth-overlay--build_15 {

@@ -76,7 +76,13 @@ const elements = {
   closeCreateOfficialChallenge: document.getElementById("closeCreateOfficialChallenge"),
   cancelCreateOfficialChallenge: document.getElementById("cancelCreateOfficialChallenge"),
   submitOfficialChallenge: document.getElementById("submitOfficialChallenge"),
+  generateOfficialChallenge: document.getElementById("generateOfficialChallenge"),
+  officialChallengePrompt: document.getElementById("officialChallengePrompt"),
   officialChallengeFormStatus: document.getElementById("officialChallengeFormStatus"),
+  officialTierReview: document.getElementById("officialTierReview"),
+  officialTierSummary: document.getElementById("officialTierSummary"),
+  officialTierSearch: document.getElementById("officialTierSearch"),
+  officialTierOptions: document.getElementById("officialTierOptions"),
   communityChallenges: document.getElementById("communityChallenges"),
   communityStatus: document.getElementById("communityStatus"),
   openCreateChallenge: document.getElementById("openCreateChallenge"),
@@ -131,6 +137,8 @@ const state = {
   challengeSelectedPlayerIds: new Set(),
   challengeSubmitting: false,
   challengeSelectionValid: false,
+  officialChallengeGenerating: false,
+  officialPlayerTiers: {},
   authSession: null,
   toastTimer: null
 };
@@ -460,8 +468,14 @@ function getTieredChallengePlayers(challenge) {
     .filter((player) => matchesRule(player, challenge.rule_type))
     .sort((left, right) => right.impact - left.impact || left.name.localeCompare(right.name));
   const tiers = Object.fromEntries([1, 2, 3, 4, 5].map((tier) => [tier, []]));
+  const customTiers = challenge.player_tiers && typeof challenge.player_tiers === "object"
+    ? challenge.player_tiers
+    : {};
   ranked.forEach((player, index) => {
-    const tier = getTierForRank(index, ranked.length);
+    const savedTier = customTiers[player.id];
+    const tier = Number.isInteger(savedTier) && savedTier >= 1 && savedTier <= 5
+      ? savedTier
+      : getTierForRank(index, ranked.length);
     tiers[tier].push({ ...player, tier });
   });
   return tiers;
@@ -626,6 +640,55 @@ function updateChallengePlayerPicker() {
 function renderOfficialChallenges() {
   elements.officialChallenges.innerHTML = OFFICIAL_CHALLENGES.map((challenge) => renderChallengeCard(challenge, true)).join("");
   attachChallengeStartHandlers(elements.officialChallenges, true);
+}
+
+function updateOfficialPlayerTierSummary() {
+  const tiers = Object.values(state.officialPlayerTiers);
+  const counts = [1, 2, 3, 4, 5].map((tier) => (
+    `$${tier}: ${tiers.filter((value) => value === tier).length}`
+  ));
+  elements.officialTierSummary.textContent = `${tiers.length} players priced · ${counts.join(" · ")}`;
+}
+
+function renderOfficialPlayerTierEditor() {
+  const playerTiers = state.officialPlayerTiers;
+  const tierEntries = Object.entries(playerTiers);
+  elements.officialTierReview.hidden = tierEntries.length === 0;
+  elements.officialTierSearch.disabled = tierEntries.length === 0;
+  if (!tierEntries.length) {
+    elements.officialTierOptions.innerHTML = "";
+    elements.officialChallengeFormStatus.textContent = "";
+    return;
+  }
+
+  updateOfficialPlayerTierSummary();
+  const searchTerm = elements.officialTierSearch.value.trim().toLocaleLowerCase();
+  const pricedPlayers = state.players
+    .filter((player) => Object.hasOwn(playerTiers, player.id))
+    .filter((player) => !searchTerm
+      || player.name.toLocaleLowerCase().includes(searchTerm)
+      || player.team.toLocaleLowerCase().includes(searchTerm))
+    .sort((left, right) => left.name.localeCompare(right.name) || left.team.localeCompare(right.team));
+  const visiblePlayers = pricedPlayers.slice(0, 60);
+  elements.officialTierOptions.innerHTML = visiblePlayers.length
+    ? `${visiblePlayers.map((player) => `
+      <label class="official-tier-row">
+        <span><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.team)}</small></span>
+        <select data-official-player-tier="${escapeHtml(player.id)}" aria-label="Price tier for ${escapeHtml(player.name)}">
+          ${[1, 2, 3, 4, 5].map((tier) => `<option value="${tier}" ${playerTiers[player.id] === tier ? "selected" : ""}>$${tier}</option>`).join("")}
+        </select>
+      </label>
+    `).join("")}
+    <p class="official-tier-count">${pricedPlayers.length > visiblePlayers.length
+      ? `Showing ${visiblePlayers.length} of ${pricedPlayers.length} matches. Search to narrow the list.`
+      : `${pricedPlayers.length} matching ${pricedPlayers.length === 1 ? "player" : "players"}.`}</p>`
+    : '<p class="official-tier-count">No players match that search.</p>';
+}
+
+function setOfficialPlayerTiers(playerTiers) {
+  state.officialPlayerTiers = playerTiers;
+  elements.createOfficialChallengeForm.elements.player_tiers.value = JSON.stringify(playerTiers);
+  renderOfficialPlayerTierEditor();
 }
 
 async function loadOfficialChallenges() {
@@ -1268,13 +1331,15 @@ async function createOfficialChallenge(event) {
   elements.officialChallengeFormStatus.textContent = "Saving the official challenge…";
   try {
     const formData = new FormData(elements.createOfficialChallengeForm);
+    const formPayload = Object.fromEntries(formData.entries());
+    formPayload.player_tiers = JSON.parse(String(formPayload.player_tiers || "{}"));
     const response = await fetch(`${API_URL}/api/v1/official-challenges`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${await getValidSupabaseAccessToken()}`
       },
-      body: JSON.stringify(Object.fromEntries(formData.entries()))
+      body: JSON.stringify(formPayload)
     });
     const payload = await response.json();
     if (!response.ok) {
@@ -1291,6 +1356,8 @@ async function createOfficialChallenge(event) {
     renderOfficialChallenges();
     elements.officialChallengeStatus.textContent = "Official challenges are shared across devices.";
     elements.createOfficialChallengeForm.reset();
+    setOfficialPlayerTiers({});
+    elements.officialTierSearch.value = "";
     elements.createOfficialChallengeDialog.close();
     showToast("Official challenge published for everyone.");
   } catch (error) {
@@ -1300,6 +1367,69 @@ async function createOfficialChallenge(event) {
   } finally {
     elements.submitOfficialChallenge.disabled = false;
     elements.submitOfficialChallenge.textContent = "Publish Official Challenge";
+  }
+}
+
+async function generateOfficialChallengeDraft() {
+  if (!window.NBAHubAuth?.isAdmin()) {
+    window.NBAHubAuth?.open("Administrator access is required to generate an official challenge.");
+    return;
+  }
+  const prompt = elements.officialChallengePrompt.value.trim();
+  if (prompt.length < 8) {
+    elements.officialChallengeFormStatus.textContent = "Describe the challenge in at least 8 characters.";
+    elements.officialChallengePrompt.focus();
+    return;
+  }
+
+  state.officialChallengeGenerating = true;
+  elements.generateOfficialChallenge.disabled = true;
+  elements.submitOfficialChallenge.disabled = true;
+  elements.generateOfficialChallenge.textContent = "Generating…";
+  elements.officialChallengeFormStatus.textContent = "AI is creating a draft and pricing the league player pool…";
+  try {
+    const response = await fetch(`${API_URL}/api/v1/admin/official-challenges/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getValidSupabaseAccessToken()}`
+      },
+      body: JSON.stringify({ prompt })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.detail || `Request failed (${response.status} ${response.statusText}).`);
+    }
+
+    const playerTiers = payload.player_tiers;
+    const expectedIds = new Set(state.players.map((player) => player.id));
+    if (!playerTiers || typeof playerTiers !== "object"
+      || Array.isArray(playerTiers)
+      || Object.keys(playerTiers).length !== expectedIds.size
+      || Object.entries(playerTiers).some(([id, tier]) => !expectedIds.has(id) || !Number.isInteger(tier) || tier < 1 || tier > 5)
+      || [...expectedIds].some((id) => !Object.hasOwn(playerTiers, id))) {
+      throw new Error("The AI draft did not include a valid price for every current player. Generate it again.");
+    }
+
+    for (const field of ["title", "description", "rule_type", "difficulty", "icon"]) {
+      if (typeof payload[field] !== "string") {
+        throw new Error("The AI provider returned an incomplete challenge draft.");
+      }
+      elements.createOfficialChallengeForm.elements[field].value = payload[field];
+    }
+    setOfficialPlayerTiers(playerTiers);
+    elements.officialTierSearch.value = "";
+    renderOfficialPlayerTierEditor();
+    elements.officialChallengeFormStatus.textContent = "Draft ready. Review the challenge and player prices, edit anything you want, then publish.";
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown generation error.";
+    elements.officialChallengeFormStatus.textContent = `Could not generate the challenge: ${message}`;
+    console.error("Official challenge AI generation failed:", error);
+  } finally {
+    state.officialChallengeGenerating = false;
+    elements.generateOfficialChallenge.disabled = false;
+    elements.generateOfficialChallenge.textContent = "Generate AI Draft";
+    elements.submitOfficialChallenge.disabled = false;
   }
 }
 
@@ -1342,6 +1472,18 @@ elements.openCreateOfficialChallenge.addEventListener("click", () => {
   elements.createOfficialChallengeDialog.showModal();
 });
 elements.createOfficialChallengeForm.addEventListener("submit", createOfficialChallenge);
+elements.generateOfficialChallenge.addEventListener("click", generateOfficialChallengeDraft);
+elements.officialTierSearch.addEventListener("input", renderOfficialPlayerTierEditor);
+elements.officialTierOptions.addEventListener("change", (event) => {
+  const select = event.target instanceof HTMLSelectElement ? event.target : null;
+  if (!select) return;
+  const playerId = select.dataset.officialPlayerTier;
+  const tier = Number(select.value);
+  if (!Object.hasOwn(state.officialPlayerTiers, playerId) || !Number.isInteger(tier) || tier < 1 || tier > 5) return;
+  state.officialPlayerTiers[playerId] = tier;
+  elements.createOfficialChallengeForm.elements.player_tiers.value = JSON.stringify(state.officialPlayerTiers);
+  updateOfficialPlayerTierSummary();
+});
 elements.closeCreateOfficialChallenge.addEventListener("click", () => elements.createOfficialChallengeDialog.close());
 elements.cancelCreateOfficialChallenge.addEventListener("click", () => elements.createOfficialChallengeDialog.close());
 elements.challengeOpenAuth.addEventListener("click", () => window.NBAHubAuth?.open());

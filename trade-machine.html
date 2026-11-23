@@ -3,11 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050505" />
     <title>NBA Trade Desk</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="trade-machine.css?v=two-way-roster-1" />
+    <link rel="stylesheet" href="trade-desk-theme.css?v=trade-desk-arena-7" />
+    <link rel="stylesheet" href="shared-auth.css?v=trade-desk-arena-1" />
   </head>
   <body>
     <div class="page-shell">
@@ -27,7 +30,6 @@
           </div>
         </div>
         <div class="topbar__info">
-          <span class="pill pill--primary" id="apiStatus">Connecting to API…</span>
           <span class="pill" id="teamCountLabel">0 of 5 teams</span>
         </div>
         <nav class="trade-site-nav" aria-label="Trade Desk sections">
@@ -63,7 +65,7 @@
             </div>
           </div>
           <div id="trendingPlayers" class="trade-trending__rail" aria-label="NBA Trade Watch players"></div>
-          <p class="trade-trending__note">Updated November 22, 2026 · CBS Sports, NBC Sports, Hoops Rumors and The Stein Line.</p>
+          <p class="trade-trending__note">Updated November 22, 2026.</p>
         </section>
 
         <div id="teamGrid" class="team-grid" aria-live="polite"></div>
@@ -113,7 +115,7 @@
         <form id="tradeSlidersForm" class="trade-sliders-form">
           <header class="trade-sliders-header">
             <div>
-              <p class="eyebrow">TRADE MACHINE / 2K STYLE</p>
+              <p class="eyebrow">TRADE MACHINE / SANDBOX MODE</p>
               <h2 id="tradeSlidersTitle">Trade sliders</h2>
               <p>Turn restrictions on or off for fantasy trades and sandbox scenarios.</p>
             </div>
@@ -143,25 +145,27 @@
           <button type="button" class="icon-button" id="closeReviewBtn" aria-label="Close trade review" title="Close">×</button>
         </div>
         <div id="reviewContent" class="review-content"></div>
-        <div class="review-post-fields">
-          <label>Post title
-            <input id="tradePostTitle" type="text" minlength="3" maxlength="100" placeholder="Give your trade proposal a title" />
-          </label>
-          <label>Explanation
-            <textarea id="tradePostExplanation" maxlength="1000" rows="3" placeholder="Explain the reasoning behind this trade"></textarea>
-          </label>
-        </div>
-        <div class="review-footer">
-          <span class="review-disclaimer">Trade checker estimate · protected pick language requires manual confirmation</span>
-          <button type="button" class="button button--add" id="submitTradeBtn">Submit proposal</button>
-          <button type="button" class="button button--primary" id="doneReviewBtn">Done</button>
-        </div>
+        <form id="tradePostForm">
+          <div class="review-post-fields">
+            <label>Post title
+              <input id="tradePostTitle" type="text" minlength="3" maxlength="100" placeholder="Give your trade proposal a title (optional)" />
+            </label>
+            <label>Explanation
+              <textarea id="tradePostExplanation" minlength="10" maxlength="1000" rows="3" placeholder="Explain the reasoning behind this trade (optional)"></textarea>
+            </label>
+          </div>
+          <div class="review-footer">
+            <span class="review-disclaimer">Trade checker estimate · protected pick language requires manual confirmation</span>
+            <button type="submit" class="button button--add" id="submitTradeBtn">Submit proposal</button>
+            <button type="button" class="button button--primary" id="doneReviewBtn">Done</button>
+          </div>
+        </form>
       </dialog>
     </div>
 
     <script src="nba-player-ids.js"></script>
     <script src="player-headshots.js"></script>
-    <script src="trade-machine.js?v=two-way-roster-1"></script>
+    <script src="trade-machine.js?v=trade-post-fields-optional-20261123-1"></script>
     <script src="shared-auth.js?v=20261121-auth-page-fix-2"></script>
   </body>
 </html>

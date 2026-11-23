@@ -10,6 +10,12 @@ The 2026-27 regular-season stats snapshot through November 20, 2026 is stored in
 
 The same migration is appended to [`SUPABASE_COMPLETE_SETUP.sql`](./SUPABASE_COMPLETE_SETUP.sql). For an existing project, run this migration if the `nba_players` rows do not yet contain the November 20 snapshot.
 
+## Active two-way contracts
+
+The active 2026-27 two-way contract snapshot is in [`supabase/migrations/20261123_nba_active_two_way_rosters.sql`](./supabase/migrations/20261123_nba_active_two_way_rosters.sql), based on the [NBA G League Two-Way Tracker](https://gleague.nba.com/twowayplayers) as of November 23, 2026. It records the 90 signed players across all 30 teams, keeps their existing roster statistics and positions, and deactivates the older unsigned rights/hold placeholders so they do not appear as active roster players.
+
+The migration is appended to [`SUPABASE_COMPLETE_SETUP.sql`](./SUPABASE_COMPLETE_SETUP.sql). For an existing database, run the entire migration in the Supabase SQL Editor (do not run only a selected portion) and then redeploy the API; the migration keeps its staging data and reconciliation in one `DO` block, and the Trade Machine reads the updated contract labels from `nba_players`.
+
 ## Static contract years
 
 The static contract-year snapshot is in [`supabase/migrations/20261122_nba_player_contract_years.sql`](./supabase/migrations/20261122_nba_player_contract_years.sql) and is appended to [`SUPABASE_COMPLETE_SETUP.sql`](./SUPABASE_COMPLETE_SETUP.sql). It updates `nba_players.metadata.player.contract_years_remaining` and records its source and snapshot time. ESPN reported years for 333 of the 528 players in the snapshot; the other 195 remain `null` rather than being estimated.
@@ -25,14 +31,15 @@ These are third-party estimates, not official NBA accounting. Some source balanc
 ## Setup
 
 1. Create a Supabase project and open its SQL Editor.
-2. Open [`SUPABASE_COMPLETE_SETUP.sql`](./SUPABASE_COMPLETE_SETUP.sql), copy the whole file, paste it into the SQL Editor, and run it once. It creates the schema and seeds teams, players, current-season stats, contract years, and all 419 draft picks.
+2. Open [`SUPABASE_COMPLETE_SETUP.sql`](./SUPABASE_COMPLETE_SETUP.sql), copy the whole file, paste it into the SQL Editor, and run it once. It creates the schema and seeds teams, players, current-season stats, active two-way contracts, contract years, and all 419 draft picks.
 3. In the Vercel project or server environment that hosts the FastAPI app, add these environment variables:
    - `SUPABASE_URL`: the project URL from Supabase Project Settings → API.
    - `SUPABASE_SERVICE_ROLE_KEY`: the service-role secret from Supabase Project Settings → API.
    - `SUPABASE_PUBLISHABLE_KEY`: the project's publishable/anon key from Supabase Project Settings → API Keys. This key is intentionally public and is used only by the browser to sign in; never use a service-role key here.
+   - `OPENAI_API_KEY` (optional): the private server-side OpenAI key used by the admin challenge generator.
    - `ADMIN_EMAILS` (optional): comma-separated Supabase account emails that should receive administrator access. A user with `app_metadata.role = "admin"` is also recognized as an administrator.
 4. In Supabase Authentication settings, enable the email sign-in provider and configure the site/redirect URLs for the deployed app.
-5. Redeploy the API after running the SQL and setting all three values.
+5. Redeploy the API after running the SQL and setting the required values; add `OPENAI_API_KEY` to enable AI challenge generation.
 
 The individual files under `supabase/migrations/` are retained for Supabase CLI users. If you use the single setup file above, do not also run those migrations separately.
 
@@ -68,7 +75,7 @@ The challenge collection and individual reads still use the legacy `X-API-Key` a
 
 ## Official challenge publishing
 
-For an existing database, run [`supabase/migrations/20261121_official_challenges.sql`](./supabase/migrations/20261121_official_challenges.sql) in the Supabase SQL Editor. The same table is included in `SUPABASE_COMPLETE_SETUP.sql`. Only an authenticated administrator can publish through `POST /api/v1/official-challenges`; the API checks the verified Supabase user's `app_metadata.role` or the server-side `ADMIN_EMAILS` list. The public challenge list is read through `GET /api/v1/official-challenges`. Admin-published challenges appear in Official Challenges and remain separate from user-created Community Challenges. The existing built-in official challenges are unchanged.
+For an existing database, run [`supabase/migrations/20261121_official_challenges.sql`](./supabase/migrations/20261121_official_challenges.sql), then [`supabase/migrations/20261123_official_challenge_player_tiers.sql`](./supabase/migrations/20261123_official_challenge_player_tiers.sql) in the Supabase SQL Editor. The same schema is included in `SUPABASE_COMPLETE_SETUP.sql`. Only an authenticated administrator can publish through `POST /api/v1/official-challenges` or generate a draft through `POST /api/v1/admin/official-challenges/generate`; both routes verify the Supabase user's administrator role. Configure `OPENAI_API_KEY` as a server-side Vercel environment variable and redeploy; never put the key in browser code. AI-generated title, rule, difficulty, and $1–$5 player prices remain editable and are saved with that official challenge only. Public challenge listing continues through `GET /api/v1/official-challenges`, and built-in challenges remain unchanged.
 
 ## Trade Machine community and current data
 
@@ -76,7 +83,7 @@ For an existing database, run [`supabase/migrations/20261121_trade_machine_commu
 
 The Trade Machine uses `/api/v1/trade-machine/saved-trades` for the signed-in user's saved proposals and `/api/v1/trade-machine/trades` for the public community feed. Submitting, deleting, commenting, and rating require a verified Supabase Auth bearer token; guests can browse the public feed. A user's saved-trade list and delete operation are scoped to that verified user. A submitted trade is public, including its team and asset details. Ratings are 1–5 and a user can update their rating; comments are trimmed and limited to 500 characters. Older browser-local saved trades are imported idempotently after sign-in and removed from that browser only after every import succeeds.
 
-Players listed under Trade Machine cap holds can be added as sign-and-trade proposals. The builder lets the user enter a first-year salary, select a 3- or 4-year term, and choose the modeled raise rate; it applies the first-year raise amount to each following season. The API snapshot does not contain prior salary or years of service, so player-specific salary maxima and signing eligibility are not verified. The checker uses the proposed first-year salary for trade matching and estimates the receiving team's first-apron hard cap, including its current cap holds.
+Players listed under Trade Machine cap holds can be added as sign-and-trade proposals. The builder lets the user enter a first-year salary, select a 3- or 4-year term, and choose the modeled raise rate; it applies the first-year raise amount to each following season. The API snapshot does not contain prior salary or years of service, so player-specific salary maxima and signing eligibility are not verified. Listed cap holds count toward the modeled Team Salary and cap room, but are excluded from apron and minimum-team-salary calculations. Users can assign an active listed standard TPE to an incoming player; the assigned salary is validated against that exception's remaining balance and excluded from ordinary salary matching. Available unused TPE balances can also count against cap room. New TPE creation, first-apron expiry adjustments that require the original trade date, expanded/aggregated/room TPEs, and other apron-specific CBA adjustments are not fully modeled.
 
 The Trade Machine's `/api/v1/trade-machine/teams` endpoint reads its roster, current-season stats, salary, and contract years from `nba_teams`/`nba_players` in Supabase; it does not query `nba_player_profiles`, ESPN, or NBA.com for those values. Unreported salary and years remain unavailable rather than being estimated. Current future-pick inventory and ownership still come from `nba_draft_picks` in Supabase; the API excludes completed draft years but does not independently verify whether a stored pick conveyance has changed. Check the returned snapshot/source labels when reviewing data.
 

@@ -165,7 +165,7 @@
           checkboxField("compact", "Compact team cards"),
           checkboxField("showHeadshots", "Show player headshots")
         ]),
-        section("Trade sliders", "Turn off NBA trade restrictions to build fantasy trades like 2K.", [
+        section("Trade sliders", "Turn off NBA trade restrictions to explore unrestricted fantasy trade scenarios.", [
           checkboxField("salaryMatching", "Salary matching", "Apply outgoing/incoming salary limits."),
           checkboxField("apronHardCaps", "Apron and hard-cap checks", "Check first- and second-apron limits."),
           checkboxField("minimumTeamSalaryFloor", "Minimum team salary", "Check whether a roster stays above the salary floor."),

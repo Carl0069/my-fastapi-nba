@@ -158,8 +158,13 @@
         check (difficulty in ('Easy', 'Medium', 'Hard')),
     icon text not null default '🏆'
         check (char_length(btrim(icon)) between 1 and 8),
+    player_tiers jsonb not null default '{}'::jsonb
+        check (jsonb_typeof(player_tiers) = 'object'),
     created_at timestamptz not null default now()
     );
+
+    alter table public.official_challenges
+    add column if not exists player_tiers jsonb not null default '{}'::jsonb;
 
     create index if not exists official_challenges_created_at_idx
     on public.official_challenges (created_at desc);
@@ -7884,3 +7889,403 @@
     WHERE id = '21:jimmy butler iii';
     COMMIT;
     -- END STATIC NBA PLAYER CONTRACT YEARS SNAPSHOT
+
+    -- BEGIN NBA 2026-27 TWO-WAY ROSTER
+    BEGIN;
+    WITH two_way_roster (id, team_id, name, position, roster_order) AS (
+      VALUES
+        ('1:mfiondu kabengele', 1, 'Mfiondu Kabengele', 'PF', 90),
+        ('4:jeff dowtin', 4, 'Jeff Dowtin', 'PG', 90),
+        ('4:jalen hood-schifino', 4, 'Jalen Hood-Schifino', 'SG', 91),
+        ('8:wendell moore jr.', 8, 'Wendell Moore Jr.', 'SG', 90),
+        ('9:gabe york', 9, 'Gabe York', 'SG', 90),
+        ('11:josh christopher', 11, 'Josh Christopher', 'SG', 90),
+        ('12:dylan windler', 12, 'Dylan Windler', 'SF', 90),
+        ('14:trevelin queen', 14, 'Trevelin Queen', 'SG', 90),
+        ('15:johnathan williams', 15, 'Johnathan Williams', 'PF', 90),
+        ('15:jt thor', 15, 'JT Thor', 'PF', 91),
+        ('15:cassius winston', 15, 'Cassius Winston', 'PG', 92),
+        ('16:david roddy', 16, 'David Roddy', 'PF', 90),
+        ('16:markus howard', 16, 'Markus Howard', 'SG', 91),
+        ('18:alex ducas', 18, 'Alex Ducas', 'SG', 90),
+        ('19:ashton hagans', 19, 'Ashton Hagans', 'PG', 90),
+        ('19:tj leaf', 19, 'TJ Leaf', 'PF', 91),
+        ('19:keljin blevins', 19, 'Keljin Blevins', 'SF', 92),
+        ('21:jerome robinson', 21, 'Jerome Robinson', 'SG', 90),
+        ('21:taran armstrong', 21, 'Taran Armstrong', 'PG', 91),
+        ('21:nico mannion', 21, 'Nico Mannion', 'PG', 92),
+        ('22:tyty washington jr.', 22, 'TyTy Washington Jr.', 'PG', 90),
+        ('22:xavier moon', 22, 'Xavier Moon', 'SG', 91),
+        ('24:saben lee', 24, 'Saben Lee', 'PG', 90),
+        ('24:gabriel lundberg', 24, 'Gabriel Lundberg', 'SG', 91),
+        ('24:ishmail wainright', 24, 'Ishmail Wainright', 'SF', 92),
+        ('24:udoka azubuike', 24, 'Udoka Azubuike', 'C', 93),
+        ('25:patrick baldwin jr.', 25, 'Patrick Baldwin Jr.', 'SF', 90),
+        ('25:jordan ford', 25, 'Jordan Ford', 'PG', 91),
+        ('25:mason jones', 25, 'Mason Jones', 'SG', 92),
+        ('26:kai jones', 26, 'Kai Jones', 'C', 90),
+        ('26:greg brown iii', 26, 'Greg Brown III', 'PF', 91),
+        ('26:moses wright', 26, 'Moses Wright', 'PF', 92),
+        ('26:mckinley wright iv', 26, 'McKinley Wright IV', 'PG', 93),
+        ('27:jack mcveigh', 27, 'Jack McVeigh', 'PF', 90),
+        ('29:jared harper', 29, 'Jared Harper', 'PG', 90),
+        ('29:james nunnally', 29, 'James Nunnally', 'SF', 91)
+    )
+    INSERT INTO public.nba_players
+      (id, team_id, name, full_name, position, is_active, metadata)
+    SELECT
+      id,
+      team_id,
+      name,
+      name,
+      position,
+      true,
+      jsonb_build_object(
+        'is_starter', false,
+        'roster_order', roster_order,
+        'player', jsonb_build_object(
+          'name', name,
+          'pos', position,
+          'contract_type', 'Two-Way'
+        )
+      )
+    FROM two_way_roster
+    ON CONFLICT (id) DO UPDATE
+    SET team_id = EXCLUDED.team_id,
+        name = EXCLUDED.name,
+        full_name = EXCLUDED.full_name,
+        position = EXCLUDED.position,
+        is_active = true,
+        metadata =
+          COALESCE(public.nba_players.metadata, '{}'::jsonb)
+          || jsonb_build_object(
+            'is_starter', false,
+            'roster_order', EXCLUDED.metadata->'roster_order',
+            'player',
+              COALESCE(public.nba_players.metadata->'player', '{}'::jsonb)
+              || EXCLUDED.metadata->'player'
+          ),
+        updated_at = now();
+    COMMIT;
+    -- END NBA 2026-27 TWO-WAY ROSTER
+
+    -- BEGIN BOBBY PORTIS 2026-27 CONTRACT
+    BEGIN;
+    DO $$
+    BEGIN
+      UPDATE public.nba_players
+      SET metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb),
+            '{player}',
+            COALESCE(metadata->'player', '{}'::jsonb) || jsonb_build_object(
+              'salary', 14521414,
+              'contract_years_remaining', 2,
+              'contract_source', '2026-27 static player contract snapshot',
+              'contract_data_as_of', '2026-11-22'
+            ),
+            true
+          ),
+          updated_at = now()
+      WHERE id = '11:bobby portis'
+        AND team_id = 11;
+
+      IF NOT FOUND THEN
+        RAISE EXCEPTION 'Active Bobby Portis roster row (11:bobby portis) was not found.';
+      END IF;
+    END
+    $$;
+    COMMIT;
+    -- END BOBBY PORTIS 2026-27 CONTRACT
+
+-- BEGIN ACTIVE TWO-WAY ROSTERS 2026-11-23
+
+DO $$
+DECLARE
+  matched_count integer;
+  unmatched_count integer;
+  inactive_two_way_count integer;
+BEGIN
+
+-- Signed, active two-way contracts from the NBA G League tracker as of 2026-11-23.
+CREATE TEMP TABLE active_two_way_roster (
+  team_id integer NOT NULL,
+  name text NOT NULL,
+  roster_order integer NOT NULL,
+  PRIMARY KEY (team_id, name)
+) ON COMMIT DROP;
+
+INSERT INTO active_two_way_roster (team_id, name, roster_order) VALUES
+  (12, 'Rafael Castro', 90),
+  (12, 'RayJ Dennis', 91),
+  (12, 'Jalen Wilson', 92),
+  (1, 'Devin Carter', 90),
+  (1, 'Dillon Mitchell', 91),
+  (1, 'Amari Williams', 92),
+  (2, 'Tyler Bilodeau', 90),
+  (2, 'Chaney Johnson', 91),
+  (2, 'Grant Nelson', 92),
+  (13, 'Michael Ajayi', 90),
+  (13, 'Kylan Boswell', 91),
+  (13, 'PJ Hall', 92),
+  (6, 'Tobe Awaka', 90),
+  (6, 'Jordan Hawkins', 91),
+  (6, 'Jaylin Sellers', 92),
+  (7, 'Zack Austin', 90),
+  (7, 'Norchad Omier', 91),
+  (7, 'Ernest Udeh Jr.', 92),
+  (26, 'Walter Clayton Jr.', 90),
+  (26, 'Jett Howard', 91),
+  (26, 'Tobi Lawal', 92),
+  (16, 'Bryce Hopkins', 90),
+  (16, 'Ryan Nembhard', 91),
+  (16, 'Cam Whitmore', 92),
+  (8, 'Elijah Harkless', 90),
+  (8, 'Isaac Jones', 91),
+  (8, 'Ugonna Onyenso', 92),
+  (21, 'LJ Cryer', 90),
+  (21, 'Graham Ike', 91),
+  (21, 'Malevy Leons', 92),
+  (27, 'Quadir Copeland', 90),
+  (27, 'Julian Phillips', 91),
+  (27, 'Oscar Tshiebwe', 92),
+  (9, 'Kobe Brown', 90),
+  (9, 'Jalen Slawson', 91),
+  (9, 'Braden Smith', 92),
+  (22, 'Cam Christie', 90),
+  (22, 'Nick Martinelli', 91),
+  (22, 'Jalen Pickett', 92),
+  (23, 'Carson Cooper', 90),
+  (23, 'Arthur Kaluma', 91),
+  (23, 'Chris Mañon', 92),
+  (28, 'Jahmai Mashack', 90),
+  (28, 'Richie Saunders', 91),
+  (28, 'Javon Small', 92),
+  (11, 'Tre Donaldson', 90),
+  (11, 'Vladislav Goldin', 91),
+  (11, 'Keshad Johnson', 92),
+  (10, 'Kam Jones', 90),
+  (10, 'Pete Nance', 91),
+  (10, 'Cormac Ryan', 92),
+  (17, 'Johni Broome', 90),
+  (17, 'Zyon Pullin', 91),
+  (17, 'Rocco Zikarsky', 92),
+  (29, 'Malik Dia', 90),
+  (29, 'Jaron Pierre Jr.', 91),
+  (29, 'Julian Reese', 92),
+  (3, 'Jaden Akins', 90),
+  (3, 'Dalton Knecht', 91),
+  (3, 'Tyler Nickel', 92),
+  (18, 'Brooks Barnhizer', 90),
+  (18, 'Josh Dix', 91),
+  (18, 'Micah Peavy', 92),
+  (14, 'Colin Castleton', 90),
+  (14, 'Alex Morales', 91),
+  (14, 'Izaiyah Nelson', 92),
+  (4, 'Tacko Fall', 90),
+  (4, 'Caleb Love', 91),
+  (4, 'Rayan Rupert', 92),
+  (24, 'Duop Reath', 90),
+  (24, 'Pat Spencer', 91),
+  (24, 'Drew Timme', 92),
+  (19, 'Jayson Kent', 90),
+  (19, 'John Tonje', 91),
+  (19, 'Chris Youngblood', 92),
+  (25, 'Leaky Black', 90),
+  (25, 'Jonathan Mogbo', 91),
+  (25, 'Sean Pedulla', 92),
+  (30, 'Maliq Brown', 90),
+  (30, 'Ja''Kobi Gillespie', 91),
+  (30, 'David Jones García', 92),
+  (5, 'Nate Bittle', 90),
+  (5, 'Kevin McCullar Jr.', 91),
+  (5, 'Malachi Smith', 92),
+  (20, 'Jonas Aidoo', 90),
+  (20, 'Kobe Bufkin', 91),
+  (20, 'Harrison Ingram', 92),
+  (15, 'Reece Beekman', 90),
+  (15, 'Felix Okpara', 91),
+  (15, 'Jamir Watkins', 92);
+
+  IF (SELECT count(*) FROM active_two_way_roster) <> 90
+     OR (SELECT count(DISTINCT team_id) FROM active_two_way_roster) <> 30
+     OR EXISTS (
+       SELECT team_id
+       FROM active_two_way_roster
+       GROUP BY team_id
+       HAVING count(*) <> 3
+     ) THEN
+    RAISE EXCEPTION 'The active two-way contract snapshot must contain exactly three players for each of 30 teams.';
+  END IF;
+
+-- Remove the prior unsigned rights/hold labels; those placeholders are not active contracts.
+UPDATE public.nba_players AS p
+SET is_active = CASE
+      WHEN p.id IN (
+    '1:mfiondu kabengele',
+    '4:jeff dowtin',
+    '4:jalen hood-schifino',
+    '8:wendell moore jr.',
+    '9:gabe york',
+    '11:josh christopher',
+    '12:dylan windler',
+    '14:trevelin queen',
+    '15:johnathan williams',
+    '15:jt thor',
+    '15:cassius winston',
+    '16:david roddy',
+    '16:markus howard',
+    '18:alex ducas',
+    '19:ashton hagans',
+    '19:tj leaf',
+    '19:keljin blevins',
+    '21:jerome robinson',
+    '21:taran armstrong',
+    '21:nico mannion',
+    '22:tyty washington jr.',
+    '22:xavier moon',
+    '24:saben lee',
+    '24:gabriel lundberg',
+    '24:ishmail wainright',
+    '24:udoka azubuike',
+    '25:patrick baldwin jr.',
+    '25:jordan ford',
+    '25:mason jones',
+    '26:kai jones',
+    '26:greg brown iii',
+    '26:moses wright',
+    '26:mckinley wright iv',
+    '27:jack mcveigh',
+    '29:jared harper',
+    '29:james nunnally'
+      ) THEN false
+      ELSE p.is_active
+    END,
+    metadata = jsonb_set(
+      COALESCE(p.metadata, '{}'::jsonb),
+      '{player}',
+      COALESCE(p.metadata->'player', '{}'::jsonb) - 'contract_type',
+      true
+    ),
+    updated_at = now()
+WHERE p.metadata #>> '{player,contract_type}' = 'Two-Way';
+
+WITH roster_matches AS (
+  SELECT
+    s.team_id,
+    s.name,
+    s.roster_order,
+    p.id,
+    row_number() OVER (
+      PARTITION BY s.team_id, regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g')
+      ORDER BY p.is_active DESC, (p.team_id = s.team_id) DESC, p.updated_at DESC, p.id
+    ) AS match_order
+  FROM active_two_way_roster AS s
+  JOIN public.nba_players AS p
+    ON regexp_replace(normalize(lower(p.name), NFKD), '[^[:alnum:]]', '', 'g') = regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g')
+    OR regexp_replace(normalize(lower(p.full_name), NFKD), '[^[:alnum:]]', '', 'g') = regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g')
+)
+UPDATE public.nba_players AS p
+SET team_id = m.team_id,
+    name = m.name,
+    full_name = m.name,
+    is_active = true,
+    metadata = jsonb_set(
+      COALESCE(p.metadata, '{}'::jsonb),
+      '{player}',
+      COALESCE(p.metadata->'player', '{}'::jsonb) || jsonb_build_object(
+        'name', m.name,
+        'contract_type', 'Two-Way',
+        'contract_source', 'NBA G League Two-Way Tracker',
+        'contract_data_as_of', '2026-11-23'
+      ),
+      true
+    ) || jsonb_build_object(
+      'is_starter', false,
+      'roster_order', m.roster_order
+    ),
+    updated_at = now()
+FROM roster_matches AS m
+WHERE m.match_order = 1
+  AND p.id = m.id;
+
+INSERT INTO public.nba_players
+  (id, team_id, name, full_name, position, is_active, metadata)
+SELECT
+  s.team_id::text || ':' || regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g'),
+  s.team_id,
+  s.name,
+  s.name,
+  NULL,
+  true,
+  jsonb_build_object(
+    'is_starter', false,
+    'roster_order', s.roster_order,
+    'player', jsonb_build_object(
+      'name', s.name,
+      'contract_type', 'Two-Way',
+      'contract_source', 'NBA G League Two-Way Tracker',
+      'contract_data_as_of', '2026-11-23'
+    )
+  )
+FROM active_two_way_roster AS s
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.nba_players AS p
+  WHERE p.is_active
+    AND p.team_id = s.team_id
+    AND (
+      regexp_replace(normalize(lower(p.name), NFKD), '[^[:alnum:]]', '', 'g') = regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g')
+      OR regexp_replace(normalize(lower(p.full_name), NFKD), '[^[:alnum:]]', '', 'g') = regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g')
+    )
+)
+ON CONFLICT (id) DO UPDATE
+SET team_id = EXCLUDED.team_id,
+    name = EXCLUDED.name,
+    full_name = EXCLUDED.full_name,
+    is_active = true,
+    metadata = COALESCE(public.nba_players.metadata, '{}'::jsonb)
+      || jsonb_build_object(
+        'is_starter', false,
+        'roster_order', EXCLUDED.metadata->'roster_order',
+        'player', COALESCE(public.nba_players.metadata->'player', '{}'::jsonb)
+          || EXCLUDED.metadata->'player'
+      ),
+    updated_at = now();
+
+  SELECT count(*) INTO matched_count
+  FROM active_two_way_roster AS s
+  JOIN public.nba_players AS p
+    ON p.is_active
+   AND p.team_id = s.team_id
+   AND p.metadata #>> '{player,contract_type}' = 'Two-Way'
+   AND regexp_replace(normalize(lower(p.name), NFKD), '[^[:alnum:]]', '', 'g') = regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g');
+
+  SELECT count(*) INTO unmatched_count
+  FROM active_two_way_roster AS s
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM public.nba_players AS p
+    WHERE p.is_active
+      AND p.team_id = s.team_id
+      AND p.metadata #>> '{player,contract_type}' = 'Two-Way'
+      AND regexp_replace(normalize(lower(p.name), NFKD), '[^[:alnum:]]', '', 'g') = regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g')
+  );
+
+  SELECT count(*) INTO inactive_two_way_count
+  FROM public.nba_players AS p
+  WHERE p.is_active
+    AND p.metadata #>> '{player,contract_type}' = 'Two-Way'
+    AND NOT EXISTS (
+      SELECT 1
+      FROM active_two_way_roster AS s
+      WHERE regexp_replace(normalize(lower(p.name), NFKD), '[^[:alnum:]]', '', 'g') = regexp_replace(normalize(lower(s.name), NFKD), '[^[:alnum:]]', '', 'g')
+    );
+
+  IF matched_count <> 90 OR unmatched_count <> 0 OR inactive_two_way_count <> 0 THEN
+    RAISE EXCEPTION 'Two-way roster reconciliation failed: matched %, unmatched %, other active labels %.',
+      matched_count, unmatched_count, inactive_two_way_count;
+  END IF;
+END
+$$;
+
+-- END ACTIVE TWO-WAY ROSTERS 2026-11-23

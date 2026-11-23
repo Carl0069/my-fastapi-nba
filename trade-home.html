@@ -3,12 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b1220" />
+    <meta name="theme-color" content="#050505" />
     <title>NBA Trade Desk</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="trade-machine.css?v=trade-home-1" />
+    <link rel="stylesheet" href="trade-desk-theme.css?v=trade-desk-arena-7" />
+    <link rel="stylesheet" href="shared-auth.css?v=trade-desk-arena-1" />
   </head>
   <body>
     <div class="page-shell">
@@ -35,15 +37,32 @@
       </header>
 
       <main class="trade-home">
-        <section class="trade-home__hero">
-          <div>
+        <section class="trade-home__hero" aria-labelledby="tradeHomeTitle">
+          <div class="trade-home__hero-copy">
             <p class="trade-trending__eyebrow"><span aria-hidden="true"></span> NBA TRADE WATCH</p>
-            <h2>Build the deal. Follow the rumors.</h2>
+            <h2 id="tradeHomeTitle">Build the deal. Follow the rumors.</h2>
             <p>Explore the league’s trade market, submit proposals, and compare front-office decisions.</p>
             <div class="trade-home__actions">
               <a class="button button--primary" href="trade-machine.html">Open Trade Machine</a>
               <a class="button button--ghost" href="trade-community.html">View Community</a>
             </div>
+          </div>
+          <div class="trade-home__court" role="img" aria-label="Stylized basketball court illustration">
+            <svg viewBox="0 0 520 340" aria-hidden="true" focusable="false">
+              <rect class="trade-home__court-boundary" x="20" y="20" width="480" height="300" rx="14" />
+              <line class="trade-home__court-line" x1="260" y1="20" x2="260" y2="320" />
+              <circle class="trade-home__court-line" cx="260" cy="170" r="48" />
+              <rect class="trade-home__court-line" x="20" y="112" width="76" height="116" />
+              <rect class="trade-home__court-line" x="424" y="112" width="76" height="116" />
+              <path class="trade-home__court-line" d="M96 112 A58 58 0 0 1 96 228" />
+              <path class="trade-home__court-line" d="M424 112 A58 58 0 0 0 424 228" />
+              <path class="trade-home__court-accent" d="M20 62 H67 A128 128 0 0 1 67 278 H20" />
+              <path class="trade-home__court-accent" d="M500 62 H453 A128 128 0 0 0 453 278 H500" />
+              <circle class="trade-home__court-hoop" cx="48" cy="170" r="8" />
+              <circle class="trade-home__court-hoop" cx="472" cy="170" r="8" />
+              <circle class="trade-home__court-ball" cx="260" cy="170" r="16" />
+              <path class="trade-home__court-seam" d="M244 170 H276 M260 154 C252 162 252 178 260 186 M260 154 C268 162 268 178 260 186" />
+            </svg>
           </div>
         </section>
 
@@ -55,7 +74,7 @@
             </div>
           </div>
           <div id="rumoredPlayers" class="trade-trending__rail" aria-label="NBA Trade Watch players"></div>
-          <p class="trade-trending__note">Updated November 22, 2026 · CBS Sports, NBC Sports, Hoops Rumors and The Stein Line.</p>
+          <p class="trade-trending__note">Updated November 22, 2026.</p>
         </section>
       </main>
     </div>

@@ -124,6 +124,23 @@ h1, h2, p { margin-top: 0; }
 .official-challenge-tools { display: flex; align-items: center; gap: 12px; }
 .official-challenge-status { margin: -2px 0 10px; color: #7b837b; font-size: 9px; line-height: 1.45; }
 .official-challenge-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.official-ai-builder, .official-tier-review { margin: 0 0 13px; padding: 11px; border: 1px solid #d9d2c6; border-radius: 6px; background: #f8f5ee; }
+.official-ai-builder .form-field { margin-bottom: 8px; }
+.official-ai-generate { min-height: 34px; padding: 0 12px; border: 1px solid #6240a0; border-radius: 4px; background: #6240a0; color: white; font-size: 9px; font-weight: 850; cursor: pointer; }
+.official-ai-generate:hover:not(:disabled) { background: #472a7e; }
+.official-ai-generate:disabled { opacity: .55; cursor: wait; }
+.official-tier-review[hidden] { display: none; }
+.official-tier-review__heading { display: grid; gap: 3px; margin-bottom: 8px; }
+.official-tier-review__heading strong { font-size: 10px; }
+.official-tier-review__heading p { margin: 0; color: #778078; font-size: 8px; line-height: 1.45; }
+.official-tier-search { width: 100%; min-height: 34px; margin-bottom: 7px; padding: 7px 9px; border: 1px solid #cfc8bb; border-radius: 4px; background: #fffefa; color: var(--ink); font: 500 10px "DM Sans", sans-serif; }
+.official-tier-options { display: grid; max-height: 245px; gap: 4px; overflow: auto; overscroll-behavior: contain; }
+.official-tier-row { display: flex; min-height: 38px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 7px; border: 1px solid #e4ded2; border-radius: 4px; background: #fffefa; }
+.official-tier-row span { display: grid; min-width: 0; gap: 2px; }
+.official-tier-row strong { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.official-tier-row small, .official-tier-count { color: #7b837b; font-size: 8px; }
+.official-tier-row select { min-height: 29px; padding: 4px 7px; border: 1px solid #cfc8bb; border-radius: 4px; background: #fffefa; color: var(--ink); font: 700 9px "DM Sans", sans-serif; }
+.official-tier-count { margin: 4px 0 0; line-height: 1.4; }
 .create-official-challenge-button { min-height: 34px; padding: 0 11px; border: 1px solid #b6422e; border-radius: 5px; background: #fae9df; color: #963b28; font-size: 9px; font-weight: 900; cursor: pointer; transition: background .15s ease, color .15s ease; }
 .create-official-challenge-button:hover { background: var(--orange); color: white; }
 .create-official-challenge-button[hidden] { display: none; }

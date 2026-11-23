@@ -10421,6 +10421,24 @@ h1 {
   font-size: 9px;
 }
 
+.team-move-summary section > .team-tpe-controls {
+  display: grid;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.team-tpe-controls label {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+}
+
+.team-tpe-controls select {
+  width: 100%;
+}
+
 .team-cap-outlook {
   background: #121920;
 }
@@ -10490,6 +10508,10 @@ h1 {
   }
 
   .team-move-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .team-tpe-controls label {
     grid-template-columns: minmax(0, 1fr);
   }
 

@@ -31,6 +31,7 @@ let isLoadingTeams = false;
 const state = {
   teamIds: [],
   transfers: {},
+  tradeExceptionUses: {},
   signAndTrades: {},
   reSignedCapHolds: {},
   renouncedCapHolds: {},
@@ -48,7 +49,6 @@ const state = {
 const teamGridEl = document.getElementById("teamGrid");
 const trendingPlayersEl = document.getElementById("trendingPlayers");
 const teamCountLabelEl = document.getElementById("teamCountLabel");
-const apiStatusEl = document.getElementById("apiStatus");
 const guestTradeNoticeEl = document.getElementById("guestTradeNotice");
 const addTeamBtn = document.getElementById("addTeamBtn");
 const clearTradeBtn = document.getElementById("clearTradeBtn");
@@ -59,6 +59,7 @@ const reviewTitleEl = document.getElementById("reviewTitle");
 const closeReviewBtn = document.getElementById("closeReviewBtn");
 const doneReviewBtn = document.getElementById("doneReviewBtn");
 const submitTradeBtn = document.getElementById("submitTradeBtn");
+const tradePostForm = document.getElementById("tradePostForm");
 const playerProfileDialog = document.getElementById("playerProfileDialog");
 const playerProfileContentEl = document.getElementById("playerProfileContent");
 const playerCompareDialog = document.getElementById("playerCompareDialog");
@@ -187,6 +188,12 @@ function renderCapAssetRow(item, view, team) {
     item.description,
     item.expires_on ? `Expires ${item.expires_on}` : null
   ].filter(Boolean);
+  const exceptionIndex = view === "exceptions" ? (team.cap_exceptions || []).indexOf(item) : -1;
+  const exceptionId = exceptionIndex >= 0 ? `${team.id}:tpe:${exceptionIndex}` : "";
+  const assignedTpeSalary = exceptionId && /trade exception/i.test(String(item.type || ""))
+    ? getTeamTradeExceptionUse(team.id, exceptionId)
+    : 0;
+  if (assignedTpeSalary > 0) details.push(`Assigned in this proposal: ${formatMoney(assignedTpeSalary)}`);
   const amount = item.amount !== null && item.amount !== undefined && item.amount !== ""
     && Number.isFinite(Number(item.amount))
     ? formatMoney(Number(item.amount))
@@ -236,7 +243,7 @@ function renderCapAssetPanel(team, view) {
   const status = team.cap_data_status?.[view] || "unavailable";
   const title = isExceptionPanel ? "Salary-cap exceptions" : "Cap holds";
   const explanation = isExceptionPanel
-    ? "Available trade exceptions and remaining MLE/BAE balances; eligibility and limits still apply."
+    ? "Select an active trade exception for an incoming player. Other listed exception balances are informational."
     : "Unsigned-player rights holds count against the cap but are not signed salaries.";
   const emptyMessage = status === "none"
     ? `No active ${isExceptionPanel ? "exceptions" : "cap holds"} are listed for this team.`
@@ -260,6 +267,47 @@ function renderCapAssetPanel(team, view) {
       </div>
     </section>
   `;
+}
+
+function renderTradeExceptionControls(team, incomingEntries) {
+  const controls = incomingEntries
+    .filter(({ player }) => player && !player.signAndTrade && !isTwoWayPlayer(player) && hasSalary(player) && player.salary > 0)
+    .map(({ playerId, player }) => {
+      const assignedId = state.tradeExceptionUses[playerId] || "";
+      const options = getAvailableTeamTradeExceptions(team.id, playerId);
+      if (assignedId && !options.some((exception) => exception.id === assignedId)) {
+        const selectedException = getTeamTradeExceptions(team.id).find((exception) => exception.id === assignedId);
+        options.unshift({
+          ...(selectedException || { id: assignedId, name: "Selected trade exception", amount: 0 }),
+          remainingAmount: selectedException
+            ? Number(selectedException.amount) - getTeamTradeExceptionUse(team.id, assignedId, playerId)
+            : 0,
+          unavailable: true
+        });
+      }
+      if (!options.length) return "";
+      return `
+        <label>
+          <span>TPE for ${escapeHtml(player.name)}</span>
+          <select class="destination-select tpe-use-select" data-tpe-player="${escapeHtml(playerId)}" aria-label="Apply a trade exception to ${escapeHtml(player.name)}">
+            <option value="" ${assignedId ? "" : "selected"}>Use cap room / salary matching</option>
+            ${options.map((exception) => {
+              const label = [
+                exception.name || "Trade exception",
+                `${formatCompactMoney(exception.remainingAmount)} available`,
+                exception.expires_on ? `expires ${exception.expires_on}` : "",
+                exception.unavailable ? "unavailable" : ""
+              ].filter(Boolean).join(" · ");
+              return `<option value="${escapeHtml(exception.id)}" ${assignedId === exception.id ? "selected" : ""} ${exception.unavailable ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+            }).join("")}
+          </select>
+        </label>
+      `;
+    })
+    .filter(Boolean)
+    .join("");
+
+  return controls ? `<div class="team-tpe-controls">${controls}</div>` : "";
 }
 
 function getSignTradeRaiseLimit(rightsType) {
@@ -304,8 +352,11 @@ function updateSignTradePreview(form) {
     && Number(existingContract.toTeamId) === Number(destination.id)
     ? Number(existingContract.firstYearSalary)
     : 0;
-  const projectedPayroll = destination && flow
+  const projectedCapPayroll = destination && flow
     ? getTeamCapPayroll(destination.id) - flow.payrollOutgoing + flow.incoming - existingIncoming + salary
+    : null;
+  const projectedApronSalary = destination && flow
+    ? getTeamSalaryExcludingCapHolds(destination.id) - flow.payrollOutgoing + flow.incoming - existingIncoming + salary
     : null;
 
   form.querySelector("[data-snt-schedule]").innerHTML = schedule.length
@@ -313,15 +364,15 @@ function updateSignTradePreview(form) {
     : '<p class="sign-trade-empty">Enter a positive first-year salary to preview the contract.</p>';
   signTradeContentEl.querySelector("[data-snt-total]").textContent = `${years} seasons · ${formatMoney(total)} total`;
   form.querySelector("[data-snt-trade-salary]").textContent = formatMoney(salary || 0);
-  form.querySelector("[data-snt-destination-payroll]").textContent = projectedPayroll === null
+  form.querySelector("[data-snt-destination-payroll]").textContent = projectedCapPayroll === null
     ? "Choose a destination"
-    : formatMoney(projectedPayroll);
-  form.querySelector("[data-snt-apron-room]").textContent = projectedPayroll === null
+    : formatMoney(projectedCapPayroll);
+  form.querySelector("[data-snt-apron-room]").textContent = projectedApronSalary === null
     ? "—"
-    : `${projectedPayroll <= CBA_ESTIMATES.firstApron ? "" : "Over "}${formatMoney(Math.abs(CBA_ESTIMATES.firstApron - projectedPayroll))}`;
+    : `${projectedApronSalary <= CBA_ESTIMATES.firstApron ? "" : "Over "}${formatMoney(Math.abs(CBA_ESTIMATES.firstApron - projectedApronSalary))}`;
   form.querySelector("[data-snt-apron-room]").classList.toggle(
     "is-over",
-    projectedPayroll !== null && projectedPayroll > CBA_ESTIMATES.firstApron
+    projectedApronSalary !== null && projectedApronSalary > CBA_ESTIMATES.firstApron
   );
 }
 
@@ -405,7 +456,7 @@ function renderSignTradeDialog(teamId, hold) {
         <div class="sign-trade-schedule" data-snt-schedule></div>
         <div class="sign-trade-preview__totals">
           <div><span>First-year trade salary</span><strong data-snt-trade-salary></strong></div>
-          <div><span>Destination after-trade payroll</span><strong data-snt-destination-payroll></strong></div>
+          <div><span>Destination cap payroll</span><strong data-snt-destination-payroll></strong></div>
           <div><span>Room below first apron</span><strong data-snt-apron-room></strong></div>
         </div>
       </section>
@@ -454,6 +505,7 @@ function renderSignTradeDialog(teamId, hold) {
   signTradeContentEl.querySelector(".sign-trade-cancel").addEventListener("click", () => signTradeDialog.close());
   signTradeContentEl.querySelector(".sign-trade-remove")?.addEventListener("click", () => {
     delete state.transfers[playerId];
+    delete state.tradeExceptionUses[playerId];
     delete state.signAndTrades[playerId];
     signTradeDialog.close();
     pendingSignTrade = null;
@@ -755,6 +807,7 @@ function buildTradeSnapshot(validation = validateTrade()) {
     tradeState: {
       teamIds: [...state.teamIds],
       transfers: { ...state.transfers },
+      tradeExceptionUses: { ...state.tradeExceptionUses },
       signAndTrades: Object.fromEntries(
         Object.entries(state.signAndTrades).map(([playerId, contract]) => [playerId, { ...contract }])
       ),
@@ -821,6 +874,86 @@ function getTeamCapHoldsTotal(teamId) {
   }, 0);
 }
 
+function getTeamTradeExceptions(teamId) {
+  const team = getTeam(teamId);
+  if (!team) return [];
+  return (team.cap_exceptions || [])
+    .map((exception, index) => ({
+      ...exception,
+      id: `${team.id}:tpe:${index}`
+    }))
+    .filter((exception) =>
+      /trade exception/i.test(String(exception.type || ""))
+      && Number.isFinite(Number(exception.amount))
+      && Number(exception.amount) > 0
+    );
+}
+
+function getActiveTeamTradeExceptions(teamId) {
+  const today = new Date().toISOString().slice(0, 10);
+  return getTeamTradeExceptions(teamId).filter((exception) =>
+    !exception.expires_on || exception.expires_on >= today
+  );
+}
+
+function getTeamTradeExceptionUse(teamId, exceptionId, excludePlayerId = "") {
+  return Object.entries(state.tradeExceptionUses).reduce((total, [playerId, assignedExceptionId]) => {
+    if (assignedExceptionId !== exceptionId
+      || playerId === excludePlayerId
+      || Number(state.transfers[playerId]) !== Number(teamId)) return total;
+    const player = findTransferredPlayer(playerId);
+    const salary = Number(player?.salary);
+    return total + (Number.isFinite(salary) && salary > 0 ? salary : 0);
+  }, 0);
+}
+
+function getTeamBaseCapPayroll(teamId) {
+  const team = getTeam(teamId);
+  return Number(team?.total_salary || 0)
+    + Number(team?.dead_money_total || 0)
+    + getTeamCapHoldsTotal(teamId)
+    + getTeamResignedCapHoldsTotal(teamId)
+    + getTeamRosterActionAdjustment(teamId);
+}
+
+function isTeamTradeExceptionAvailable(teamId) {
+  const exceptions = getActiveTeamTradeExceptions(teamId);
+  const exceptionTotal = exceptions.reduce((total, exception) => total + Number(exception.amount), 0);
+  if (exceptionTotal <= 0) return false;
+  const basePayroll = getTeamBaseCapPayroll(teamId);
+  return basePayroll >= CBA_ESTIMATES.salaryCap
+    || CBA_ESTIMATES.salaryCap - basePayroll < exceptionTotal;
+}
+
+function getAvailableTeamTradeExceptions(teamId, excludePlayerId = "") {
+  if (!isTeamTradeExceptionAvailable(teamId)) return [];
+  return getActiveTeamTradeExceptions(teamId)
+    .map((exception) => ({
+      ...exception,
+      remainingAmount: Number(exception.amount) - getTeamTradeExceptionUse(teamId, exception.id, excludePlayerId)
+    }))
+    .filter((exception) => exception.remainingAmount > 0);
+}
+
+function getTeamTradeExceptionIncomingSalary(teamId) {
+  return Object.entries(state.tradeExceptionUses).reduce((total, [playerId, exceptionId]) => {
+    if (!exceptionId || Number(state.transfers[playerId]) !== Number(teamId)) return total;
+    const player = findTransferredPlayer(playerId);
+    const salary = Number(player?.salary);
+    return total + (Number.isFinite(salary) && salary > 0 ? salary : 0);
+  }, 0);
+}
+
+function getTeamTradeExceptionCapHold(teamId, basePayroll) {
+  const exceptions = getActiveTeamTradeExceptions(teamId);
+  const originalTotal = exceptions.reduce((total, exception) => total + Number(exception.amount), 0);
+  if (basePayroll >= CBA_ESTIMATES.salaryCap
+    || CBA_ESTIMATES.salaryCap - basePayroll >= originalTotal) return 0;
+  return exceptions.reduce((total, exception) => (
+    total + Math.max(0, Number(exception.amount) - getTeamTradeExceptionUse(teamId, exception.id))
+  ), 0);
+}
+
 function getTeamResignedCapHoldsTotal(teamId) {
   const team = getTeam(teamId);
   if (!team) return 0;
@@ -846,12 +979,14 @@ function getTeamRosterActionAdjustment(teamId) {
 }
 
 function getTeamCapPayroll(teamId) {
+  const basePayroll = getTeamBaseCapPayroll(teamId);
+  return basePayroll + getTeamTradeExceptionCapHold(teamId, basePayroll);
+}
+
+function getTeamSalaryExcludingCapHolds(teamId) {
   const team = getTeam(teamId);
-  return Number(team?.total_salary || 0)
-    + Number(team?.dead_money_total || 0)
-    + getTeamCapHoldsTotal(teamId)
-    + getTeamResignedCapHoldsTotal(teamId)
-    + getTeamRosterActionAdjustment(teamId);
+  if (!team) return 0;
+  return getTeamBaseCapPayroll(teamId) - getTeamCapHoldsTotal(teamId);
 }
 
 function getPickOwnerTeams(pick) {
@@ -944,10 +1079,9 @@ function getTeamPlayerCounts(teamId) {
 }
 
 function getApronTier(team) {
-  const payroll = getTeamCapPayroll(team.id);
-  const status = String(team.tax_status || "").toLowerCase();
-  if (status.includes("2nd apron") || payroll >= CBA_ESTIMATES.secondApron) return 2;
-  if (status.includes("1st apron") || payroll >= CBA_ESTIMATES.firstApron) return 1;
+  const salary = getTeamSalaryExcludingCapHolds(team.id);
+  if (salary >= CBA_ESTIMATES.secondApron) return 2;
+  if (salary >= CBA_ESTIMATES.firstApron) return 1;
   return 0;
 }
 
@@ -1007,6 +1141,7 @@ function removeTeamTransfers(teamId) {
   Object.entries(state.transfers).forEach(([playerId, destinationId]) => {
     if (Number(playerId.split(":")[0]) === Number(teamId) || Number(destinationId) === Number(teamId)) {
       delete state.transfers[playerId];
+      delete state.tradeExceptionUses[playerId];
       delete state.signAndTrades[playerId];
     }
   });
@@ -1084,12 +1219,13 @@ function renderTeamCard(teamId, slotIndex) {
   const flow = getTeamFlow(team.id);
   const payroll = Number(team.total_salary || 0);
   const afterTrade = getTeamCapPayroll(team.id) - flow.payrollOutgoing + flow.incoming;
+  const salaryAfterTrade = getTeamSalaryExcludingCapHolds(team.id) - flow.payrollOutgoing + flow.incoming;
   const capMetrics = [
     { label: "Cap payroll after trade", value: afterTrade, className: "" },
     { label: "Cap room", value: CBA_ESTIMATES.salaryCap - afterTrade, className: "team-cap-metric--cap" },
-    { label: "1st apron room", value: CBA_ESTIMATES.firstApron - afterTrade, className: "team-cap-metric--apron" },
-    { label: "2nd apron room", value: CBA_ESTIMATES.secondApron - afterTrade, className: "team-cap-metric--apron" },
-    { label: "Above minimum", value: afterTrade - CBA_ESTIMATES.minimumTeamSalary, className: "team-cap-metric--minimum" }
+    { label: "1st apron room", value: CBA_ESTIMATES.firstApron - salaryAfterTrade, className: "team-cap-metric--apron" },
+    { label: "2nd apron room", value: CBA_ESTIMATES.secondApron - salaryAfterTrade, className: "team-cap-metric--apron" },
+    { label: "Above minimum", value: salaryAfterTrade - CBA_ESTIMATES.minimumTeamSalary, className: "team-cap-metric--minimum" }
   ];
   const renderRosterRow = (player, index) => {
     const playerId = getPlayerId(team.id, player.name);
@@ -1261,21 +1397,26 @@ function renderTeamCard(teamId, slotIndex) {
     .filter(([, destinationId]) => Number(destinationId) === Number(team.id))
     .map(([playerId]) => findTransferredPlayer(playerId))
     .filter(Boolean);
+  const incomingEntries = Object.entries(state.transfers)
+    .filter(([, destinationId]) => Number(destinationId) === Number(team.id))
+    .map(([playerId]) => ({ playerId, player: findTransferredPlayer(playerId) }))
+    .filter(({ player }) => player);
   const renderMovePills = (players) => players.length
     ? players.slice(0, 4).map((player) => `<span>${escapeHtml(player.name)} · ${escapeHtml(formatCompactMoney(Number(player.salary) || 0))}</span>`).join("")
       + (players.length > 4 ? `<span>+${players.length - 4} more</span>` : "")
     : '<small>No players selected</small>';
   const payrollScaleMax = CBA_ESTIMATES.secondApron * 1.15;
-  const payrollFillPercent = Math.min(100, Math.max(0, afterTrade / payrollScaleMax * 100));
-  const apronStatus = afterTrade <= CBA_ESTIMATES.firstApron
-    ? `${formatMoney(CBA_ESTIMATES.firstApron - afterTrade)} below the 1st apron`
-    : afterTrade <= CBA_ESTIMATES.secondApron
-      ? `${formatMoney(CBA_ESTIMATES.secondApron - afterTrade)} below the 2nd apron`
-      : `${formatMoney(afterTrade - CBA_ESTIMATES.secondApron)} above the 2nd apron`;
+  const currentSalary = getTeamSalaryExcludingCapHolds(team.id);
+  const payrollFillPercent = Math.min(100, Math.max(0, salaryAfterTrade / payrollScaleMax * 100));
+  const apronStatus = salaryAfterTrade <= CBA_ESTIMATES.firstApron
+    ? `${formatMoney(CBA_ESTIMATES.firstApron - salaryAfterTrade)} below the 1st apron`
+    : salaryAfterTrade <= CBA_ESTIMATES.secondApron
+      ? `${formatMoney(CBA_ESTIMATES.secondApron - salaryAfterTrade)} below the 2nd apron`
+      : `${formatMoney(salaryAfterTrade - CBA_ESTIMATES.secondApron)} above the 2nd apron`;
   const teamMovementSummary = outgoingPlayers.length || incomingPlayers.length
     ? `<div class="team-move-summary">
         <section><span>Sending</span><div>${renderMovePills(outgoingPlayers)}</div></section>
-        <section><span>Receiving</span><div>${renderMovePills(incomingPlayers)}</div></section>
+        <section><span>Receiving</span><div>${renderMovePills(incomingPlayers)}</div>${renderTradeExceptionControls(team, incomingEntries)}</section>
       </div>`
     : "";
 
@@ -1302,13 +1443,12 @@ function renderTeamCard(teamId, slotIndex) {
         <div>${renderTeamMetricAmount(payroll)}<span>Roster salary</span></div>
         <div>${renderTeamMetricAmount(flow.outgoing, "-", "money-out")}<span>Outgoing</span></div>
         <div>${renderTeamMetricAmount(flow.incoming, "+", "money-in")}<span>Incoming</span></div>
-        <div>${renderTeamMetricAmount(afterTrade)}<span>After trade</span></div>
+        <div>${renderTeamMetricAmount(afterTrade)}<span>Cap payroll</span></div>
       </div>
-      <section class="team-payroll-track" aria-label="${escapeHtml(team.name)} payroll movement">
-        <div class="team-payroll-track__heading"><span>PAYROLL MOVEMENT</span><strong>${escapeHtml(formatCompactMoney(payroll))} <i aria-hidden="true">→</i> ${escapeHtml(formatCompactMoney(afterTrade))}</strong></div>
-        <div class="team-payroll-track__bar" role="img" aria-label="Payroll after trade at ${Math.round(payrollFillPercent)} percent of the displayed scale">
+      <section class="team-payroll-track" aria-label="${escapeHtml(team.name)} apron salary movement">
+        <div class="team-payroll-track__heading"><span>APRON SALARY MOVEMENT</span><strong>${escapeHtml(formatCompactMoney(currentSalary))} <i aria-hidden="true">→</i> ${escapeHtml(formatCompactMoney(salaryAfterTrade))}</strong></div>
+        <div class="team-payroll-track__bar" role="img" aria-label="Apron salary after trade at ${Math.round(payrollFillPercent)} percent of the displayed scale">
           <span style="width:${payrollFillPercent}%"></span>
-          <i class="team-payroll-track__mark team-payroll-track__mark--cap" style="left:${CBA_ESTIMATES.salaryCap / payrollScaleMax * 100}%"></i>
           <i class="team-payroll-track__mark team-payroll-track__mark--first" style="left:${CBA_ESTIMATES.firstApron / payrollScaleMax * 100}%"></i>
           <i class="team-payroll-track__mark team-payroll-track__mark--second" style="left:${CBA_ESTIMATES.secondApron / payrollScaleMax * 100}%"></i>
         </div>
@@ -1318,7 +1458,7 @@ function renderTeamCard(teamId, slotIndex) {
       <section class="team-cap-outlook" aria-label="${escapeHtml(team.name)} cap outlook after trade">
         <div class="team-cap-outlook__heading">
           <strong>Team cap outlook</strong>
-          <span>2026–27 estimates</span>
+          <span>2026–27 · holds/TPEs affect cap room, not apron salary</span>
         </div>
         <div class="team-cap-metrics">
           ${capMetrics.map(({ label, value, className }) => {
@@ -1795,6 +1935,7 @@ function saveFrontOfficeAction(event) {
       schedule: preview.schedule
     };
     delete state.transfers[playerId];
+    delete state.tradeExceptionUses[playerId];
     delete state.signAndTrades[playerId];
     showTradeToast(`${playerRef.player.name} ${move === "stretched" ? "stretch" : move === "buyout" ? "buyout" : "waiver"} simulation applied.`);
   }
@@ -1921,6 +2062,7 @@ function renderTradeBoard() {
           state.renouncedCapHolds[button.dataset.player] = true;
           delete state.signAndTrades[button.dataset.player];
           delete state.transfers[button.dataset.player];
+          delete state.tradeExceptionUses[button.dataset.player];
           showTradeToast(`${player.name} cap hold removed from the simulation.`);
         }
         renderTradeBoard();
@@ -1937,6 +2079,7 @@ function renderTradeBoard() {
       const playerId = button.dataset.player;
       if (state.transfers[playerId]) {
         delete state.transfers[playerId];
+        delete state.tradeExceptionUses[playerId];
       } else {
         const senderId = Number(playerId.split(":")[0]);
         const defaultDestination = state.teamIds.find((id) => id !== null && Number(id) !== senderId);
@@ -1975,9 +2118,24 @@ function renderTradeBoard() {
   teamGridEl.querySelectorAll(".destination-select[data-player]").forEach((select) => {
     select.addEventListener("change", () => {
       const playerId = select.dataset.player;
+      if (Number(state.transfers[playerId]) !== Number(select.value)) {
+        delete state.tradeExceptionUses[playerId];
+      }
       state.transfers[playerId] = Number(select.value);
       if (state.signAndTrades[playerId]) {
         state.signAndTrades[playerId].toTeamId = Number(select.value);
+      }
+      renderTradeBoard();
+    });
+  });
+
+  teamGridEl.querySelectorAll(".tpe-use-select[data-tpe-player]").forEach((select) => {
+    select.addEventListener("change", () => {
+      const playerId = select.dataset.tpePlayer;
+      if (select.value) {
+        state.tradeExceptionUses[playerId] = select.value;
+      } else {
+        delete state.tradeExceptionUses[playerId];
       }
       renderTradeBoard();
     });
@@ -2280,16 +2438,60 @@ function validateTrade() {
       : "No sign-and-trade contracts are included.")
   });
 
+  const tradeExceptionIssues = [];
+  const tradeExceptionUses = new Map();
+  Object.entries(state.tradeExceptionUses).forEach(([playerId, exceptionId]) => {
+    const destinationId = Number(state.transfers[playerId]);
+    const player = findTransferredPlayer(playerId);
+    const team = getTeam(destinationId);
+    if (!destinationId || !team || !player || !hasSalary(player) || player.salary <= 0 || isTwoWayPlayer(player)) {
+      tradeExceptionIssues.push("A selected trade exception is not attached to a valid incoming player.");
+      return;
+    }
+    if (player.signAndTrade) {
+      tradeExceptionIssues.push(`${player.name} cannot use a traded player exception in this sign-and-trade proposal.`);
+      return;
+    }
+    const exception = getActiveTeamTradeExceptions(team.id)
+      .find((item) => item.id === exceptionId);
+    if (!exception) {
+      tradeExceptionIssues.push(`${team.name}'s selected trade exception is unavailable or expired.`);
+      return;
+    }
+    if (!isTeamTradeExceptionAvailable(team.id)) {
+      tradeExceptionIssues.push(`${team.name} has enough cap room to use cap space instead of a trade exception.`);
+      return;
+    }
+    const key = `${team.id}:${exception.id}`;
+    const use = tradeExceptionUses.get(key) || { team, exception, amount: 0 };
+    use.amount += player.salary;
+    tradeExceptionUses.set(key, use);
+  });
+  tradeExceptionUses.forEach(({ team, exception, amount }) => {
+    if (amount > Number(exception.amount)) {
+      tradeExceptionIssues.push(`${team.name} assigns ${formatMoney(amount)} to a ${formatMoney(Number(exception.amount))} trade exception.`);
+    }
+  });
+  checks.push({
+    title: "Trade exceptions",
+    status: tradeExceptionIssues.length ? "fail" : "pass",
+    detail: tradeExceptionIssues.join(" ")
+      || (tradeExceptionUses.size
+        ? "Assigned incoming salaries fit within active team trade exceptions."
+        : "No trade exceptions are assigned. Listed standard TPEs can be applied to incoming salaries.")
+  });
+
   const salaryIssues = [];
   const salaryNotes = [];
   participatingTeams.forEach((team) => {
     const flow = getTeamFlow(team.id);
-    if (flow.incoming <= 0) return;
+    const incomingForMatching = Math.max(0, flow.incoming - getTeamTradeExceptionIncomingSalary(team.id));
+    if (incomingForMatching <= 0) return;
     const match = getSalaryMatchLimit(team, flow.outgoing);
-    if (flow.incoming > match.maximum) {
-      salaryIssues.push(`${team.name} receives ${formatMoney(flow.incoming)} but may receive up to ${formatMoney(match.maximum)}. ${match.rule}`);
+    if (incomingForMatching > match.maximum) {
+      salaryIssues.push(`${team.name} receives ${formatMoney(incomingForMatching)} not covered by a selected TPE but may receive up to ${formatMoney(match.maximum)} through salary matching. ${match.rule}`);
     } else {
-      salaryNotes.push(`${team.name}: ${formatMoney(flow.incoming)} incoming / ${formatMoney(match.maximum)} allowed.`);
+      salaryNotes.push(`${team.name}: ${formatMoney(incomingForMatching)} salary-matched incoming / ${formatMoney(match.maximum)} allowed.`);
     }
   });
   checks.push({
@@ -2297,14 +2499,16 @@ function validateTrade() {
     status: !TRADE_RULES.salaryMatching ? "pass" : salaryIssues.length ? "fail" : "pass",
     detail: !TRADE_RULES.salaryMatching
       ? "Salary matching is disabled by your trade sliders."
-      : (salaryIssues.length ? salaryIssues : salaryNotes).join(" ") || "No player salaries are changing hands."
+      : (salaryIssues.length ? salaryIssues : salaryNotes).join(" ") || (Object.keys(state.tradeExceptionUses).length
+        ? "TPE-assigned salary is evaluated separately."
+        : "No player salaries are changing hands.")
   });
 
   const minimumSalaryIssues = [];
   if (TRADE_RULES.minimumTeamSalaryFloor) {
     participatingTeams.forEach((team) => {
       const flow = getTeamFlow(team.id);
-      const afterTrade = getTeamCapPayroll(team.id) - flow.payrollOutgoing + flow.incoming;
+      const afterTrade = getTeamSalaryExcludingCapHolds(team.id) - flow.payrollOutgoing + flow.incoming;
       if (afterTrade < CBA_ESTIMATES.minimumTeamSalary) {
         minimumSalaryIssues.push(`${team.name} would be at ${formatMoney(afterTrade)}, below the modeled minimum team salary of ${formatMoney(CBA_ESTIMATES.minimumTeamSalary)}.`);
       }
@@ -2338,18 +2542,20 @@ function validateTrade() {
   participatingTeams.forEach((team) => {
     const tier = getApronTier(team);
     const flow = getTeamFlow(team.id);
-    const afterTrade = getTeamCapPayroll(team.id) - flow.payrollOutgoing + flow.incoming;
+    const afterTrade = getTeamSalaryExcludingCapHolds(team.id) - flow.payrollOutgoing + flow.incoming;
+    const incomingForMatching = Math.max(0, flow.incoming - getTeamTradeExceptionIncomingSalary(team.id));
     const receivesSignAndTrade = Object.values(state.signAndTrades)
       .some((contract) => Number(contract.toTeamId) === Number(team.id));
     if (receivesSignAndTrade && afterTrade > CBA_ESTIMATES.firstApron) {
       hardCapIssues.push(`${team.name} would exceed the estimated first-apron hard cap triggered by receiving a sign-and-trade player.`);
-    } else if (tier && flow.incoming > 0) {
+    } else if (tier && incomingForMatching > 0) {
       const apronLimit = tier === 2 ? CBA_ESTIMATES.secondApron : CBA_ESTIMATES.firstApron;
-      if (afterTrade > apronLimit) {
-        hardCapIssues.push(`${team.name} would be at ${formatMoney(afterTrade)}, above the estimated ${tier === 2 ? "second" : "first"} apron of ${formatMoney(apronLimit)}.`);
+      const afterTradeWithoutTpeIncoming = afterTrade - getTeamTradeExceptionIncomingSalary(team.id);
+      if (afterTradeWithoutTpeIncoming > apronLimit) {
+        hardCapIssues.push(`${team.name} would be at ${formatMoney(afterTradeWithoutTpeIncoming)}, above the estimated ${tier === 2 ? "second" : "first"} apron of ${formatMoney(apronLimit)} outside its TPE-acquired salary.`);
       }
     }
-    if (tier && flow.incoming > 0 && flow.incoming > flow.outgoing) {
+    if (tier && incomingForMatching > 0 && incomingForMatching > flow.outgoing) {
       hardCapIssues.push(`${team.name} is marked ${tier === 2 ? "second" : "first"} apron and cannot take back more salary than it sends.`);
     }
   });
@@ -2365,8 +2571,9 @@ function validateTrade() {
   participatingTeams.forEach((team) => {
     if (getApronTier(team) !== 2) return;
     const flow = getTeamFlow(team.id);
+    const incomingForMatching = Math.max(0, flow.incoming - getTeamTradeExceptionIncomingSalary(team.id));
     const counts = getTeamPlayerCounts(team.id);
-    if (flow.incoming > 0 && counts.outgoing > 1) {
+    if (incomingForMatching > 0 && counts.outgoing > 1) {
       aggregationIssues.push(`${team.name} is a second-apron team and may not aggregate multiple outgoing player salaries.`);
     }
   });
@@ -2519,13 +2726,13 @@ async function submitTradeProposal() {
   const snapshot = buildTradeSnapshot();
   const postTitle = document.getElementById("tradePostTitle")?.value.trim() || "";
   const postExplanation = document.getElementById("tradePostExplanation")?.value.trim() || "";
-  if (postTitle.length < 3) {
-    showTradeToast("Add a post title before submitting.");
+  if (postTitle && postTitle.length < 3) {
+    showTradeToast("A post title must contain at least 3 characters.");
     document.getElementById("tradePostTitle")?.focus();
     return;
   }
-  if (postExplanation.length < 10) {
-    showTradeToast("Add an explanation of at least 10 characters.");
+  if (postExplanation && postExplanation.length < 10) {
+    showTradeToast("An explanation must contain at least 10 characters.");
     document.getElementById("tradePostExplanation")?.focus();
     return;
   }
@@ -2557,7 +2764,6 @@ async function loadTeams({ background = false } = {}) {
   if (isLoadingTeams) return;
   isLoadingTeams = true;
   if (!background) {
-    apiStatusEl.textContent = "Connecting to API…";
     teamGridEl.innerHTML = '<div class="loading-state">Loading team data…</div>';
   }
 
@@ -2572,47 +2778,12 @@ async function loadTeams({ background = false } = {}) {
     if (teams.length === 0) throw new Error("The API returned no teams.");
     lastTeamsRefreshAt = Date.now();
 
-    const missingSalaries = teams.reduce((count, team) => count + getTeamPlayers(team).filter((player) => !hasSalary(player)).length, 0);
-    const usedCatalogSalaries = teams.some((team) => getTeamPlayers(team).some((player) => player.salary_source === "Supabase catalog"));
-    const stats = data.stats || {};
-    const roster = data.roster || {};
-    const updatedAt = stats.last_updated
-      ? new Date(stats.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-      : "";
-    const salaryStatus = missingSalaries === 0
-      ? usedCatalogSalaries ? "API/catalog salaries received" : "API salaries received"
-      : `${missingSalaries} salaries unavailable`;
-    const contractsUnavailable = roster.contracts_status === "unavailable";
-    const rosterStatus = contractsUnavailable
-      ? "Supabase roster · contract snapshot unavailable"
-      : roster.status === "snapshot"
-      ? "Supabase roster/contracts snapshot"
-      : roster.status === "fresh"
-        ? "ESPN rosters/contracts current"
-        : "Roster data may be outdated";
-    const statsStatus = stats.status === "snapshot"
-      ? `${stats.season} stats snapshot through Nov. 20`
-      : stats.status === "fresh"
-      ? `${stats.season} stats through Nov. 20${updatedAt ? ` · refreshed ${updatedAt}` : ""}`
-      : stats.status === "pending"
-        ? `${stats.season || "Current-season"} stats pending`
-        : "Live stats unavailable";
-    const rosterUpdatedAt = roster.last_updated
-      ? new Date(roster.last_updated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-      : "";
-    apiStatusEl.textContent = `${rosterStatus}${rosterUpdatedAt ? ` ${rosterUpdatedAt}` : ""} · ${salaryStatus} · ${statsStatus}`;
-    apiStatusEl.title = [roster.source, roster.message, stats.message, data.picks?.message].filter(Boolean).join(" ");
-    apiStatusEl.classList.toggle("pill--warning", contractsUnavailable || !["fresh", "snapshot"].includes(roster.status) || missingSalaries > 0 || !["fresh", "snapshot"].includes(stats.status));
-
     renderTradeBoard();
   } catch (error) {
     console.error("Trade machine API load failed:", error);
     if (teams.length) {
-      apiStatusEl.textContent = "Stats refresh failed. Showing the last API response; automatic retry in 15 minutes.";
-      apiStatusEl.classList.add("pill--warning");
       renderTradeBoard();
     } else {
-      apiStatusEl.textContent = "API connection failed";
       teamGridEl.innerHTML = '<div class="loading-state">Could not load teams. Check the API URL, network, and API key.</div>';
     }
   } finally {
@@ -2638,6 +2809,7 @@ addTeamBtn.addEventListener("click", addTeamSlot);
 
 clearTradeBtn.addEventListener("click", () => {
   state.transfers = {};
+  state.tradeExceptionUses = {};
   state.signAndTrades = {};
   state.reSignedCapHolds = {};
   state.renouncedCapHolds = {};
@@ -2653,7 +2825,10 @@ clearTradeBtn.addEventListener("click", () => {
 });
 
 reviewTradeBtn.addEventListener("click", reviewTrade);
-submitTradeBtn.addEventListener("click", submitTradeProposal);
+tradePostForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitTradeProposal();
+});
 closeReviewBtn.addEventListener("click", () => reviewDialog.close());
 doneReviewBtn.addEventListener("click", () => reviewDialog.close());
 playerProfileDialog.addEventListener("click", (event) => {
