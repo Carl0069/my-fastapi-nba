@@ -4100,7 +4100,23 @@ def _fetch_current_nba_odds() -> dict:
         except (HTTPError, URLError, TimeoutError, OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
             if isinstance(error, HTTPError):
                 logger.warning("The Odds API request failed with HTTP %s.", error.code)
-                failure_message = f"The Odds API request failed (HTTP {error.code})."
+                if error.code == 401:
+                    failure_message = (
+                        "The Odds API rejected THE_ODDS_API_KEY (HTTP 401). "
+                        "Check the key in Vercel Environment Variables and redeploy the API."
+                    )
+                elif error.code == 403:
+                    failure_message = (
+                        "The Odds API denied this request (HTTP 403). "
+                        "Check that the API plan allows NBA odds."
+                    )
+                elif error.code == 429:
+                    failure_message = (
+                        "The Odds API request limit was reached (HTTP 429). "
+                        "Check the account quota and try again later."
+                    )
+                else:
+                    failure_message = f"The Odds API request failed (HTTP {error.code})."
             else:
                 logger.warning("The Odds API request could not be completed (%s).", type(error).__name__)
                 failure_message = "The Odds API could not be reached or returned invalid data."
