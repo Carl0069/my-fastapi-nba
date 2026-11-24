@@ -5880,6 +5880,59 @@ def edit_admin_player(
     }
 
 
+@app.delete(
+    "/api/v1/admin/players/{player_id:path}",
+    summary="Remove an admin-added player",
+    description="Deactivates an admin-added player so it no longer appears in NBA Hub. Player rows are retained for referential integrity.",
+)
+def remove_admin_player(
+    player_id: str,
+    user_id: UUID = Depends(verify_supabase_admin),
+):
+    existing = supabase_rest_request(
+        "nba_players?select=id,name,is_active,metadata"
+        f"&id=eq.{quote(player_id, safe='')}&limit=1"
+    )
+    if not isinstance(existing, list) or not existing:
+        raise HTTPException(status_code=404, detail="The player was not found.")
+
+    before = existing[0]
+    metadata = before.get("metadata") if isinstance(before.get("metadata"), dict) else {}
+    if metadata.get("admin_added") is not True:
+        raise HTTPException(
+            status_code=409,
+            detail="Only admin-added players can be removed with this endpoint.",
+        )
+    if before.get("is_active") is False:
+        return {"status": "already_removed", "id": player_id}
+
+    updated_metadata = {
+        **metadata,
+        "admin_removed_by": str(user_id),
+        "admin_removed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    rows = supabase_rest_request(
+        f"nba_players?id=eq.{quote(player_id, safe='')}",
+        method="PATCH",
+        payload={
+            "is_active": False,
+            "metadata": updated_metadata,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not isinstance(rows, list) or not rows:
+        raise HTTPException(status_code=502, detail="The player could not be removed.")
+
+    global TEAM_CATALOG_CACHE
+    with TEAM_CATALOG_LOCK:
+        TEAM_CATALOG_CACHE = None
+    _log_admin_action(
+        user_id, "nba_hub", "delete", "player",
+        player_id, metadata, updated_metadata,
+    )
+    return {"status": "removed", "id": player_id, "name": before.get("name")}
+
+
 @app.patch("/api/v1/admin/teams/{team_id}")
 def update_admin_team(
     team_id: int,
